@@ -3,21 +3,13 @@
 Index only. Buildable spec is `context/PLAN.md` (§S specs, §P phases).
 On conflict, PLAN wins. Fill each heading; keep it one screen.
 
-## 1. What
+## 1. What and why
 
 A personal AI intelligence desk: the last 24 hours of AI and technology news,
 filtered by categories you define, summarised with citations. Local-first,
-single user, one command to run.
-
-## 2. Why
-
-Tab-hopping, duplicate stories, clickbait, no time to read. One feed, one
-window, one summary that points back at the source.
-
-## 3. Who
-
-One technical person who reads AI and tech news daily and would rather
-self-host than subscribe.
+single user, one command to run. Built for one technical person tired of
+tab-hopping, duplicate stories, and clickbait — one feed, one window, one
+summary that points back at the source.
 
 ## 4. Scope (v0.1)
 
