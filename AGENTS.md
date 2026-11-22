@@ -9,8 +9,17 @@ Stack: SvelteKit + TypeScript + Tailwind v4 + `lucide-svelte` + libSQL/Turso
 second lockfile. Versions are pinned exact in `package.json`
 (Node `26.13.0`, pnpm `12.16.1`). Do not re-resolve them.
 
-Gates: `pnpm lint && pnpm check` mid-phase. `pnpm test && pnpm build` plus
-the phase's **Done** line plus a security review at every phase gate.
+Gates: `pnpm lint:changed`, `pnpm typecheck:changed` and
+`pnpm test:changed` after every edit — they look only at new and modified
+files, so the loop stays fast. The full gate (`pnpm lint && pnpm typecheck
+&& pnpm test && pnpm build && pnpm audit`) runs once per phase, before the
+merge, and in CI. Never run the full suite as the inner dev loop.
+
+Branches: every phase, feature and fix gets its own branch off `main` —
+`phase-N-<slug>`, `feat-<slug>`, `fix-<slug>`. Nothing is implemented on
+`main`. A branch is merged with `--no-ff` and kept; `main` only ever moves
+by merge. The one exception is an explicit instruction from the owner to
+work on `main` for that specific change.
 
 ## 1. Unit testing
 
@@ -78,9 +87,11 @@ reproduction, and the smallest fix.
 
 ## 5. Discuss and improve
 
-Findings are not auto-fixed. Present them as a list, discuss, prioritise,
-then implement — with the decision recorded next to that phase's work. A
-finding may be accepted as a known limitation with a written reason.
+Critical and high findings are fixed before the phase is committed — no
+discussion needed, the fix lands with a reproducing test. Everything else
+is presented as a list, discussed, prioritised, then implemented, with the
+decision recorded next to that phase's work. A finding may be accepted as a
+known limitation with a written reason.
 
 ## Hard rules
 

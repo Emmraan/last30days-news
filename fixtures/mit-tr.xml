@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title>MIT Technology Review</title>
+		<item>
+			<title>The model that reads a whole lab notebook</title>
+			<link>https://www.technologyreview.com/2026/11/18/lab-notebook/</link>
+			<pubDate>Wed, 18 Nov 2026 12:00:00 GMT</pubDate>
+			<description>Researchers point a language model at four years of bench notes.</description>
+		</item>
+		<item>
+			<title>Why chips are getting hotter before they get faster</title>
+			<link>https://www.technologyreview.com/2026/11/16/hot-chips/</link>
+			<pubDate>Mon, 16 Nov 2026 08:00:00 GMT</pubDate>
+			<description>Power density is the constraint now, not transistor count.</description>
+		</item>
+	</channel>
+</rss>

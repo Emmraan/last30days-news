@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+	<channel>
+		<title>TechCrunch AI</title>
+		<item>
+			<title>An AI startup raises a round it will not describe</title>
+			<link>https://techcrunch.com/2026/11/18/undisclosed-round/</link>
+			<pubDate>Tue, 18 Nov 2026 14:05:00 GMT</pubDate>
+			<content:encoded><![CDATA[<p>Series B, size unknown, investors unnamed.</p>]]></content:encoded>
+		</item>
+		<item>
+			<title>Open weights, closed benchmarks</title>
+			<link>https://techcrunch.com/2026/11/17/open-weights/</link>
+			<pubDate>Mon, 17 Nov 2026 11:00:00 GMT</pubDate>
+			<description>The leaderboard is not reproducible.</description>
+		</item>
+	</channel>
+</rss>
