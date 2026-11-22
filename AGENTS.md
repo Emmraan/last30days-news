@@ -1,7 +1,7 @@
 # AGENTS.md
 
-The spec is `context/PLAN.md`. On conflict, PLAN wins. This file is the
-agent-facing copy of PLAN §S23; if the two disagree, §S23 wins.
+This file is self-contained. Do not assume any other spec document exists or
+will survive — it may be replaced. Every rule an agent needs is written here.
 
 Stack: SvelteKit + TypeScript + Tailwind v4 + `lucide-svelte` + libSQL/Turso
 + Drizzle + Vercel AI SDK. `adapter-vercel` in prod, `adapter-node` for
@@ -37,16 +37,49 @@ fix without a reproducing test is not a fix.
 ## 4. Pen tester pass
 
 After each phase's green tests, switch to adversarial mode and try to break
-the build. Minimum scope is PLAN §S24: auth bypass, injection, SSRF via
-feed URL, resource exhaustion, secrets, rate limiting, crypto, CSRF, client
-DoS, cost abuse, info leak, headers, supply chain. Produce a numbered
-findings list: severity, what was broken, the exact reproduction, and the
-smallest fix.
+the build. Cover at least:
+
+- **Auth bypass** — any `/api/*` reachable without a session; cookie
+  forging; session fixation; expiry not enforced; `mustChangePassword`
+  ignored.
+- **Injection** — FTS5 query smuggling (`"`, `*`, `NEAR`, `^`, column
+  filters), SQL via sort/cursor params, XSS in item title/excerpt/author
+  from a hostile feed, XSS in the AI summary, template injection in
+  `reason`.
+- **SSRF via feed URL** — a pasted URL pointing at `127.0.0.1`,
+  `169.254.169.254`, `[::1]`, `file://`, a redirect chain, or a non-HTTP
+  scheme. Must be blocked and must not leak the response.
+- **Resource exhaustion** — a 2 GB feed, a feed with 50k items, a zip bomb,
+  `Content-Length` lies, no timeout, an infinite redirect loop, a category
+  with 10k keywords, `limit=100000`.
+- **Secrets** — a key in any response body, log line, error string, or
+  stack trace; settings dumpable unauthenticated; reset leaving an old key
+  usable.
+- **Rate limiting** — 100 parallel logins; does the lockout hold when the
+  DB is remote; can a spoofed `X-Forwarded-For` reset the counter.
+- **Crypto** — non-constant-time compare anywhere, reused IV, missing GCM
+  tag check, password change not re-encrypting, salt not rewritten on
+  reset.
+- **CSRF** — non-GET without `Origin`, `Origin: null`, a cross-site form
+  post, `SameSite` missing in a prod build.
+- **Client DoS** — a 100k-char title, a title of only combining marks, an
+  RTL override in a title, `line-clamp` bypass.
+- **Cost abuse** — unauthenticated AI calls; a category prompt that
+  triggers unbounded scoring; a model response that loops the repair.
+- **Info leak** — a stack trace in an API error, the data dir path in a
+  prod error, source URLs of disabled feeds, the version string.
+- **Headers** — CSP actually emitted, no `unsafe-inline`, no missing
+  `nosniff`, cache headers not caching authenticated JSON.
+- **Supply chain** — a new dependency with a postinstall script, an
+  unpinned transitive, a lockfile change with no `package.json` change.
+
+Produce a numbered findings list: severity, what was broken, the exact
+reproduction, and the smallest fix.
 
 ## 5. Discuss and improve
 
 Findings are not auto-fixed. Present them as a list, discuss, prioritise,
-then implement — with the decision recorded in that phase's section. A
+then implement — with the decision recorded next to that phase's work. A
 finding may be accepted as a known limitation with a written reason.
 
 ## Hard rules
@@ -57,5 +90,10 @@ finding may be accepted as a known limitation with a written reason.
 - A new dependency needs a one-line justification in the PR body: why the
   stdlib or an installed package could not do it. There is no
   `DECISIONS.md`.
-- UI text is English and plain. No §S21 pattern ships.
+- UI text is English and plain. No AI-pattern copy: no "unlock", "supercharge",
+  "seamless", "elevate", "game-changing", no em-dash-heavy marketing voice,
+  no emoji headings.
+- UI must read as a Windows desktop app, not a webpage: no gradients or
+  aurora backgrounds, no card grids, no fake window chrome, no serif
+  display fonts, no multi-colour status dots, no web fonts.
 - Comments explain *why*, never *what*.
