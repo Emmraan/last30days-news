@@ -75,6 +75,8 @@ The MVP ships one complete end-to-end use case:
 - AI config: base URL, API key (optional), model selection, on/off.
 - Web UI: single feed, category + time filters, article cards with
   summary and source links.
+- Landing page: one public single-page site that explains the product
+  and how to run it (see 6.8).
 - Storage: local database for articles and summaries.
 - Install: `npx last30days-news` launches a local server and opens the
   browser.
@@ -138,7 +140,7 @@ built once and extended, not rewritten.
   content, language.
 - Individual account monitoring: a tracked profile's new post appears
   with original link, author, and timestamp.
-- Custom sources use the same source-definition schema (6.8).
+- Custom sources use the same source-definition schema (6.9).
 - A source can be disabled without removing its history.
 
 ### 6.4 AI research and intelligence
@@ -199,7 +201,71 @@ built once and extended, not rewritten.
 - No account or email is required; this is a single-user local gate.
 - Login attempts are rate-limited to slow brute-force tries.
 
-### 6.8 Custom resources (post-MVP)
+### 6.8 Landing page (public, single page)
+
+One page, nav to footer, no separate marketing site. Shares the app's
+tokens, type scale, radii, and logo — it must look like the same
+product, just in a document-shaped container.
+
+Structure is inspired by openship.io (stacked two-line headline,
+left-aligned hero, real product screenshots as the only imagery,
+numbered walkthrough, spec table, FAQ, columned footer). It is **not**
+a copy: no blue-gradient brand palette, no feature-card grid, no
+comparison matrix against competitors.
+
+**Imagery rule.** Every image on the page is a screenshot of this
+product, captured from the running dashboard at 2x and exported to
+`webp`. No stock photos, no illustrations, no abstract renders, no
+AI-generated artwork, no device mockups. Screenshots sit in a plain
+1px `--line` frame with `var(--r-lg)` radius and no drop shadow.
+
+Sections, in order:
+
+1. **Nav** — logo + wordmark left; anchors (`How it works`, `What you
+   get`, `Sources`, `FAQ`) centre-right; `Open the app` pill and a
+   small mono `v0.1.0` on the right. Sticky, `--side` background,
+   1px bottom hairline. No blur, no shadow.
+2. **Hero** — stacked two-line headline, left-aligned, largest type on
+   the page (`--f-d`, clamp 40–64px, tracking -0.03em), second line in
+   `--txt-3`. One supporting sentence at 16px/1.6 in `--txt-2`, max
+   56ch. Two actions: primary accent pill `Open the app`, secondary
+   bordered pill `See how it works`. Directly below, a full-width
+   dashboard screenshot in a 1px frame — the same markup as the real
+   app, not a redraw.
+3. **Proof strip** — a single hairline-bordered row of plain-text facts
+   separated by 1px rules: `Local-first`, `Works without an AI key`,
+   `6 curated sources`, `Cited summaries`. Mono numerals, no badges,
+   no logos.
+4. **How it works** — three numbered steps, vertically stacked, each a
+   two-column row: left = mono step number + short label; right =
+   heading, one paragraph, and a cropped screenshot of that stage
+   (feed, detail pane, citations). Hairline rule between steps. This is
+   the section that carries the page; give it the most space.
+5. **What you get** — spec list, not cards. Two columns per row: label
+   (`--txt`) left, one-line description (`--txt-2`) right, 1px hairline
+   separator between rows. Eight rows max: time windows, categories,
+   cited summaries, provider-independent AI, local storage, no-key
+   mode, keyboard-first UI, single-binary install.
+6. **Sources** — the curated set as small bordered badges in a wrapped
+   flow row, grouped by category with mono group labels. Real domains
+   only. No logo wall, no marquee, no carousel.
+7. **FAQ** — six to eight native `<details>` items, 1px hairline
+   separators, mono chevron, no accordion library. Questions must be
+   the ones a real user asks: is my data uploaded, do I need an API key,
+   which providers work, how fresh is the feed, can I add sources.
+8. **Closing action** — one line, one primary pill, one secondary link
+   to the repo. Left-aligned, same rhythm as the hero.
+9. **Footer** — logo and one-sentence description left; three link
+   columns (`Product`, `Developers`, `Legal`) plus install command in
+   mono; bottom row with `v0.1.0` and licence. 1px top hairline.
+
+Rules: no pricing table, no testimonials, no newsletter form, no cookie
+banner, no fake customer logos, no "trusted by". Copy is concrete and
+short — every claim must be true of the shipped app. Section spacing
+follows one rhythm (96px desktop / 56px mobile); content column max
+1080px, centred, with the hero screenshot allowed to bleed wider.
+
+### 6.9 Custom resources (post-MVP)
 
 - Users can add their own sources in a defined source format.
 - The format is a versioned schema (source definition) shared by
@@ -251,17 +317,96 @@ built once and extended, not rewritten.
 - AI keys are optional; the core product must work without them.
 - No vendor lock-in for sources or models.
 
-### 8.3 UI principles
+### 8.3 UI principles — LOCKED
 
-- Premium and hand-crafted, like a real product design team.
-- Custom design tokens: color, type, spacing, radius, shadow.
-- Distinct typography (Geist, Satoshi, or Inter Tight).
-- Bespoke components; no default shadcn or MUI look.
-- Purposeful, fast, subtle motion.
-- Dark and light themes with WCAG AA contrast.
-- Consistent icons (lucide), single stroke weight.
-- Strict spacing grid, no ad-hoc padding.
-- SPA navigation: page changes are instant, no full reload.
+Approved 2026-11-22. Reference implementation: `dash-design.html`.
+Do not deviate without a new approval.
+
+**Feel.** A Windows desktop application, not a webpage. Premium and
+hand-crafted. The software feel comes from layout, typography, and
+density — never from fake OS window chrome, title bars, or traffic
+lights.
+
+**Tokens (single source of truth).**
+
+| Token | Dark | Light |
+|---|---|---|
+| `--bg` | `#1b1b1b` | `#f3f3f3` |
+| `--side` | `#171717` | `#e9e9e9` |
+| `--pane` | `#202020` | `#f7f7f7` |
+| `--card` | `#262626` | `#fff` |
+| `--raise` | `#2c2c2c` | `#f2f2f2` |
+| `--raise-2` | `#333` | `#e9e9e9` |
+| `--line` | `#2e2e2e` | `#e3e3e3` |
+| `--line-2` | `#3d3d3d` | `#d2d2d2` |
+| `--txt` | `#f2f2f2` | `#141414` |
+| `--txt-2` | `#b9b9b9` | `#545454` |
+| `--txt-3` | `#8a8a8a` | `#848484` |
+| `--accent` | `#60cdff` | `#0f6cbd` |
+| `--accent-on` | `#062a3a` | `#fff` |
+| `--ok` | `#6ccb5f` | `#0f7b0f` |
+| `--warn` | `#fce100` | `#9d5d00` |
+
+Radii: `--r:10px` `--r-md:14px` `--r-lg:18px`. Pills use `99px`.
+Heights: `--h-top:54px` `--h-sb:34px`. Easing:
+`cubic-bezier(.22,.61,.36,1)`.
+
+**Type.** `Segoe UI Variable Text` body, `Segoe UI Variable Display`
+headings, `Cascadia Mono` for numerals, counts, and timestamps. Base
+14px / 1.5. Negative tracking on headings. Tabular numerals on all
+metrics.
+
+**Layout model.**
+
+- App shell: `grid-template-rows: auto minmax(0,1fr) auto`, `100vh`,
+  zero padding, zero gap.
+- Top bar and status bar are **full-bleed and square** — edge to edge,
+  no radius, separated from the body by a 1px hairline only
+  (`box-shadow: 0 1px 0 var(--line)` / `0 -1px 0 var(--line)`).
+- Body: `grid-template-columns: 252px minmax(0,1fr) 424px`,
+  `gap:2px`, `padding-bottom:2px`, background `--bg`.
+- The three panes are **seamless, not floating**: `border:0`,
+  `border-radius:var(--r)` (10px), separated only by the 2px `--bg`
+  gutter. No 8px gutters, no drop shadows on panes.
+- Breakpoints: 1280px hides the detail pane, 940px hides the sidebar
+  and the workspace switcher.
+
+**Borders — small components only.** Large panes stay borderless.
+Interactive small components carry a 1px `--line` border so they read
+as controls:
+
+- `.search` — 1px `--line`, hover `--line-2`, focus-within `--accent`.
+- `.iconbtn` — 1px transparent, hover reveals `--line` (no layout shift).
+- `.seg`, `.btn`, `.chip`, `.tag` — 1px `--line`, hover `--line-2`.
+- `.tag.ai` and `.why` callout — 1px accent at 22% tint.
+- `.fav` source badges — 1px `--line-2`, centered glyph, `padding:0 2px`,
+  `line-height:1` so text never touches the border.
+- `.item.on` — `inset 0 0 0 1px var(--line)` plus a 3px accent left bar.
+
+**Logo — LOCKED: radar sweep.** Rounded-square accent tile (28px,
+9px radius, `linear-gradient(150deg, var(--accent), color-mix(in
+srgb, var(--accent) 45%, #7b61ff))`) holding a 19px glyph:
+
+```
+<circle r="8.7" stroke-width="1.5" opacity=".3"/>
+<circle r="5" stroke-width="1.5" opacity=".5"/>
+<path d="M12 12 12 3.3A8.7 8.7 0 0 1 20.7 12Z" fill opacity=".92"/>
+<circle r="1.9" fill/>
+```
+
+It is a symbol mark, not a letterform. Meaning: continuous scanning of
+a recency window. Reuse the same glyph for the favicon on an accent
+background.
+
+**Colour discipline.** One accent plus `--ok` and `--warn`. No
+multi-colour status dots. No gradients except the logo tile.
+
+**Motion.** 100–120ms on hover and selection, 220ms for panel
+transitions, `--ease` throughout. Honour
+`prefers-reduced-motion: reduce`.
+
+**Navigation.** SPA — instant, no full reload. Focus-visible ring is
+2px `--accent` at 1px offset on every interactive element.
 
 ### 8.4 AI-generated pattern block
 
@@ -274,6 +419,11 @@ The build fails on any of these patterns:
 - Over-explaining or "As an AI" comments.
 - Emoji used as icons.
 - Random accent colors with no token system.
+- Fake OS window chrome, traffic lights, or title-bar replicas.
+- Serif display fonts, aurora/mesh gradient backgrounds.
+- Uniform card grids used as the default page structure.
+- Floating panes with wide gutters and drop shadows inside the app shell.
+- More than one accent hue, or status dots in arbitrary colours.
 
 ## 9. Success metrics
 
