@@ -84,6 +84,10 @@ finding may be accepted as a known limitation with a written reason.
 
 ## Hard rules
 
+- Never read real environment values from `.env` while implementing or
+  debugging. No `cat .env`, no printing an env var, no dumping the process
+  environment. Work from the documented variable names only; if a value is
+  genuinely needed, ask for it instead of reading it.
 - Tests never touch the network. Recorded fixtures only.
 - No file exists before the phase that needs it. No `utils/` dumping
   ground, no barrel `index.ts`, no interface with one implementation.
