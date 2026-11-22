@@ -15,11 +15,12 @@ files, so the loop stays fast. The full gate (`pnpm lint && pnpm typecheck
 && pnpm test && pnpm build && pnpm audit`) runs once per phase, before the
 merge, and in CI. Never run the full suite as the inner dev loop.
 
-Branches: every phase, feature and fix gets its own branch off `main` —
-`phase-N-<slug>`, `feat-<slug>`, `fix-<slug>`. Nothing is implemented on
-`main`. A branch is merged with `--no-ff` and kept; `main` only ever moves
-by merge. The one exception is an explicit instruction from the owner to
-work on `main` for that specific change.
+Branches: a branch is for planned work — a phase from `context/PLAN.md`, or a
+feature big enough to be worth one (`phase-N-<slug>`, `feat-<slug>`). Small
+fixes, wording changes and doc edits go straight onto `main` as a direct
+commit; do not open a branch for those. A branch is merged with `--no-ff` and
+kept; `main` only ever moves by merge or by those direct small commits. An
+explicit instruction from the owner always wins.
 
 Skills: before starting any phase, feature or fix, read
 `.agents/skills/last30days-news/SKILL.md` and load the skills it names for
