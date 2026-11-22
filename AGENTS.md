@@ -31,11 +31,12 @@ deviations and accepted findings, one entry per merged phase. Append to it
 before the phase merge.
 
 Doc lifecycle: `context/PRD.md` is the working spec. Once `context/PLAN.md`
-covers everything the PRD describes, replace the PRD with its blank template
-so the next round is written there. Once every phase in `PLAN.md` is merged,
-replace `PLAN.md` and `PROGRESS.md` with their blank templates. A template's
-sections stay; only the fields are emptied. Today `PRD.md` stays filled —
-the post-MVP scope has no plan yet.
+covers everything the PRD describes, empty the PRD back to its clean
+template — the same headings with no content — so the next round is written
+there. Once every phase in `PLAN.md` is merged, do the same to `PLAN.md` and
+`PROGRESS.md`. There is no template file to copy from: the file itself is
+rewritten in place, sections kept, fields emptied. Today `PRD.md` stays
+filled — the post-MVP scope has no plan yet.
 
 ## 1. Unit testing
 

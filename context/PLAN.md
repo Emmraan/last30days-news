@@ -603,11 +603,12 @@ negotiable:
    the work commit, the merge commit, the gate result, every deviation
    from this plan with its reason, and every finding accepted as a known
    limitation. Append before the phase merge, never after.
-8. **Reset the docs from their templates.** Once this plan covers
-   everything `context/PRD.md` describes, the PRD goes back to its blank
-   template so the next round is written there. Once every phase here is
-   merged, `context/PLAN.md` and `context/PROGRESS.md` go back to their
-   blank templates too. Sections stay; only the fields are emptied.
+8. **Clean the docs back to a template.** Once this plan covers
+   everything `context/PRD.md` describes, rewrite the PRD in place as its
+   clean template — the same headings, every field empty — so the next
+   round is written there. Once every phase here is merged, do the same
+   to `context/PLAN.md` and `context/PROGRESS.md`. No template file is
+   copied; the file keeps its own structure and loses its content.
    `PRD.md` stays filled for now — the post-MVP scope has no plan yet.
 
 ### S24 Security review scope (pen-tester checklist)
