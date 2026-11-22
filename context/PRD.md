@@ -69,11 +69,14 @@ The MVP ships one complete end-to-end use case:
 ### In scope
 
 - Time filters: last 24 hours, 7 days, 30 days (rolling windows, §6.1).
-- Categories: AI & ML and Technology active; the other six exist in the
-  schema with no sources (§6.2).
-- Sources: exactly the six curated feeds in §6.11.
+- Categories: `ai` and `technology` seeded, plus user-created categories
+  (§6.2). A custom category can be sources-only, keywords-only, or
+  prompt-scored by AI — any mix, no limit on how many (§6.2).
+- Sources: the six curated feeds in §6.11, plus any RSS/Atom/JSON feed
+  URL a user pastes while creating a category (§6.2, §6.16).
 - AI: summarization with server-side citations, provider-independent
-  (§6.14). Optional — the product is fully usable with no key.
+  (§6.14). Optional — the product is fully usable with no key. AI also
+  powers `match_mode='ai'` category scoring (§6.2, §6.14).
 - AI config: base URL, API key (optional), model selection, on/off (§6.5).
 - Web UI: app shell, feed, category + time filters, detail pane with
   summary and source links, search, keyboard map (§6.6, §6.18–§6.20).
@@ -89,7 +92,10 @@ The MVP ships one complete end-to-end use case:
 
 - Social monitoring (X, Reddit, YouTube, GitHub, arXiv).
 - Individual account monitoring.
-- Custom topics, custom source manager UI, AI-assisted source creation.
+- The full custom source manager (§6.9) — hand-editable source
+  definitions, per-source intervals, source editing UI, AI-assisted
+  source creation. v0.1 accepts a pasted feed URL only (§6.2).
+- AI-suggested keywords or feed URLs when creating a category.
 - Cross-source verification and "What's Next?".
 - Follow-up conversations and period comparison.
 - Multi-category items and per-category country scope.
@@ -147,19 +153,92 @@ presets are rolling windows computed client-side.
 rules above already define both, so shipping them later needs no data
 change — only a control.
 
-### 6.2 Categories and geography
+### 6.2 Categories (LOCKED)
 
-**Active in v0.1:** `ai` and `technology`. Exactly two.
+A category is a **row**, not an enum value. Users create as many as they
+want, and a category is built from three independent layers that each
+work on their own:
 
-**Defined in schema, empty in v0.1:** politics, geopolitics, business,
-science, cybersecurity, startups. They exist as an enum so adding a
-source later needs no migration, and the UI hides them until a source
-feeds them.
+| Layer | Works with no AI key | What it does |
+|---|---|---|
+| **Sources** | yes | Which feeds the category reads |
+| **Keywords** | yes | Plain string match over title + excerpt |
+| **AI relevance** | no | Scores every candidate item against a prompt |
 
-**Post-MVP.** Custom topics (keyword or rule sets), per-category country
-scope, and multi-category items. The `item.category` column holds one
-primary category in v0.1, so multi-category support is a join table
-added later, not a rewrite.
+A category with only sources works. A category with only keywords works.
+A category with all three works and is the most precise. Nothing here
+requires a model, which is why the product still works without a key.
+
+**`category` table** (also in §6.10):
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | text pk | `ai`, `technology`, or `usr-<slug>` |
+| `name` | text | display name, e.g. `AI Models` |
+| `builtin` | integer bool | 1 = seeded, cannot be renamed or deleted |
+| `match_mode` | text | `keywords` \| `ai` \| `both` |
+| `keywords` | text json | `string[]`, may be empty |
+| `prompt` | text | natural-language intent, nullable |
+| `ai_threshold` | real | 0–1, default `0.6`, ignored when `match_mode='keywords'` |
+| `sort_order` | integer | sidebar order |
+| `created_at` | integer ms utc | |
+
+**Builtin categories, seeded in v0.1:** `ai` (AI & ML) and `technology`,
+both `match_mode='keywords'`, empty keywords, pinned to their sources in
+§6.11. They behave exactly like user-made categories; `builtin` only
+protects them from rename and delete.
+
+**Custom category — creation.** Three fields, all optional except a name:
+
+1. **Name.** Any string, 1–40 characters, unique after case-folding.
+2. **Sources.** The six builtin feeds are offered as checkboxes. Below
+   them, a **feed URL** field accepts any RSS/Atom or JSON feed URL.
+   Pasting one fetches it once immediately; if it does not parse as a
+   feed, the field is rejected inline with the parser error and nothing
+   is saved. A pasted feed is a normal source row with
+   `category = this category`, `kind = rss|json`, and the default 60
+   minute interval. This is the "it works without AI" path and it is in
+   v0.1.
+3. **Prompt or keywords.** Either, or both.
+
+**Custom category — `match_mode`.**
+
+- `keywords` — SQL `LIKE` over `item.title` and `item.excerpt`, case
+  insensitive, word-boundary aware. No regex, no boolean syntax. A user
+  typing `gpt-5` gets `gpt-5`.
+- `ai` — every candidate item is scored against `prompt` (§6.14). An
+  item appears when `score >= ai_threshold`.
+- `both` — union: keyword hit **or** score above threshold.
+
+**Candidates.** The pool the category can draw from is:
+
+- the category's own sources, if it has any;
+- otherwise every item in the current time window.
+
+That single rule is what keeps AI cost bounded without limiting what a
+user can build.
+
+**AI scoring is lazy and cached.** A category is scored when the user
+opens it, never on a timer. Results land in `category_item` keyed by
+`(category_id, item_id, prompt_hash)`, so:
+
+- switching categories back and forth costs nothing;
+- editing the prompt changes `prompt_hash` and invalidates only that
+  category's scores;
+- scoring renders progressively — items appear as batches complete, and
+  the pane shows the `scoring` state from §6.18 rather than a blank list.
+
+Scoring runs in batches of 20 items per model call, 200 items per open.
+That is a cost guard, not a customization limit: the number of
+categories, sources, keywords, and the length of a prompt are all
+unbounded. There is no cap on how many custom categories a user makes.
+
+**Composition.** Selecting a category never clears the time filter or the
+search box. All three compose with `AND`.
+
+**Not in v0.1:** per-category country scope, AI-written keyword lists,
+AI-suggested feed URLs, multi-category assignment of a single item, and
+the full custom source manager with a hand-editable definition (§6.9).
 
 ### 6.3 Source system
 
@@ -199,8 +278,8 @@ added later, not a rewrite.
 - The UI shows a masked key and an is-configured flag; the raw key is
   never returned to the client after save.
 - The server makes all AI calls; keys are never sent to the browser.
-- On serverless hosts, keys live in server env vars or a managed KV
-  store, since the filesystem is read-only.
+- There is no serverless deployment in v0.1 (§6.27), so keys always live
+  in the local database and never in environment variables.
 - If AI is off or unconfigured, aggregation and filtering still work.
 
 ### 6.6 Web application
@@ -209,6 +288,10 @@ added later, not a rewrite.
 
 - Responsive dashboard with a feed, filters, and article detail.
 - Category and time filters are one click away.
+- **Category manager** (§6.2): create, rename, reorder, delete. A new
+  category is sources-only, keywords-only, or AI-scored, and can add its
+  own feed by pasting a URL. Lives in a panel, not a route — no page
+  navigation to make one.
 - Search across stored items (§6.19).
 - On-demand refresh with live progress (§6.12).
 - Settings: theme, password change, AI providers and keys.
@@ -229,8 +312,8 @@ added later, not a rewrite.
 - After first login, the user is prompted to change the password in
   Settings.
 - The password is stored hashed, never in plain text.
-- Login is required in every deployment mode: local `npx`, Docker,
-  VPS, and Vercel.
+- Login is required in every deployment mode: local `npx`, Docker, and
+  VPS (§6.27).
 - A server-side session cookie (httponly) keeps the user logged in
   until logout or expiry.
 - AI keys never reach the client; they stay in the server-side store
@@ -272,8 +355,9 @@ Sections, in order:
    app, not a redraw.
 3. **Proof strip** — a single hairline-bordered row of plain-text facts
    separated by 1px rules: `Local-first`, `Works without an AI key`,
-   `6 curated sources`, `Cited summaries`. Mono numerals, no badges,
-   no logos.
+   `Bring your own model`, `Cited summaries`. Mono numerals, no badges,
+   no logos. **No source count on the landing page** — the number is a
+   moving target and every claim must survive the next release.
 4. **How it works** — three numbered steps, vertically stacked, each a
    two-column row: left = mono step number + short label; right =
    heading, one paragraph, and a cropped screenshot of that stage
@@ -286,7 +370,8 @@ Sections, in order:
    mode, keyboard-first UI, one-command install.
 6. **Sources** — the curated set as small bordered badges in a wrapped
    flow row, grouped by category with mono group labels. Real domains
-   only. No logo wall, no marquee, no carousel.
+   only. No logo wall, no marquee, no carousel. One line above the
+   badges: any RSS feed can be added later — no count, no total.
 7. **FAQ** — six to eight native `<details>` items, 1px hairline
    separators, mono chevron, no accordion library. Questions must be
    the ones a real user asks: is my data uploaded, do I need an API key,
@@ -304,6 +389,10 @@ follows one rhythm (96px desktop / 56px mobile); content column max
 1080px, centred, with the hero screenshot allowed to bleed wider.
 
 ### 6.9 Custom resources (post-MVP)
+
+v0.1 already accepts a pasted feed URL inside the category creator
+(§6.2). What this section adds later is the full manager: hand-editable
+definitions, per-source intervals, editing, and AI-assisted creation.
 
 - Users can add their own sources in a defined source format.
 - The format is a versioned schema (source definition) shared by
@@ -331,7 +420,7 @@ would otherwise become a column migration.
 | `name` | text | display name |
 | `kind` | text | `rss` \| `hn` \| `json` |
 | `url` | text | fetch URL |
-| `category` | text | one of §6.2 categories |
+| `category` | text fk | `category.id`, cascade on delete |
 | `enabled` | integer bool | default 1 |
 | `fetch_interval_min` | integer | default 30 |
 | `last_fetched_at` | integer ms utc | null until first run |
@@ -352,7 +441,7 @@ would otherwise become a column migration.
 | `fetched_at` | integer ms utc | |
 | `excerpt` | text | plain text, max 800 chars, HTML stripped |
 | `language` | text | BCP-47, best effort |
-| `category` | text | primary category |
+| `category` | text fk | primary category, `category.id` |
 | `source_count` | integer | denormalized count of `item_source` |
 
 Indexes: `(published_at desc)`, `(category, published_at desc)`,
@@ -388,6 +477,45 @@ Indexes: `(published_at desc)`, `(category, published_at desc)`,
 | `expires_at` | integer ms utc | |
 | `last_seen_at` | integer ms utc | |
 
+**`category`** — builtin and user-made. Defined in §6.2.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | text pk | `ai`, `technology`, or `usr-<slug>` |
+| `name` | text | display name |
+| `builtin` | integer bool | 1 = seeded, cannot be renamed or deleted |
+| `match_mode` | text | `keywords` \| `ai` \| `both` |
+| `keywords` | text json | `string[]`, may be empty |
+| `prompt` | text | natural-language intent, nullable |
+| `ai_threshold` | real | 0–1, default `0.6`, ignored for `keywords` |
+| `sort_order` | integer | sidebar order |
+| `created_at` | integer ms utc | |
+
+**`category_source`** — optional narrowing of a custom category to
+specific sources. Primary key `(category_id, source_id)`.
+
+| Column | Type | Notes |
+|---|---|---|
+| `category_id` | text fk | cascade on delete |
+| `source_id` | text fk | cascade on delete |
+
+Index: `(category_id)`.
+
+**`category_item`** — cached AI relevance scores for a custom category.
+Only written when `match_mode` is `ai` or `both`. Primary key
+`(category_id, item_id, prompt_hash)`.
+
+| Column | Type | Notes |
+|---|---|---|
+| `category_id` | text fk | cascade on delete |
+| `item_id` | text fk | cascade on delete |
+| `prompt_hash` | text | `sha1(prompt)` hex; editing the prompt invalidates |
+| `score` | real | 0–1 |
+| `reason` | text | one short sentence from the model, nullable |
+| `created_at` | integer ms utc | |
+
+Indexes: `(category_id, prompt_hash, score desc)`, `(item_id)`.
+
 **`setting`** — key/value.
 
 | Column | Type | Notes |
@@ -406,8 +534,11 @@ Indexes: `(published_at desc)`, `(category, published_at desc)`,
 
 ### 6.11 Curated sources (MVP, LOCKED)
 
-Exactly six sources ship in v0.1. This list is what the landing page
-means by "6 curated sources". Changing it means changing that copy.
+Six sources are seeded in v0.1 — enough to fill two categories on first
+boot, not a closed set. The landing page shows them as a plain badge
+list (§6.8) and does **not** publish the count. Adding a seventh source
+later must not require an edit to marketing copy, and a user adding a
+feed URL in the category creator (§6.2) never touches this table.
 
 | id | Name | Kind | URL | Category | Interval |
 |---|---|---|---|---|---|
@@ -418,8 +549,8 @@ means by "6 curated sources". Changing it means changing that copy.
 | `tc-ai` | TechCrunch AI | rss | `https://techcrunch.com/category/artificial-intelligence/feed/` | ai | 60 min |
 | `hf-blog` | Hugging Face Blog | rss | `https://huggingface.co/blog/feed.xml` | ai | 120 min |
 
-- Categories active in v0.1: `ai` and `technology`. The other six from
-  §6.2 exist in the schema but ship with no sources.
+- Categories active in v0.1: `ai` and `technology` (builtin, §6.2).
+  User-created categories may pin these feeds or add their own (§6.2).
 - Hacker News uses the Firebase API: `topstories.json` then
   `item/{id}.json`, capped at the first 100 ids. HN items have no author
   feed and no excerpt beyond `text`, which is usually empty — the excerpt
@@ -541,6 +672,38 @@ per-item citations and blows the context window.
 **Cost guard.** Summaries are generated on demand or on first view, not
 eagerly for every fetched item. Cached forever per `(item_id, model)`.
 
+**Category relevance scoring (§6.2).** A second, separate model call. It
+never summarizes and never writes `summary`.
+
+- **Input.** The category `prompt`, then up to 20 items, each as
+  `{id, title, source, published, excerpt}` with the excerpt capped at
+  800 characters. Batching only exists to cut round-trips; every item is
+  still scored on its own.
+- **Output.** Strict JSON, one score per input id, in the same order:
+
+  ```json
+  {
+    "scores": [
+      { "id": "sha1…", "score": 0.0, "reason": "string, max 90 chars" }
+    ]
+  }
+  ```
+
+- `score` is a float `0`–`1`. `reason` is optional and is shown in the
+  item row as the `why` callout (§8.3) only when it is present.
+- An id that comes back missing is scored `0` and is not retried within
+  the batch. A second batch is a new call.
+- Same validation and one-repair rule as summaries. On total failure the
+  category falls back to `keywords` matching for that request and the
+  pane shows the degraded note from §6.18. It never shows an error page.
+- `temperature: 0`, `max_tokens: 900`. Cached per
+  `(category_id, item_id, prompt_hash)` in `category_item`.
+- When `match_mode='both'`, an item that already matched a keyword is
+  not sent to the model at all. Keywords are free; the model is not.
+- Changing any AI provider setting invalidates nothing — scores are
+  model-agnostic by design, and a re-score happens only when the prompt
+  changes or the user presses **Re-score** in the category menu.
+
 ### 6.15 Security specifics (LOCKED)
 
 Everything here uses Node's built-in `crypto`. No native dependency, no
@@ -559,9 +722,28 @@ Decryption happens in server memory only, per request that needs it.
 Never cached in a global after logout.
 
 **Password loss.** Changing the password re-derives the data key and
-re-encrypts every stored secret in one transaction. Forgetting the
-password means the AI keys are unrecoverable — this is accepted, and the
-Settings screen states it before the change is confirmed.
+re-encrypts every stored secret in one transaction.
+
+Forgetting the password must not brick the app. The login screen has a
+**Forgot password** link that opens `/reset`, reachable without a
+session, which:
+
+1. Does not ask for the old password and does not reveal whether one
+   exists. It requires typing `reset` to confirm.
+2. Deletes `auth.password` and every `session` row, so every logged-in
+   device is out.
+3. Deletes all rows of the encrypted secret store, then rewrites
+   `crypto.salt`. Old ciphertext is unreadable garbage at that point, and
+   it is removed rather than left lying around.
+4. Leaves items, summaries, sources, and settings intact. Only
+   credentials and AI keys are lost.
+5. Writes one log line: event `auth.reset`. No email, no token.
+6. Requires the new password on the next screen, minimum 8 characters.
+
+The reset is a local file already owned by whoever ran it, so this is not
+a privilege boundary — it is an escape hatch. `/reset` is rate-limited by
+the same 5-per-15-minutes counter as login. The Settings screen states
+plainly that a reset wipes AI keys and must be re-entered.
 
 **Session cookie.** Name `l30_session`. `HttpOnly`, `SameSite=Lax`,
 `Path=/`, `Secure` when the request arrived over HTTPS, `Max-Age` 30 days.
@@ -596,13 +778,21 @@ SvelteKit server routes. JSON in, JSON out. Every route except
 | `POST` | `/api/auth/login` | `{password}` → sets cookie, `{ok:true}` |
 | `POST` | `/api/auth/logout` | clears session row and cookie |
 | `POST` | `/api/auth/password` | `{current, next}` → re-encrypts secrets |
+| `POST` | `/api/auth/reset` | `{confirm:"reset", next}` → wipes creds + keys, no session needed |
 | `GET` | `/api/auth/session` | `{authenticated, mustChangePassword}` |
 | `GET` | `/api/feed` | `?from&to&category&q&cursor&limit` → items page |
 | `GET` | `/api/items/[id]` | item, its sources, cached summary |
 | `POST` | `/api/items/[id]/summary` | generate or return cached summary |
 | `POST` | `/api/refresh` | run a fetch pass, streamed as SSE |
+| `GET` | `/api/categories` | list: `builtin`, `match_mode`, `keywordCount`, `itemCount`, `hasPrompt` |
+| `POST` | `/api/categories` | `{name, matchMode, keywords?[], prompt?, aiThreshold?, sourceIds?[]}` |
+| `PATCH` | `/api/categories/[id]` | `{name?, matchMode?, keywords?, prompt?, aiThreshold?, sortOrder?}` — builtin rejected |
+| `DELETE` | `/api/categories/[id]` | builtin rejected; sources it created are disabled, not deleted |
+| `POST` | `/api/categories/[id]/rescore` | drop cached scores for the current `prompt_hash`, streamed as SSE |
+| `POST` | `/api/categories/feed-check` | `{url}` → `{ok, feedTitle, itemCount}` or `{ok:false, code, message}`; saves nothing |
 | `GET` | `/api/sources` | list with status |
 | `PATCH` | `/api/sources/[id]` | `{enabled}` only in v0.1 |
+| `POST` | `/api/sources` | `{url, name?, categoryId, intervalMin?}` — validates by fetching once |
 | `GET` | `/api/settings` | redacted settings, keys masked |
 | `PATCH` | `/api/settings` | theme, providers, key set/clear |
 | `POST` | `/api/settings/ai/test` | validate a key without saving |
@@ -640,8 +830,8 @@ SvelteKit server routes. JSON in, JSON out. Every route except
   NORMAL`, `foreign_keys = ON`.
 - Browser auto-open unless `--no-open` or `CI` is set.
 - `--version` and `--help` print and exit. No interactive prompts, ever.
-- On Vercel the data dir is replaced by a managed database; the app
-  refuses to boot without one rather than silently losing data.
+- The app refuses to boot without a writable data directory rather than
+  silently losing data. Deployment targets are §6.27.
 
 ### 6.18 UI states (LOCKED)
 
@@ -677,6 +867,14 @@ detail pane, never the page.
 password hint. Logged in with the default password → a single inline
 banner in Settings, not a modal, asking to change it. No database →
 fetch pass starts immediately and the feed shows the loading state.
+
+**Scoring (AI categories only).** While `category_item` scores are being
+computed, already-scored items render normally and a 1px `--line` footer
+row in the list reads `Scoring 40 of 118 · 12s`. No skeleton, no
+blocking overlay. The footer disappears when scoring completes and is
+replaced by nothing. If scoring fails, the footer becomes
+`AI unavailable — showing keyword matches` in `--warn` at 20% tint and
+stays until the user retries.
 
 ### 6.19 Search (LOCKED)
 
@@ -759,6 +957,133 @@ these:
 - A feed that returns a paywall stub instead of content stores the stub
   excerpt as-is. No circumvention, ever.
 
+### 6.23 Logging and observability (LOCKED)
+
+- One logger, `log(level, event, data)`, writing NDJSON lines to stdout.
+  Levels: `error`, `warn`, `info`, `debug`. `debug` is off unless
+  `L30_DEBUG=1`.
+- Every line carries `ts` (epoch ms), `level`, `event`, and `data`. No
+  free-text prose.
+- The event names are a closed set: `boot`, `fetch.pass`, `fetch.source`,
+  `prune`, `vacuum`, `summary.gen`, `category.score`, `auth.login`,
+  `auth.fail`, `auth.reset`, `api.error`. Adding one is a code change,
+  not config.
+- Never logged: API keys, password hashes, cookie values, full item
+  bodies, full request bodies.
+- `fetch.source` logs `{source_id, ok, count, ms, error_code}` — never a
+  stack trace on a feed failure, because feed failures are expected.
+- No metrics endpoint in v0.1. No third-party telemetry, ever.
+- Log file: the app does not write one by default. When started by
+  `npx`, stdout goes to the terminal. Docker and VPS deployments redirect
+  it, and that is the operator's business, not the app's.
+- A `/api/health` response is the only liveness signal.
+
+### 6.24 Bundle and performance budgets (LOCKED)
+
+Enforced by a check that fails the build, not by good intentions.
+
+| Budget | Limit |
+|---|---|
+| Client JS, gzipped, per route | 60 KB |
+| Client CSS, gzipped | 18 KB |
+| Total first-load (JS+CSS+fonts), gzipped | 90 KB |
+| Web fonts | 0 (system font stack only) |
+| Landing page total, gzipped | 40 KB |
+| Feed API response, 50 items | 120 KB |
+| Cold boot to listening port | 800 ms |
+| `/api/feed` p95 with 20k items in DB | 120 ms |
+| Full fetch pass, six sources | 25 s |
+| `db.sqlite` after 30 days of normal use | under 200 MB |
+
+- Measured with `vite build` output and `curl --compressed -w '%{size_download}'`.
+- No client-side chart library, no icon package, no utility CSS
+  framework. Icons are inline SVG in a single component.
+- The landing page ships zero client JS beyond what SvelteKit needs to
+  hydrate nothing; it is static and prerendered.
+- Images: real screenshots, WebP, each under 180 KB, `loading="lazy"`
+  below the fold.
+
+### 6.25 CI gates and release (LOCKED)
+
+**Pull request gates**, in order, all blocking:
+
+1. `npm ci` — lockfile must be in sync.
+2. `npm run lint` — ESLint plus Prettier check.
+3. `npm run check` — `svelte-check`, zero errors, zero warnings.
+4. `npm test` — unit tests on pure functions (URL canonicalization, dedup
+   similarity, ranking, keyword matching) plus one integration test on a
+   fixture database. No network.
+5. `npm run build` — production build must pass.
+6. Budget check (§6.24).
+7. `npm run test:e2e` — Playwright on the built app: login, feed
+   renders, filter switch, detail pane, search, category create, refresh
+   with mocked sources.
+
+**Release.** Manual, never automatic on merge.
+
+1. Bump version in `package.json`. Semver. `0.x` until the MVP is
+   feature-complete.
+2. Update `CHANGELOG.md` with one line per change under the version.
+3. Tag `v<version>`, push the tag.
+4. GitHub Actions publishes to npm on tag push, then creates a GitHub
+   Release from the changelog entry.
+5. A release fails if `npm run test:e2e` fails on the tagged commit.
+6. No `--force` publish, no pre-release on `latest`, no manual `npm
+   publish` from a laptop.
+7. After publish, `npx last30days-news@<version>` is smoke-tested on
+   Windows, macOS, and Linux runners.
+
+**Branch policy.** `main` is always releasable. Feature branches squash
+merge. No long-lived develop branch.
+
+### 6.26 Language policy (LOCKED)
+
+- UI ships in **English only** in v0.1. No i18n framework, no string
+  catalogue, no locale switcher.
+- `item.language` is stored as BCP-47, best effort from the feed, and is
+  used for one thing: grouping in the detail pane when a source is
+  non-English. It never changes UI copy.
+- All UI text lives in the components as plain English strings. When a
+  second language is added later, extraction to a catalogue is a
+  mechanical pass — no structure changes needed now.
+- Dates and numbers are formatted with `Intl` using `en-GB` defaults but
+  respect the browser locale for relative timestamps only.
+- This is a deliberate deferral, not an oversight. A single-user local
+  app does not earn a translation layer until it has users who need one.
+
+### 6.27 Deployment targets (LOCKED)
+
+Three supported targets. Nothing else is promised.
+
+**1. Local — `npx last30days-news`.** The primary target. SQLite on disk,
+`127.0.0.1`, no config. This is what §6.17 describes and what every
+other target must not degrade.
+
+**2. Docker.** Single image, Node LTS slim base.
+
+- `docker run -d -p 4477:4477 -v l30:/data -e HOST=0.0.0.0 last30days-news`
+- Data dir defaults to `/data` in the image. Volume is mandatory;
+  without one a warning is printed at boot.
+- Runs as a non-root user, UID 1000.
+- Image size budget: 220 MB. No build toolchain in the final layer.
+- `HEALTHCHECK` hits `/api/health`.
+- The default password `last30` is printed loudly on first boot in the
+  container log, with a one-line warning to change it.
+
+**3. VPS — systemd.** `npm i -g last30days-news`, then a unit file.
+
+- `Restart=on-failure`, `Environment=HOST=127.0.0.1 PORT=4477`.
+- Caddy or nginx in front for TLS. The app never terminates TLS itself
+  and never manages certificates.
+- `Secure` cookies require the proxy to set `X-Forwarded-Proto`; the app
+  trusts that header only when `L30_TRUST_PROXY=1`.
+- SQLite on local disk, never on a network filesystem.
+
+**Not supported in v0.1:** Vercel or any serverless host, Kubernetes,
+multi-replica. The app is single-user with a local file database, and
+§6.17 already says it refuses to boot without a writable data dir.
+`adapter-node` is the only adapter used (§8.1).
+
 ## 7. Non-functional requirements
 
 - Privacy: all data and keys stay on the user's machine by default.
@@ -770,6 +1095,9 @@ these:
 - Security: sanitize all fetched HTML; never render raw remote markup.
 - Security: login is required before any data is shown; passwords are
   hashed and login attempts are rate-limited.
+- Observability: structured logs only, no telemetry (§6.23).
+- Budgets: bundle, boot, and query limits are build-failing (§6.24).
+- Language: English UI in v0.1, no i18n framework (§6.26).
 
 ## 8. Constraints
 
@@ -786,7 +1114,7 @@ these:
 | ORM | Drizzle |
 | AI | Vercel AI SDK (core and svelte) |
 | RSS | rss-parser |
-| Server | adapter-node and adapter-vercel |
+| Server | adapter-node only (§6.27) |
 
 ### 8.2 Runtime rules
 
@@ -910,16 +1238,22 @@ The build fails on any of these patterns:
 |---|---|
 | Time to first feed | Under 5 minutes from install |
 | Fresh items per day | 20+ across 2+ categories |
+| Custom category create | works offline, no AI, instant |
+| Custom category with feed URL | works offline, no AI, instant |
+| Custom category with AI scoring | cached, re-open is instant |
+| Cold boot | under 800 ms |
 | Cited summaries | 100% of summaries link to sources |
 | Works without AI key | Yes |
 | Supported providers | 3+ at launch |
+| Client JS per route | under 60 KB gzipped (§6.24) |
 
 ## 10. Risks and mitigations
 
 | Risk | Mitigation |
 |---|---|
 | Source breakage | Health checks, graceful skip, retries |
-| AI cost | Local providers, caching, on-demand summaries |
+| AI cost | Local providers, caching, on-demand summaries, lazy per-category scoring with 200-item cap (§6.2, §6.14) |
+| Category sprawl | No cap by design; scoring is lazy so unused categories cost nothing (§6.2) |
 | Duplicate noise | Deduplication pass before ranking |
 | Prompt injection from feeds | Treat fetched text as data, sanitize, strip instructions |
 | Scope creep | Ship MVP first; roadmap stages are explicit |
