@@ -568,7 +568,7 @@ No pricing, testimonials, newsletter, cookie banner, fake logos, or
 ### S23 Agent rules — `AGENTS.md` (LOCKED)
 
 `AGENTS.md` at repo root is generated from this section verbatim and is
-the file every agent reads first. Six rules, in this order, not
+the file every agent reads first. Seven rules, in this order, not
 negotiable:
 
 1. **Unit testing.** Pure functions only: canonical URL, title
@@ -599,6 +599,10 @@ negotiable:
    skills it names for that kind of work, so the implementation follows
    the project's own conventions. The rules in `AGENTS.md` win over
    anything a skill says.
+7. **Keep `context/PROGRESS.md` current.** One entry per merged phase:
+   the work commit, the merge commit, the gate result, every deviation
+   from this plan with its reason, and every finding accepted as a known
+   limitation. Append before the phase merge, never after.
 
 ### S24 Security review scope (pen-tester checklist)
 

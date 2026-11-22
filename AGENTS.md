@@ -26,6 +26,10 @@ Skills: before starting any phase, feature or fix, read
 that kind of work, so the implementation follows this project's own
 conventions. The rules in this file win over anything a skill says.
 
+Progress: `context/PROGRESS.md` is the phase history — commit, gate result,
+deviations and accepted findings, one entry per merged phase. Append to it
+before the phase merge.
+
 ## 1. Unit testing
 
 Pure functions only: canonical URL, title normalisation, Jaccard, keyword
