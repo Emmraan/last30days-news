@@ -1,0 +1,132 @@
+@import 'tailwindcss';
+
+/* Tokens are the only colour source (§S11). Tailwind utilities are generated
+   from these names, so `bg-pane` exists and `bg-slate-800` does not. */
+@theme {
+	--color-bg: #1b1b1b;
+	--color-side: #171717;
+	--color-pane: #202020;
+	--color-card: #262626;
+	--color-raise: #2c2c2c;
+	--color-raise-2: #333333;
+	--color-line: #2e2e2e;
+	--color-line-2: #3d3d3d;
+	--color-txt: #f2f2f2;
+	--color-txt-2: #b9b9b9;
+	--color-txt-3: #8a8a8a;
+	--color-accent: #60cdff;
+	--color-accent-on: #062a3a;
+	--color-accent-soft: rgb(96 205 255 / 0.13);
+	--color-ok: #6ccb5f;
+	--color-warn: #fce100;
+	--color-hover: rgb(255 255 255 / 0.055);
+	--color-active: rgb(255 255 255 / 0.085);
+
+	--radius-r: 10px;
+	--radius-r-md: 14px;
+	--radius-r-lg: 18px;
+	--radius-pill: 99px;
+
+	--spacing-top: 54px;
+	--spacing-sb: 34px;
+
+	--font-sans:
+		'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+	--font-display:
+		'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+	--font-mono: 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+
+	--ease-shell: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@layer base {
+	:root {
+		color-scheme: dark;
+		--bg: var(--color-bg);
+		--side: var(--color-side);
+		--pane: var(--color-pane);
+		--card: var(--color-card);
+		--raise: var(--color-raise);
+		--raise-2: var(--color-raise-2);
+		--line: var(--color-line);
+		--line-2: var(--color-line-2);
+		--txt: var(--color-txt);
+		--txt-2: var(--color-txt-2);
+		--txt-3: var(--color-txt-3);
+		--accent: var(--color-accent);
+		--accent-on: var(--color-accent-on);
+		--accent-soft: var(--color-accent-soft);
+		--ok: var(--color-ok);
+		--warn: var(--color-warn);
+		--hover: var(--color-hover);
+		--active: var(--color-active);
+		--r: 10px;
+		--r-md: 14px;
+		--r-lg: 18px;
+		--pill: 99px;
+		--h-top: 54px;
+		--h-sb: 34px;
+		--ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+	}
+
+	:root.light {
+		color-scheme: light;
+		--bg: #f3f3f3;
+		--side: #e9e9e9;
+		--pane: #f7f7f7;
+		--card: #ffffff;
+		--raise: #f2f2f2;
+		--raise-2: #e9e9e9;
+		--line: #e3e3e3;
+		--line-2: #d2d2d2;
+		--txt: #141414;
+		--txt-2: #545454;
+		--txt-3: #848484;
+		--accent: #0f6cbd;
+		--accent-on: #ffffff;
+		--accent-soft: rgb(15 108 189 / 0.09);
+		--ok: #0f7b0f;
+		--warn: #9d5d00;
+		--hover: rgb(0 0 0 / 0.04);
+		--active: rgb(0 0 0 / 0.065);
+	}
+
+	html,
+	body {
+		height: 100%;
+		margin: 0;
+		background: var(--bg);
+		color: var(--txt);
+		font-family: var(--font-sans);
+		font-size: 14px;
+		line-height: 1.5;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-display);
+		letter-spacing: -0.02em;
+		margin: 0;
+	}
+
+	:where(a) {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 1px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
+}
