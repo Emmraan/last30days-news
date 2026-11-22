@@ -157,8 +157,16 @@ built once and extended, not rewritten.
 - Providers: OpenAI, Anthropic, Google Gemini, OpenRouter, Groq,
   DeepSeek, Ollama, LM Studio, and any OpenAI-compatible base URL.
 - Per provider: base URL, API key (optional), model, enable toggle.
-- Keys are stored locally and never sent anywhere except the chosen
-  provider.
+- Keys are stored server-side, never in the browser.
+- At rest, keys are encrypted with a password-derived key (local file
+  or database); a stolen file or database is useless without the login
+  password.
+- The server validates a key with an optional test call before saving.
+- The UI shows a masked key and an is-configured flag; the raw key is
+  never returned to the client after save.
+- The server makes all AI calls; keys are never sent to the browser.
+- On serverless hosts, keys live in server env vars or a managed KV
+  store, since the filesystem is read-only.
 - If AI is off or unconfigured, aggregation and filtering still work.
 
 ### 6.6 Web application
@@ -182,7 +190,10 @@ built once and extended, not rewritten.
 - The password is stored hashed, never in plain text.
 - Login is required in every deployment mode: local `npx`, Docker,
   VPS, and Vercel.
-- A session cookie keeps the user logged in until logout or expiry.
+- A server-side session cookie (httponly) keeps the user logged in
+  until logout or expiry.
+- AI keys never reach the client; they stay in the server-side store
+  (see 6.5).
 - Settings exposes change password and, later, session management.
 - No account or email is required; this is a single-user local gate.
 - Login attempts are rate-limited to slow brute-force tries.
