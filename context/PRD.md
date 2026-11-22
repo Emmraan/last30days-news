@@ -173,6 +173,20 @@ built once and extended, not rewritten.
 - Notifications for tracked topics or accounts.
 - Dark and light themes.
 
+### 6.7 Authentication and access control
+
+- The web UI requires a login before any data is shown.
+- Default password is `last30` on first run.
+- After first login, the user is prompted to change the password in
+  Settings.
+- The password is stored hashed, never in plain text.
+- Login is required in every deployment mode: local `npx`, Docker,
+  VPS, and Vercel.
+- A session cookie keeps the user logged in until logout or expiry.
+- Settings exposes change password and, later, session management.
+- No account or email is required; this is a single-user local gate.
+- Login attempts are rate-limited to slow brute-force tries.
+
 ## 7. Non-functional requirements
 
 - Privacy: all data and keys stay on the user's machine by default.
@@ -182,6 +196,8 @@ built once and extended, not rewritten.
 - Extensibility: a new source or provider needs no core change.
 - Accessibility: keyboard navigation, contrast, and labels.
 - Security: sanitize all fetched HTML; never render raw remote markup.
+- Security: login is required before any data is shown; passwords are
+  hashed and login attempts are rate-limited.
 
 ## 8. Constraints
 
