@@ -104,7 +104,7 @@ The MVP ships one complete end-to-end use case:
 | v0.3 | Social monitoring | X, YouTube, individual account tracking |
 | v0.4 | Deeper intelligence | Deduplication, verification, ranking, timelines |
 | v0.5 | Research workspace | Saved reports, follow-up chat, period compare |
-| v0.6 | Customization | Custom topics, custom source manager, country filters |
+| v0.6 | Customization | Custom sources (manual + AI), custom topics, country filters |
 | v0.7 | Collaboration | Accounts, shared sources, notifications |
 | v1.0 | Hosted option | Optional managed SaaS, Docker and VPS images |
 
@@ -138,6 +138,7 @@ built once and extended, not rewritten.
   content, language.
 - Individual account monitoring: a tracked profile's new post appears
   with original link, author, and timestamp.
+- Custom sources use the same source-definition schema (6.8).
 - A source can be disabled without removing its history.
 
 ### 6.4 AI research and intelligence
@@ -197,6 +198,21 @@ built once and extended, not rewritten.
 - Settings exposes change password and, later, session management.
 - No account or email is required; this is a single-user local gate.
 - Login attempts are rate-limited to slow brute-force tries.
+
+### 6.8 Custom resources (post-MVP)
+
+- Users can add their own sources in a defined source format.
+- The format is a versioned schema (source definition) shared by
+  built-in and custom sources.
+- Two ways to create a source:
+  - Manual: fill a form or write the definition by hand.
+  - AI-assisted: describe a site or feed; the AI proposes a valid
+    definition that the user reviews and saves.
+- Every custom source is validated against the schema before it runs.
+- Custom sources behave like built-in sources: fetch, normalize,
+  deduplicate, and appear in the same feed.
+- A custom source can be edited, disabled, or removed without losing
+  its history.
 
 ## 7. Non-functional requirements
 
