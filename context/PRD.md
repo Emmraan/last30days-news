@@ -17,8 +17,8 @@ In: time-window feed (24h/7d/30d/custom), two builtin categories plus
 user-created ones, six curated sources, dedup and ranking, FTS5 search,
 on-demand summaries, password login, landing page, `npx` + Docker install.
 
-Out: multi-user, teams, mobile, cloud sync, serverless/Vercel, digests, social
-scraping, publishing, analytics, i18n.
+Out: multi-user, teams, mobile, cloud sync, digests, social scraping,
+publishing, analytics, i18n, multi-replica SQLite.
 
 ## 5. Requirements
 
@@ -28,10 +28,10 @@ dedup and rank §S7 · AI contract §S8 · search §S13 · keyboard §S14 · sta
 
 ## 6. Constraints
 
-Stack locked (PLAN §S1): SvelteKit + TS + custom CSS + SQLite/better-sqlite3 +
-Drizzle + Vercel AI SDK + rss-parser + `adapter-node`. No Tailwind, no icon
-package, no chart library, no web fonts. Versions resolved live at P0 into
-`DECISIONS.md`.
+Stack locked (PLAN §S1): SvelteKit + TS + Tailwind v4 + `lucide-svelte` +
+libSQL/Turso + Drizzle + Vercel AI SDK + rss-parser. `adapter-vercel` in prod,
+`adapter-node` for `npx`/Docker. No chart library, no UI kit, no web fonts.
+Versions pinned exact in `package.json` (Node 26.13.0, pnpm 12.16.1).
 
 UI locked (PLAN §S11, §S21): tokens, layout, radii, logo B, AI-pattern
 blocklist. Deviation needs approval.
@@ -43,9 +43,9 @@ security §S9.
 
 ## 8. Done
 
-Cold boot <800ms. `/api/feed` p95 <120ms at 20k rows. A new user reaches a
+Cold boot <800ms. `/api/feed` p95 <300ms at 20k rows. A new user reaches a
 populated feed in under a minute. Tests never hit the network. No §S21 pattern
-ships.
+ships. Every phase: tests written first, then a §S24 pen-test pass.
 
 ## 9. Risks
 

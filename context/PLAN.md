@@ -5,24 +5,32 @@ Do not start a phase until the previous one's **Done** line is true.
 
 ## 0. Rules
 
-- Stack is locked (§S1). A new dependency needs a line in `DECISIONS.md`
-  saying why the stdlib or an installed package could not do it.
-- Resolve versions **live** at P0 (`node --version`, `npm view <pkg>
-  version`). Never guess a version. Record name + version + date in
-  `DECISIONS.md`.
-- Mid-phase gate: `npm run lint && npm run check`. Phase gate: `npm test
-  && npm run build` plus that phase's **Done** line.
+- Stack is locked (§S1). A new dependency needs a one-line justification
+  in the PR body: why the stdlib or an installed package could not do it.
+  There is no `DECISIONS.md`; the spec here is the only record.
+- Versions are pinned **exactly** in `package.json` to the machine's own
+  runtime: `node 26.13.0`, `pnpm 12.16.1` (`engines` + `packageManager`).
+  No `^`, no `~`, no `latest`. One source of truth, no drift.
+- Package manager is `pnpm`. Never `npm install`, never `npm ci`, never a
+  second lockfile.
+- **Test-driven.** Write the failing test first, then the code that makes
+  it pass, then stop. A phase with no test is not done.
+- Mid-phase gate: `pnpm lint && pnpm check`. Phase gate: `pnpm test &&
+  pnpm build` plus that phase's **Done** line plus a security review
+  (§S24).
 - Tests never touch the network. Recorded fixtures only.
 - No file exists before the phase that needs it. No `utils/` dumping
   ground, no barrel `index.ts` re-exports, no interface with one impl.
 - UI text is English and plain. Copy rules §S21.
 - Comments explain *why*, never *what*. No "As an AI", no narration.
+- `AGENTS.md` is generated from §S23. It is the agent-facing copy of these
+  rules; if the two disagree, §S23 wins.
 
 ## 1. File layout (end state)
 
 ```
 src/
-  app.css                    tokens + base + layout primitives
+  app.css                    @import "tailwindcss" + @theme tokens + base
   app.html                   CSP meta, no remote hosts
   hooks.server.ts            session guard, security headers
   lib/
@@ -37,30 +45,30 @@ src/
                              Skeleton.svelte Empty.svelte KeyMap.svelte
     server/
       log.ts                 log(level,event,data)
-      db/schema.ts           drizzle schema (§S3)
-      db/index.ts            open, pragmas, migrate, data dir
+      db/schema.ts           drizzle schema (§S2)
+      db/index.ts            createClient, pragmas, migrate
       db/seed.ts             2 categories + 6 sources, idempotent
       auth/password.ts       scrypt hash/verify
       auth/secret.ts         AES-256-GCM with password-derived key
       auth/session.ts        cookie create/read/destroy
-      auth/rate.ts           in-memory limiter
+      auth/rate.ts           DB-backed limiter (serverless-safe)
       sources/{rss,hn,json}.ts  fetchSource -> RawItem[]
       fetch/pass.ts          orchestrator, SSE emitter
       ingest/insert.ts       dedup + insert + source_count
       feed/query.ts          cursor pagination
       search/fts.ts          query builder + LIKE fallback
       ai/provider.ts         settings -> LanguageModel
-      ai/summary.ts          §S9 summary call
-      ai/score.ts            §S9 category scoring call
+      ai/summary.ts          §S8 summary call
+      ai/score.ts            §S8 category scoring call
   routes/
     +layout.svelte           theme class on <html>
     +page.svelte             landing (prerender)
     login/+page.svelte
     reset/+page.svelte
     app/+page.svelte         dashboard shell
-    api/…                    §S11, one +server.ts per row
+    api/…                    §S10, one +server.ts per row
 fixtures/                    recorded feed responses (json)
-tests/                       vitest units + one integration
+tests/                       vitest units + integration
 e2e/                         playwright
 ```
 
@@ -72,18 +80,38 @@ Landing is prerendered and public; `/app` and every `/api/*` except
 
 ### S1 Stack
 
-| Layer | Choice |
-|---|---|
-| Framework | SvelteKit, Svelte 5 runes, `adapter-node` only |
-| Language | TypeScript, `strict` |
-| Styling | Custom CSS, tokens in `app.css`, no framework |
-| Components | Hand-built |
-| DB | SQLite via `better-sqlite3`, Drizzle ORM |
-| AI | `ai` (Vercel AI SDK) + `@ai-sdk/*` provider packages |
-| RSS | `rss-parser` |
-| Validation | `zod` |
+Versions are the ones on this machine, pinned exact. Nothing floats.
 
-No serverless. No Vercel. No Tailwind. No icon package. No chart lib.
+| Layer | Choice | Version |
+|---|---|---|
+| Runtime | Node | `26.13.0` |
+| Package manager | pnpm | `12.16.1` |
+| Framework | SvelteKit + Svelte 5 runes | `@sveltejs/kit 3.4.0`, `svelte 5.59.1` |
+| Build | Vite | `8.3.8` |
+| Language | TypeScript, `strict` | latest |
+| Styling | Tailwind CSS v4 via `@tailwindcss/vite` | `4.3.5` |
+| Icons | `lucide-svelte` (tree-shaken, named imports only) | `1.0.1` |
+| DB client | `@libsql/client` (file: locally, libsql:// on Vercel) | `0.18.0` |
+| ORM | Drizzle ORM + drizzle-kit | `0.45.4` / `0.31.11` |
+| AI | Vercel AI SDK + `@ai-sdk/*` providers | `ai 7.0.179` |
+| RSS | `rss-parser` | `3.13.0` |
+| Validation | `zod` | `4.6.7` |
+| Unit tests | Vitest | `5.1.1` |
+| E2E | Playwright | `1.65.1` |
+| Lint/format | ESLint + Prettier | `10.15.0` / `3.10.1` |
+
+Adapters: `@sveltejs/adapter-vercel 7.0.5` for Vercel,
+`@sveltejs/adapter-node 6.0.5` for the `npx`/Docker build. One repo, two
+targets, chosen by env in `svelte.config.js` — not two codebases.
+
+**Human-crafted is a quality bar, not a library ban.** Tailwind and
+`lucide-svelte` are allowed. What is banned is the *look* they produce by
+default: a Tailwind page that reads as a Tailwind page fails §S21.
+Tokens in `@theme` keep Tailwind honest; no default palette, no default
+shadows, no default rounded-xl cards.
+
+No chart library. If a chart is ever needed it is one inline SVG
+sparkline, ~12 lines.
 
 ### S2 Data model
 
@@ -102,6 +130,7 @@ category_source(category_id, source_id) pk
 category_item(category_id, item_id, prompt_hash) pk, score, reason, created_at
          idx(category_id,prompt_hash,score desc) idx(item_id)
 session(id pk, created_at, expires_at, last_seen_at)
+login_attempt(ip, ts) idx(ip, ts)
 setting(key pk, value json)
 item_fts = fts5(title, excerpt, content=item, content_rowid=rowid,
                 tokenize='unicode61 remove_diacritics 2')
@@ -112,6 +141,13 @@ JSON columns validated on write with zod. Deletes cascade
 (`item`→`item_source`,`summary`; `category`→`category_source`,
 `category_item`). Migrations generated by `drizzle-kit`, never hand-edited
 after ship.
+
+Connection is one env var: `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`.
+Unset → `file:<data-dir>/db.sqlite`. Set → `libsql://…`. Same schema, same
+SQL, same migrations on both. `FTS5` is built into libSQL; if the target
+reports it missing, §S13's `LIKE` fallback takes over and logs once.
+Pragmas `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON` apply
+to the file case only — a remote replica manages its own.
 
 ### S3 Time
 
@@ -240,8 +276,10 @@ Node `crypto` only, no auth library.
   over HTTPS, 30 days, value = `session.id` (32 random bytes hex). Rotate
   on login and password change.
 - CSRF: `SameSite=Lax` + strict `Origin` check on every non-GET → 403.
-- Rate limit: in-memory per IP, 5 failed logins / 15 min, then 15 min
-  lockout doubling to 24h. Success clears it.
+- Rate limit: **stored in the DB**, not in memory — Vercel runs many
+  instances, an in-memory counter is a no-op there. `login_attempt`
+  `(ip, ts)` rows, 5 failures / 15 min, lockout 15 min doubling to 24h,
+  success deletes the IP's rows. Pruned with retention.
 - Headers: `CSP default-src 'self'` (no inline script, no remote host),
   `nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`.
 
@@ -257,7 +295,7 @@ Node `crypto` only, no auth library.
 | GET | `/api/feed` | `?from&to&category&q&cursor&limit` |
 | GET | `/api/items/[id]` | item + sources + cached summary |
 | POST | `/api/items/[id]/summary` | generate or return cached |
-| POST | `/api/refresh` | SSE: `source` per source, then `done` |
+| POST | `/api/refresh` | SSE locally; `{batch:true}` on Vercel → one batch per call, client polls |
 | GET | `/api/categories` | `builtin,match_mode,keywordCount,itemCount,hasPrompt` |
 | POST | `/api/categories` | `{name,matchMode,keywords?,prompt?,aiThreshold?,sourceIds?}` |
 | PATCH | `/api/categories/[id]` | builtin rejected |
@@ -303,6 +341,14 @@ Tokens (dark / light), single source of truth in `app.css`:
 Type: `Segoe UI Variable Text` body, `Segoe UI Variable Display` headings,
 `Cascadia Mono` for numerals/counts/timestamps. 14px/1.5 base, negative
 tracking on headings, tabular numerals on metrics. Zero web fonts.
+
+Tailwind v4 wiring: the block above lives in `@theme` in `app.css`, so
+utilities are generated from these names only — `bg-pane`, `text-txt-2`,
+`border-line`, `rounded-r`, `h-top`. There is no default palette, no
+default `shadow-*`, no `rounded-xl`, no `space-y-*` rhythm. Anything the
+tokens cannot express is a small hand-written class next to the component,
+not an arbitrary `[value]` utility. Tailwind is the utility layer; the
+component CSS below is still authored by hand.
 
 Layout: shell `grid-template-rows: auto minmax(0,1fr) auto`, `100vh`,
 zero padding, zero gap. Top bar and status bar are full-bleed and square,
@@ -366,12 +412,14 @@ Five states, every pane, never blank, never a lone spinner.
 
 ### S13 Search
 
-FTS5, external content, trigger-synced. Columns `title` (weight 3),
+FTS5, external content, trigger-synced — built into libSQL, so the same
+schema works on a local file and on Turso. Columns `title` (weight 3),
 `excerpt` (1). Input split on whitespace, each token quoted, last token
 gets `*`, joined with `AND`; FTS operators from the client are escaped.
 Rank `bm25(item_fts,3.0,1.0)` then `published_at desc`. Minimum 2 chars
 or search is disabled. Results reuse the feed row and cursor. If the
-SQLite build lacks FTS5, log once and fall back to `LIKE '%q%'` on title.
+target reports FTS5 missing, log once and fall back to `LIKE '%q%'` on
+title.
 
 ### S14 Keyboard
 
@@ -385,9 +433,11 @@ chrome.
 
 Items older than 30 days deleted on start and after each pass, cascading
 to `item_source` and `summary`. Sessions expired >7 days deleted on
-start. `VACUUM` once after pruning if the file exceeds 500 MB, logging
-size before/after. Nothing else is ever pruned. `RETENTION_DAYS` is one
-exported constant, and the 30-day range uses it.
+start. `login_attempt` rows older than 24h deleted on start. `VACUUM`
+once after pruning if the file exceeds 500 MB, logging size before/after —
+file target only, a Turso replica manages its own storage. Nothing else is
+ever pruned. `RETENTION_DAYS` is one exported constant, and the 30-day
+range uses it.
 
 ### S16 Logging
 
@@ -402,22 +452,31 @@ only.
 
 ### S17 Budgets (build fails on breach)
 
-Client JS 60 KB gz/route · CSS 18 KB gz · first load 90 KB gz · web fonts
+Client JS 60 KB gz/route · CSS 28 KB gz · first load 90 KB gz · web fonts
 0 · landing 40 KB gz · feed response 50 items 120 KB · cold boot 800 ms ·
-`/api/feed` p95 120 ms @20k rows · fetch pass 25 s · DB <200 MB @30 days.
-Measured from `vite build` output plus `curl --compressed -w
-'%{size_download}'`. Screenshots: WebP, <180 KB each, lazy below fold.
+`/api/feed` p95 300 ms @20k rows (remote DB adds a hop) · fetch pass 25 s
+· DB <200 MB @30 days. Measured from `vite build` output plus `curl
+--compressed -w '%{size_download}'`. Screenshots: WebP, <180 KB each, lazy
+below fold.
+
+CSS budget is 28 KB, not 18 KB, because Tailwind v4 emits the utilities
+actually used — measured, not assumed. If it overshoots, the fix is fewer
+utilities, not a bigger budget.
 
 ### S18 CI and release
 
-PR gates, all blocking: `npm ci` → `lint` → `check` (zero warnings) →
-`test` → `build` → budget check → `test:e2e`. Release is manual: bump
+PR gates, all blocking: `pnpm install --frozen-lockfile` → `lint` →
+`check` (zero warnings) → `test` (unit + integration) → `build` → budget
+check → `test:e2e` → security review (§S24). Release is manual: bump
 semver, update `CHANGELOG.md`, tag, GH Actions publishes on tag and cuts
-the Release. No `--force`, no laptop `npm publish`. After publish,
+the Release. No `--force`, no laptop `pnpm publish`. After publish,
 `npx last30days-news@<version>` is smoke-tested on Windows, macOS, Linux.
 `main` is always releasable; squash merges.
 
 ### S19 Install and deploy
+
+**Two targets, one codebase.** `svelte.config.js` picks the adapter:
+`@sveltejs/adapter-vercel` when `VERCEL=1`, else `@sveltejs/adapter-node`.
 
 `npx last30days-news` → binary `last30days`. `PORT` honoured, else 4477
 up to 4487, then fail naming the env var. Bind `127.0.0.1`;
@@ -434,8 +493,14 @@ missing), non-root UID 1000, 220 MB budget, `HEALTHCHECK` on
 `/api/health`, prints the default password loudly on first boot. VPS:
 systemd, `Restart=on-failure`, proxy for TLS, `Secure` cookies need
 `X-Forwarded-Proto` which is trusted only when `L30_TRUST_PROXY=1`.
-SQLite never on a network FS. Not supported: serverless, Kubernetes,
-multi-replica.
+
+Vercel: `VERCEL=1` + `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`. No local
+file, no WAL. Because each invocation may be a fresh instance, `/api/
+refresh` cannot stream for long — it processes one batch per call and the
+client polls, so every run stays inside the function timeout. Rate
+limiting and sessions are already DB-backed (§S9), which is what makes
+this work. Serverless has no shared memory, so nothing may live in
+module scope. Kubernetes and multi-replica SQLite are still unsupported.
 
 ### S20 Language
 
@@ -500,24 +565,101 @@ No pricing, testimonials, newsletter, cookie banner, fake logos, or
 "trusted by". Section rhythm 96px desktop / 56px mobile, content column
 1080px centred, hero screenshot may bleed wider.
 
+### S23 Agent rules — `AGENTS.md` (LOCKED)
+
+`AGENTS.md` at repo root is generated from this section verbatim and is
+the file every agent reads first. Five rules, in this order, not
+negotiable:
+
+1. **Unit testing.** Pure functions only: canonical URL, title
+   normalisation, Jaccard, keyword match, query building, cursor encode/
+   decode, time presets, ranking comparator. Table-driven, no mocks, no
+   network, no DB. One file per unit, next to the source, `.test.ts`.
+   Coverage is not the target — every documented edge case having a case
+   is.
+2. **Integration testing.** Everything that touches the DB or a route:
+   migrations, seed idempotency, dedup insert, feed pagination, auth,
+   category CRUD, encrypt/decrypt round-trip. One real libSQL file DB per
+   test file in a temp dir, deleted after. No mocking the DB layer — a
+   mocked DB proves nothing about the SQL that ships.
+3. **Test-driven development.** Test first, watch it fail, then write the
+   smallest code that passes. A phase's tests are written at the start of
+   that phase, not after it. A bug fix without a reproducing test is not
+   a fix.
+4. **Pen tester pass.** After each phase's green tests, switch to
+   adversarial mode and try to break the build. Scope, at minimum, per
+   §S24. Produce a numbered findings list: severity, what was broken, the
+   exact reproduction, and the smallest fix.
+5. **Discuss and improve.** Findings are not auto-fixed. They are
+   presented as a list, discussed, prioritised, and only then implemented
+   — with the decision recorded in that phase's section. A finding may be
+   accepted as a known limitation with a written reason.
+
+### S24 Security review scope (pen-tester checklist)
+
+Run after every phase gate. Each item either passes or becomes a finding.
+
+- **Auth bypass** — any `/api/*` reachable without a session; cookie
+  forging; session fixation; expiry not enforced; `mustChangePassword`
+  ignored.
+- **Injection** — FTS5 query smuggling (`"`, `*`, `NEAR`, `^`, column
+  filters), SQL via sort/cursor params, XSS in item title/excerpt/author
+  from a hostile feed, XSS in the AI summary, template injection in
+  `reason`.
+- **SSRF via feed URL** — a pasted URL pointing at `127.0.0.1`,
+  `169.254.169.254`, `[::1]`, `file://`, a redirect chain, or a
+  non-HTTP scheme. Must be blocked, must not leak the response.
+- **Resource exhaustion** — a 2 GB feed, a feed with 50k items, a zip
+  bomb, `Content-Length` lies, no timeout, an infinite redirect loop, a
+  category with 10k keywords, `limit=100000`.
+- **Secrets** — a key in any response body, log line, error string, or
+  stack trace; `setting` dumpable unauthenticated; reset leaving an old
+  key usable.
+- **Rate limiting** — 100 parallel logins; does the lockout hold when the
+  DB is remote; can a spoofed `X-Forwarded-For` reset the counter.
+- **Crypto** — non-constant-time compare anywhere, reused IV, missing GCM
+  tag check, password change not re-encrypting, `crypto.salt` rewritten
+  on reset.
+- **CSRF** — non-GET without `Origin`, `Origin: null`, a cross-site form
+  post, `SameSite` missing in a prod build.
+- **DoS on the client** — a 100k-char title, a title of only combining
+  marks, an RTL override in a title, `line-clamp` bypass.
+- **Cost abuse** — unauthenticated AI calls; a category prompt that
+  triggers unbounded scoring; a model response that loops the repair.
+- **Info leak** — a stack trace in an API error, the data dir path in a
+  prod error, source URLs of disabled feeds, the version string.
+- **Header and CDN** — CSP actually emitted, no `unsafe-inline`, no
+  missing `nosniff`, cache headers not caching authenticated JSON.
+- **Supply chain** — a new dependency with a postinstall script, an
+  unpinned transitive, a lockfile change with no `package.json` change.
+
+Findings get fixed in the phase they were found, or explicitly deferred
+with a written reason in that phase.
+
 ## 3. Phases
 
 ### P0 Bootstrap
 
-- Resolve live: Node LTS, `npm view` for svelte, @sveltejs/kit,
-  adapter-node, vite, drizzle-orm, drizzle-kit, better-sqlite3, rss-parser,
-  ai, zod, vitest, playwright, eslint, prettier. Write `DECISIONS.md` with
-  name, version, date, and why.
-- Scaffold SvelteKit: TypeScript, no demo app, no ESLint-less state.
-  Add `adapter-node`, `src/app.css`, `src/app.html`.
+- Versions are already fixed in §S1 to this machine's Node `26.13.0` and
+  `pnpm 12.16.1`. Do not re-resolve, do not run `npm view`.
+- `package.json`: `"packageManager": "pnpm@12.16.1"`,
+  `"engines": {"node": "26.13.0"}`, `.npmrc` with
+  `engine-strict=true` and `save-exact=true`. Every version exact.
+- Scaffold SvelteKit: TypeScript, no demo app. Add
+  `@sveltejs/adapter-vercel` + `@sveltejs/adapter-node`,
+  `@tailwindcss/vite`, `lucide-svelte`, `src/app.css` with
+  `@import "tailwindcss"` and `@theme` tokens from §S11, `src/app.html`.
 - Scripts: `dev`, `build`, `preview`, `lint`, `format`, `check`, `test`,
   `test:e2e`, `db:generate`, `budget`.
 - `.gitignore` (`node_modules`, `.svelte-kit`, `build`, `*.sqlite*`,
-  `fixtures/cache`), `.editorconfig`, `tsconfig` strict.
-- `/api/health` → `{ok:true,version}`.
+  `fixtures/cache`), `.editorconfig`, `tsconfig` strict,
+  `AGENTS.md` from §S23.
+- `/api/health` → `{ok:true,version}`. First Vitest + Playwright tests
+  exist and run (they may assert only the health route).
 
-**Done:** `npm run build` passes, dev server boots, `/api/health` returns
-200, `DECISIONS.md` has every version with a date.
+**Done:** `pnpm build` passes, `pnpm test` passes, dev server boots,
+`/api/health` returns 200, `package.json` has no `^` or `~`, and
+`AGENTS.md` matches §S23.
 
 ### P1 Database
 
@@ -615,7 +757,8 @@ rejected; a bad feed URL is rejected inline and writes no row.
 
 ### P8 Shell
 
-- `app.css` — tokens for both themes, base reset, type scale, focus ring,
+- `app.css` — `@import "tailwindcss"`, `@theme` with every §S11 token, base
+  reset, type scale, focus ring, and the hand-written component classes:
   `.pane`, `.btn`, `.seg`, `.chip`, `.tag`, `.search`, `.iconbtn`, `.fav`,
   `.item`.
 - `Logo.svelte` + `lib/logo.ts` (glyph + favicon data URI), `TopBar`,
@@ -701,13 +844,16 @@ no pattern from §S21 is present.
   `--help`, `CI`, `L30_DATA_DIR`, `L30_DEBUG`, `L30_TRUST_PROXY`.
 - `Dockerfile` (multi-stage, non-root, `/data`, healthcheck), systemd unit
   in `deploy/`, `README` install section.
+- `vercel.json` + `VERCEL=1` adapter switch + `TURSO_*` env docs.
 - `scripts/budget.mjs` — reads the build manifest, fails over §S17.
 - GitHub Actions: PR gates per §S18, tag release to npm.
-- `CHANGELOG.md`, `LICENSE` (MIT), `DECISIONS.md` final pass.
+- `CHANGELOG.md`, `LICENSE` (MIT).
+- Full §S24 pass on the deployed Vercel URL, not just localhost.
 
-**Done:** `npm pack` → install in a temp dir → `last30days` serves the
-login screen; `npm run budget` passes; the CI workflow is green on a clean
-clone; `docker build` is under 220 MB.
+**Done:** `pnpm pack` → install in a temp dir → `last30days` serves the
+login screen; `pnpm budget` passes; the CI workflow is green on a clean
+clone; `docker build` is under 220 MB; the Vercel deploy logs in, fetches,
+and shows a feed against Turso.
 
 ## 4. Definition of done (v0.1)
 
@@ -717,5 +863,9 @@ clone; `docker build` is under 220 MB.
 - Every summary links to its source; a failed summary never blocks an item.
 - Login, reset, and encrypted keys behave per §S9.
 - No test hits the network. Every gate in §S18 is green.
+- Every phase shipped with its tests written first, and a §S24 pass
+  recorded with findings closed or deferred in writing.
 - No §S21 pattern ships. Landing page is screenshots only.
 - Nothing in §S17 is over budget.
+- Deployed on Vercel against Turso and running locally on a SQLite file
+  from the same commit.
