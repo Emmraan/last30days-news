@@ -1,6 +1,6 @@
 # Product Requirements Document — last30days-news
 
-Status: working draft
+Status: implementation-ready (v0.1 scope locked)
 Owner: product
 Last updated: 2026-11-22
 
@@ -283,7 +283,7 @@ Sections, in order:
    (`--txt`) left, one-line description (`--txt-2`) right, 1px hairline
    separator between rows. Eight rows max: time windows, categories,
    cited summaries, provider-independent AI, local storage, no-key
-   mode, keyboard-first UI, single-binary install.
+   mode, keyboard-first UI, one-command install.
 6. **Sources** — the curated set as small bordered badges in a wrapped
    flow row, grouped by category with mono group labels. Real domains
    only. No logo wall, no marquee, no carousel.
