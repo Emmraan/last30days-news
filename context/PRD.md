@@ -212,11 +212,52 @@ built once and extended, not rewritten.
 
 ## 8. Constraints
 
+### 8.1 Chosen stack
+
+| Layer | Choice |
+|---|---|
+| Framework | SvelteKit (Svelte 5) |
+| Language | TypeScript |
+| Styling | Custom CSS with design tokens |
+| Components | Hand-built, no default kit |
+| Motion | Svelte transitions and CSS |
+| Database | SQLite (better-sqlite3) |
+| ORM | Drizzle |
+| AI | Vercel AI SDK (core and svelte) |
+| RSS | rss-parser |
+| Server | adapter-node and adapter-vercel |
+
+### 8.2 Runtime rules
+
 - Runtime and dependencies: stable and latest, pinned exactly in
   `package.json`. Version sources and dates are recorded in the
   decisions log.
 - AI keys are optional; the core product must work without them.
 - No vendor lock-in for sources or models.
+
+### 8.3 UI principles
+
+- Premium and hand-crafted, like a real product design team.
+- Custom design tokens: color, type, spacing, radius, shadow.
+- Distinct typography (Geist, Satoshi, or Inter Tight).
+- Bespoke components; no default shadcn or MUI look.
+- Purposeful, fast, subtle motion.
+- Dark and light themes with WCAG AA contrast.
+- Consistent icons (lucide), single stroke weight.
+- Strict spacing grid, no ad-hoc padding.
+- SPA navigation: page changes are instant, no full reload.
+
+### 8.4 AI-generated pattern block
+
+The build fails on any of these patterns:
+
+- Generic gradient hero, centered tagline, "AI-powered" badge.
+- Emoji section headers (rocket, sparkle, target).
+- Default template or component-kit look.
+- "Lorem ipsum" or placeholder copy.
+- Over-explaining or "As an AI" comments.
+- Emoji used as icons.
+- Random accent colors with no token system.
 
 ## 9. Success metrics
 
