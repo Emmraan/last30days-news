@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+	<channel>
+		<title>Hugging Face Blog</title>
+		<item>
+			<title>SmolLM3 is a small model with a long context</title>
+			<link>https://huggingface.co/blog/smollm3</link>
+			<pubDate>Fri, 14 Nov 2026 09:00:00 GMT</pubDate>
+			<description>Three billion parameters, 128k tokens, one GPU.</description>
+		</item>
+		<item>
+			<title>Datasets that outlive their papers</title>
+			<link>https://huggingface.co/blog/datasets</link>
+			<pubDate>Wed, 12 Nov 2026 09:00:00 GMT</pubDate>
+			<description>What a dataset needs to stay useful after the authors move on.</description>
+		</item>
+	</channel>
+</rss>

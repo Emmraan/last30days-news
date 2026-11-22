@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+	<channel>
+		<title>Ars Technica</title>
+		<link>https://feeds.arstechnica.com/arstechnica/index</link>
+		<item>
+			<title>Rocket Lab nails its twentieth recovery</title>
+			<link>https://arstechnica.com/space/2026/11/rocket-lab-recovery/?utm_source=rss&amp;utm_medium=feed</link>
+			<pubDate>Tue, 18 Nov 2026 10:00:00 GMT</pubDate>
+			<dc:creator>Stephen Clark</dc:creator>
+			<description><![CDATA[<p>The booster came back <b>intact</b> for the twentieth time.</p>]]></description>
+		</item>
+		<item>
+			<title>A quieter datacentre, without the diesel</title>
+			<link>https://arstechnica.com/tech/2026/11/datacentre-power/</link>
+			<pubDate>Mon, 17 Nov 2026 22:15:00 GMT</pubDate>
+			<dc:creator>Anna Gross</dc:creator>
+			<description><![CDATA[<p>Batteries replace the generators, and the neighbours notice.</p>]]></description>
+		</item>
+		<item>
+			<title>No link here</title>
+			<description>An entry that must be skipped.</description>
+		</item>
+	</channel>
+</rss>

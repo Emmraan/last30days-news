@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+	<title>The Verge</title>
+	<entry>
+		<title>Nothing launches a phone with no apps</title>
+		<link href="https://www.theverge.com/2026/11/18/nothing-phone#comments"/>
+		<updated>2026-11-18T09:30:00Z</updated>
+		<author><name>Allison Johnson</name></author>
+		<summary>A phone that ships with nothing on it.</summary>
+	</entry>
+	<entry>
+		<title>Streaming bundles get smaller</title>
+		<link href="https://www.theverge.com/2026/11/17/bundles"/>
+		<updated>2026-11-17T16:00:00Z</updated>
+		<author><name>Emma Roth</name></author>
+		<summary>Two services, one price, fewer channels.</summary>
+	</entry>
+</feed>
