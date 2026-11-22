@@ -61,6 +61,9 @@ addition.
 
 ## 4. MVP scope (v0.1)
 
+Status: **plan complete.** The build plan for this scope is written and
+locked; work starts at bootstrap.
+
 The MVP ships one complete end-to-end use case:
 
 > Read AI and technology news from the last 24 hours, drawn from
@@ -112,6 +115,9 @@ The MVP ships one complete end-to-end use case:
 - Basic aggregation works with no AI key configured.
 
 ## 5. Future roadmap
+
+Status: **not planned yet.** Post-MVP scope is agreed below at intent
+level only; its build plan is written after v0.1 ships.
 
 | Stage | Theme | Key additions |
 |---|---|---|
