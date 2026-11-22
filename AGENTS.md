@@ -21,6 +21,11 @@ Branches: every phase, feature and fix gets its own branch off `main` —
 by merge. The one exception is an explicit instruction from the owner to
 work on `main` for that specific change.
 
+Skills: before starting any phase, feature or fix, read
+`.agents/skills/last30days-news/SKILL.md` and load the skills it names for
+that kind of work, so the implementation follows this project's own
+conventions. The rules in this file win over anything a skill says.
+
 ## 1. Unit testing
 
 Pure functions only: canonical URL, title normalisation, Jaccard, keyword
