@@ -56,6 +56,11 @@ test('fresh boot creates the schema and seeds 2 categories + 6 sources', async (
 	const c = await counts(client);
 	expect(c).toMatchObject({ categories: 2, sources: 6, items: 0, fts: 1, triggers: 3, fk: 1 });
 	expect(c.journal).toBe('wal');
+	// Order must be byte order, not the host's collation.
+	const applied = (await client.execute('select name from __migration order by applied_at')).rows.map(
+		(r) => String(r[0])
+	);
+	expect(applied).toEqual([...applied].sort());
 	await close();
 });
 

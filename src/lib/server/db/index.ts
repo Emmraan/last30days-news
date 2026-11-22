@@ -29,7 +29,9 @@ async function applyMigrations(client: Client) {
 	const { rows } = await client.execute('select name from __migration');
 	const applied = new Set(rows.map((r) => String(r.name)));
 
-	const pending = Object.entries(MIGRATIONS).sort(([a], [b]) => a.localeCompare(b));
+	// Byte order, not localeCompare: migration order must not depend on the
+	// machine's collation, or two hosts apply the same files in two orders.
+	const pending = Object.entries(MIGRATIONS).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 	for (const [path, sql] of pending) {
 		const name = path.slice(path.lastIndexOf('/') + 1);
 		if (applied.has(name)) continue;
