@@ -13,14 +13,21 @@ import { readTheme, THEME_COOKIE } from '#lib/theme';
 let dbPromise: Promise<Awaited<ReturnType<typeof createDb>>> | null = null;
 const getDb = () => (dbPromise ??= createDb());
 
-const PUBLIC_API = new Set(['/api/health', '/api/auth/login', '/api/auth/reset', '/api/auth/session']);
+const PUBLIC_API = new Set([
+	'/api/health',
+	'/api/auth/login',
+	'/api/auth/reset',
+	'/api/auth/session'
+]);
 const PUBLIC_PAGES = new Set(['/', '/login', '/reset']);
 // Reachable with a first-run session so the password can actually be changed.
 const WHILE_CHANGING = new Set(['/api/auth/password', '/api/auth/session', '/api/auth/logout']);
 
 const HEADERS: Record<string, string> = {
+	// SvelteKit inlines the page CSS for a prerendered, no-JS document, so inline
+	// styles must be allowed or the landing page ships unstyled. Scripts stay locked.
 	'content-security-policy':
-		"default-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'",
+		"default-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'",
 	'x-content-type-options': 'nosniff',
 	'referrer-policy': 'no-referrer',
 	'x-frame-options': 'DENY'
@@ -77,13 +84,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// §S9: the first-run password is public knowledge, so nothing but the
 	// change route itself may run until a real one is stored.
-	if (session && event.locals.mustChangePassword && path.startsWith('/api/') && !WHILE_CHANGING.has(path)) {
+	if (
+		session &&
+		event.locals.mustChangePassword &&
+		path.startsWith('/api/') &&
+		!WHILE_CHANGING.has(path)
+	) {
 		return refuse(403, 'password_change_required', 'Set a new password first.');
 	}
 
 	const response = await resolve(event, {
-		transformPageChunk: ({ html }) =>
-			html.replace('%l30.theme%', theme ? `class="${theme}"` : '')
+		transformPageChunk: ({ html }) => html.replace('%l30.theme%', theme ? `class="${theme}"` : '')
 	});
 	for (const [k, v] of Object.entries(HEADERS)) {
 		// SvelteKit adds per-request script hashes/nonces to the page CSP.

@@ -98,7 +98,13 @@ test('other API routes are refused while the default password is still in use', 
 
 test('the password change route stays reachable while a change is required', async () => {
 	const id = await createSession(seeded.db);
-	const { event } = eventFor({ path: '/api/auth/password', method: 'POST', body: '{}', origin: 'http://127.0.0.1:4477', session: id });
+	const { event } = eventFor({
+		path: '/api/auth/password',
+		method: 'POST',
+		body: '{}',
+		origin: 'http://127.0.0.1:4477',
+		session: id
+	});
 	const res = await handle({ event, resolve: ok });
 	expect(res.status).toBe(200);
 });
@@ -169,4 +175,14 @@ test('a write from another origin is refused', async () => {
 	const res = await handle({ event, resolve: ok });
 	expect(res.status).toBe(403);
 	expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+});
+
+test('the policy allows the inline styles a prerendered page ships', async () => {
+	// Without style-src the landing page falls back to default-src and renders
+	// with no stylesheet at all.
+	const { event } = eventFor({ path: '/', method: 'GET' });
+	const res = await handle({ event, resolve: ok });
+	const policy = res.headers.get('content-security-policy') ?? '';
+	expect(policy).toContain("style-src 'self'");
+	expect(policy).not.toContain("script-src 'self' 'unsafe-inline'");
 });
