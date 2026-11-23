@@ -1,9 +1,10 @@
 # PROGRESS
 
 Phase history for `context/PLAN.md`. Keep it compact: the status table plus one
-short entry per merged phase, limited to the work commit, gate result,
-deviations and accepted findings. Tighten older entries when adding a new one;
-the plan and code hold the full rationale.
+short entry per phase commit, limited to the work commit, gate result,
+deviations and accepted findings. Work that is committed but not merged is
+marked `committed` and keeps the merge column empty. Tighten older entries when
+adding a new one; the plan and code hold the full rationale.
 
 ## Status
 
@@ -28,8 +29,8 @@ the plan and code hold the full rationale.
 | Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
 | Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
 | P14 Landing v1 | reverted | `phase-14-landing` | — | branch deleted |
-| R1 Dashboard redesign | in progress | `redesign-dashboard` | — | — |
-| R2 Landing v2 | not started | — | — | — |
+| R1 Dashboard redesign | committed | `redesign-dashboard` | `d32c8d4` | — (not merged) |
+| R2 Landing v2 | committed | `redesign-dashboard` | `d32c8d4` | — (not merged) |
 | P15 Install, budgets, CI | not started | — | — | — |
 
 ## P0 — Bootstrap
@@ -299,20 +300,20 @@ page: the secondary pill, the three step screenshots, the eight spec rows, the
 closing repo link and the hero bleed all drifted from §6.8, and a landing page
 does not belong in the app bundle. Branch `phase-14-landing` deleted.
 
-Kept uncommitted for the new landing app: `scripts/shots.mjs` (Playwright, 2x
-capture, WebP via canvas) and `static/shots/{dashboard,sources,detail,categories}.webp`.
+Kept uncommitted for the new landing app at the time: the Playwright capture
+scripts and WebP shots were later removed. The landing uses real markup only.
 
-## Landing v2 — decisions
+## R2 — Landing v2
 
-- Own SvelteKit app in `landing/`: own `package.json`, `adapter-static`,
-  `prerender = true`, `csr = false`, zero server code. Tokens are a ~40-line copy
-  with a "keep in sync with `src/app.css`" comment — no shared package.
-- App loses its landing: `src/routes/+page.svelte` and `+page.ts` go,
-  `+page.server.ts` redirects to `/app`; `/` stays in `PUBLIC_PAGES`.
-- §6.8 is the spec and is followed section by section, not reinterpreted.
-- Three deployables, two codebases: app → adapter-node (`npx`, Docker, VPS) and
-  adapter-vercel (Vercel + Turso); landing → adapter-static. The app is never
-  duplicated per target (§6.27).
+Committed in `d32c8d4` on `redesign-dashboard`; not merged. Own SvelteKit app in
+`landing/`: workspace package, `adapter-static`, `prerender = true`, `csr = false`,
+zero server code, `#lib`, tokens copied from the app. Full page built with real
+markup only: nav, hero (npx/npm/pnpm/yarn/bun install runner with copy, three-pane
+preview), proof strip, how it works, what you get, sources, FAQ, closing, footer.
+No app URL; GitHub only. Inline scripts own theme, tabs/copy, smooth section
+scroll and the mobile menu. Light favicon, FAQ disclosure motion, nav/theme/copy
+micro-motion, thin scrollbar. Landing check 0 errors/0 warnings; build exit 0;
+`lint:changed` 0 errors. No Playwright or screenshot scripts.
 
 ## Redesign workflow (owner-set)
 
@@ -327,13 +328,16 @@ capture, WebP via canvas) and `static/shots/{dashboard,sources,detail,categories
   emoji headings and fake window chrome.
 - Landing reference is openship.io, already captured by §6.8.
 
-## R1 — Dashboard redesign (in progress)
+## R1 — Dashboard redesign
 
-Iteration 1 (toolbar + sidebar, awaiting approval): radius tokens now 12/16/20;
-body gutters 10px with 12px outer padding; sidebar 236px, 34px rows, active row
-`--card` + 1px ring, per-category counts from `CategoryView.itemCount`; toolbar
-58px with pill search field, pill segmented presets and 32px icon buttons.
-Next: feed rows, detail pane, panels, status bar, help overlay, then login/reset.
+Committed in `d32c8d4` on `redesign-dashboard`; not merged. Radius tokens now
+12/16/20; 10px body gutters with 12px outer padding; sidebar 236px, 34px rows,
+`--card` + ring active row, per-category counts and a manage row; toolbar 58px
+with pill search, pill presets and 32px icon buttons; 44px mono pane heads;
+selected feed row = `--card` + ring + 3px accent bar. Detail gained a labelled
+excerpt block; login is a centred 372px card. Feed entities are decoded before
+`displayText()` (numeric, hex and named; unknown stays literal) with a table
+test. App check 0/0 and eslint 0 errors; changed tests green.
 
 ## Working rules adopted mid-project
 
