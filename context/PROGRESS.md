@@ -25,6 +25,12 @@ the plan and code hold the full rationale.
 | P11 Category manager | done | `phase-11-categories` | `6695835` | `27dfa41` |
 | P12 Settings | done | `phase-12-settings` | `f2e74d5` | `675a551` |
 | P13 Keyboard and offline | done | `phase-13-keyboard-states` | `7e8176f` | `d6191b4` |
+| Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
+| Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
+| P14 Landing v1 | reverted | `phase-14-landing` | — | branch deleted |
+| R1 Dashboard redesign | in progress | `redesign-dashboard` | — | — |
+| R2 Landing v2 | not started | — | — | — |
+| P15 Install, budgets, CI | not started | — | — | — |
 
 ## P0 — Bootstrap
 
@@ -275,6 +281,59 @@ is open (it is not a modal, so nothing is trapped); Retry while still offline
 just fails again; `navigator.onLine` can be wrong behind a dead proxy.
 
 Deviations: none.
+
+## Bugfixes landed straight on `main`
+
+- `4ac1b3c` — `POST /api/auth/password` rejected the first-run default because
+  it verified against a stored hash that does not exist yet, so the banner link
+  was dead; `seed()` was never called outside tests, so a fresh install had zero
+  sources. Both carry a reproducing test.
+- `58998e8` — the CSP header had no `style-src`, so `default-src 'self'` blocked
+  the inline `<style>` a prerendered page ships and the page rendered unstyled.
+  `style-src 'self' 'unsafe-inline'` added; scripts stay nonce-gated.
+
+## P14 — Landing v1 (reverted)
+
+Built inside the app as `/` with `prerender`/`csr = false`. Correct theme, wrong
+page: the secondary pill, the three step screenshots, the eight spec rows, the
+closing repo link and the hero bleed all drifted from §6.8, and a landing page
+does not belong in the app bundle. Branch `phase-14-landing` deleted.
+
+Kept uncommitted for the new landing app: `scripts/shots.mjs` (Playwright, 2x
+capture, WebP via canvas) and `static/shots/{dashboard,sources,detail,categories}.webp`.
+
+## Landing v2 — decisions
+
+- Own SvelteKit app in `landing/`: own `package.json`, `adapter-static`,
+  `prerender = true`, `csr = false`, zero server code. Tokens are a ~40-line copy
+  with a "keep in sync with `src/app.css`" comment — no shared package.
+- App loses its landing: `src/routes/+page.svelte` and `+page.ts` go,
+  `+page.server.ts` redirects to `/app`; `/` stays in `PUBLIC_PAGES`.
+- §6.8 is the spec and is followed section by section, not reinterpreted.
+- Three deployables, two codebases: app → adapter-node (`npx`, Docker, VPS) and
+  adapter-vercel (Vercel + Turso); landing → adapter-static. The app is never
+  duplicated per target (§6.27).
+
+## Redesign workflow (owner-set)
+
+- App first: dashboard and login, one component per iteration. Nothing advances
+  until the owner approves the current one.
+- Landing second: nav + hero, then proof strip, how it works, what you get,
+  sources, FAQ, closing, footer — one section per iteration, same gate.
+- Visual reference for the dashboard: an OpenShip-style app shell — soft cards,
+  12–16px radii, ~10px gutters, pill segmented control, mono uppercase sidebar
+  label, active row = card background + 1px ring, ghost icon buttons. Borrowed as
+  spacing, type and surface language only: §S21 still bans gradients, card grids,
+  emoji headings and fake window chrome.
+- Landing reference is openship.io, already captured by §6.8.
+
+## R1 — Dashboard redesign (in progress)
+
+Iteration 1 (toolbar + sidebar, awaiting approval): radius tokens now 12/16/20;
+body gutters 10px with 12px outer padding; sidebar 236px, 34px rows, active row
+`--card` + 1px ring, per-category counts from `CategoryView.itemCount`; toolbar
+58px with pill search field, pill segmented presets and 32px icon buttons.
+Next: feed rows, detail pane, panels, status bar, help overlay, then login/reset.
 
 ## Working rules adopted mid-project
 
