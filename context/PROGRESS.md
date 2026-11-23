@@ -20,7 +20,7 @@ the plan and code hold the full rationale.
 | P6 Summaries | done | `phase-6-summaries` | `918808f` | `7a70e3b` |
 | P7 Categories | done | `phase-7-categories` | `d06dda2` | `a844770` |
 | P8 UI shell | done | `phase-8-shell` | `47da9d5` | `0e7ab65` |
-| P9 Feed and detail | done | `phase-9-feed-detail` | `cc34369` | pending |
+| P9 Feed and detail | done | `phase-9-feed-detail` | `cc34369` | `9e8d53d` |
 
 ## P0 — Bootstrap
 
