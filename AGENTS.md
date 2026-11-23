@@ -29,9 +29,12 @@ Skills: before starting any phase, feature or fix, read
 that kind of work, so the implementation follows this project's own
 conventions. The rules in this file win over anything a skill says.
 
-Progress: `context/PROGRESS.md` is the phase history — commit, gate result,
-deviations and accepted findings, one entry per merged phase. Append to it
-before the phase merge.
+Progress: `context/PROGRESS.md` is a compact phase index, not a changelog.
+Keep the status table and one short entry per merged phase (aim for about 20
+lines), limited to the work commit, gate result, deviations and accepted
+findings. No narrative, no file-by-file test inventory, no repeated plan text.
+Tighten older entries when a new phase is added; keep the file around 200
+lines. Append before the phase merge.
 
 Doc lifecycle: `context/PRD.md` is the working spec. Once `context/PLAN.md`
 covers everything the PRD describes, empty the PRD back to its clean
