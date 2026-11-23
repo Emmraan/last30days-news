@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestEvent } from './$types';
 import { z } from 'zod';
 import { apiError, readJson } from '#lib/server/api';
-import { hashPassword, verifyPassword } from '#lib/server/auth/password';
+import { FIRST_RUN_PASSWORD, hashPassword, verifyPassword } from '#lib/server/auth/password';
 import { createSession, destroyAllSessions } from '#lib/server/auth/session';
 import { setSessionCookie } from '#lib/server/auth/cookie';
 import { setVaultCookie } from '#lib/server/auth/vault-cookie';
@@ -28,9 +28,11 @@ export async function POST({ request, cookies, url, locals }: RequestEvent) {
 	const { db, ip } = locals;
 
 	const stored = await getSetting<string>(db, 'auth.password');
-	if (!(await verifyPassword(current, stored)))
-		return apiError(401, 'invalid_password', 'Incorrect password.');
-	if (await verifyPassword(next, stored))
+	// Before the first change nothing is stored, so the default is the only
+	// password that can be current. Same rule the login route applies.
+	const currentOk = stored ? await verifyPassword(current, stored) : current === FIRST_RUN_PASSWORD;
+	if (!currentOk) return apiError(401, 'invalid_password', 'Incorrect password.');
+	if (stored && (await verifyPassword(next, stored)))
 		return apiError(400, 'password_unchanged', 'Choose a different password.');
 
 	// One pass over the vault: a half-rewritten set of secrets under the new

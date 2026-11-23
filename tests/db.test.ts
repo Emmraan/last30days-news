@@ -64,6 +64,14 @@ test('fresh boot creates the schema and seeds 2 categories + 6 sources', async (
 	await close();
 });
 
+test('opening a fresh database seeds it without any extra call', async () => {
+	const { client, close } = await createDb({ dataDir: tempDir() });
+
+	const c = await counts(client);
+	expect(c).toMatchObject({ categories: 2, sources: 6 });
+	await close();
+});
+
 test('second boot changes nothing', async () => {
 	const dir = tempDir();
 	const first = await createDb({ dataDir: dir });

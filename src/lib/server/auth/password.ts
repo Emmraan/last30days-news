@@ -20,6 +20,9 @@ const MAXMEM = 64 * 1024 * 1024;
 /** Same cost as a real hash, so a missing password costs the same as a wrong one. */
 export const DUMMY_HASH = `scrypt$${N}$${R}$${P}$AAAAAAAAAAAAAAAAAAAAAA==$${'A'.repeat(43)}=`;
 
+/** §S9 first-run password. It only ever matches while no password is stored. */
+export const FIRST_RUN_PASSWORD = 'last30';
+
 export async function hashPassword(plain: string): Promise<string> {
 	const salt = randomBytes(SALTLEN);
 	const hash = await scrypt(plain, salt, KEYLEN, { N, r: R, p: P, maxmem: MAXMEM });

@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestEvent } from './$types';
 import { z } from 'zod';
 import { locked, readJson } from '#lib/server/api';
-import { DUMMY_HASH, verifyPassword } from '#lib/server/auth/password';
+import { DUMMY_HASH, FIRST_RUN_PASSWORD, verifyPassword } from '#lib/server/auth/password';
 import { lockState, clearFailures, recordFailure } from '#lib/server/auth/rate';
 import { createSession } from '#lib/server/auth/session';
 import { setSessionCookie } from '#lib/server/auth/cookie';
@@ -14,8 +14,6 @@ import { log } from '#lib/server/log';
 export const prerender = false;
 
 const body = z.object({ password: z.string().min(1).max(1024) }).strict();
-
-const FIRST_RUN_PASSWORD = 'last30';
 
 export async function POST({ request, cookies, url, locals }: RequestEvent) {
 	const parsed = await readJson(request, body);

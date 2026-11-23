@@ -185,6 +185,32 @@ test('POST /api/auth/password requires a session', async () => {
 	expect(res.status).toBe(401);
 });
 
+test('the first-run password can be replaced before anything is stored', async () => {
+	const { db } = await freshDb();
+	const { event: loginEv, jar } = loginEvent(db as never, 'last30');
+	await login(loginEv);
+	const sessionId = jar.jar.get(SESSION_COOKIE)!;
+
+	const { event } = makeEvent({
+		db,
+		body: { current: 'wrong', next: 'new password 1' },
+		cookies: jar,
+		sessionId
+	});
+	expect((await read(await changePassword(event))).status).toBe(401);
+
+	const { event: ok } = makeEvent({
+		db,
+		body: { current: 'last30', next: 'new password 1' },
+		cookies: jar,
+		sessionId
+	});
+	expect((await read(await changePassword(ok))).status).toBe(200);
+	expect(await verifyPassword('new password 1', (await getSetting<string>(db, 'auth.password'))!)).toBe(
+		true
+	);
+});
+
 test('changing the password re-encrypts stored secrets and keeps them usable', async () => {
 	const { db, client } = await seededPassword('old password');
 	const oldKey = deriveKey('old password', await getSetting<string>(db, 'crypto.salt').then((s) => Buffer.from(s!, 'base64')));

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { createClient, type Client } from '@libsql/client';
 import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import * as schema from './schema';
+import { seed } from './seed';
 
 export const RETENTION_DAYS = 30;
 
@@ -98,8 +99,13 @@ export async function createDb(opts: { dataDir?: string } = {}) {
 
 	await applyMigrations(client);
 
+	// Seeding here, not at the call sites: a fresh install has to find its
+	// builtin categories and sources no matter which entry point opened the DB.
+	const db = drizzle(client, { schema }) as LibSQLDatabase<typeof schema>;
+	await seed(db);
+
 	return {
-		db: drizzle(client, { schema }) as LibSQLDatabase<typeof schema>,
+		db,
 		client,
 		close: () => client.close()
 	};
