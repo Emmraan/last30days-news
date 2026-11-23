@@ -6,6 +6,7 @@ import { SESSION_COOKIE } from '#lib/server/auth/session';
 import { readVaultCookie } from '#lib/server/auth/vault-cookie';
 import { getSetting } from '#lib/server/settings';
 import { log } from '#lib/server/log';
+import { readTheme, THEME_COOKIE } from '#lib/theme';
 
 // One pool per process. SvelteKit gives no teardown hook, and the client is
 // cheap to keep: a single sqlite handle.
@@ -37,6 +38,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.db = db;
 
 	const path = event.url.pathname;
+	// The class lands in app.html before first paint; a script would need
+	// unsafe-inline in the CSP, and a client-only class would flash.
+	const theme = readTheme(event.cookies.get(THEME_COOKIE));
 
 	// §S9 CSRF: SameSite=Lax plus an Origin check on every non-GET. A missing
 	// Origin is refused too — browsers always send one for cross-site writes.
@@ -77,8 +81,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return refuse(403, 'password_change_required', 'Set a new password first.');
 	}
 
-	const response = await resolve(event);
-	for (const [k, v] of Object.entries(HEADERS)) response.headers.set(k, v);
+	const response = await resolve(event, {
+		transformPageChunk: ({ html }) =>
+			html.replace('%l30.theme%', theme ? `class="${theme}"` : '')
+	});
+	for (const [k, v] of Object.entries(HEADERS)) {
+		// SvelteKit adds per-request script hashes/nonces to the page CSP.
+		// Replacing it with the static one would block hydration.
+		if (!response.headers.has(k)) response.headers.set(k, v);
+	}
 	if (path.startsWith('/api/')) response.headers.set('cache-control', 'no-store');
 	return response;
 };
