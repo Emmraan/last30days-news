@@ -22,6 +22,7 @@ the plan and code hold the full rationale.
 | P8 UI shell | done | `phase-8-shell` | `47da9d5` | `0e7ab65` |
 | P9 Feed and detail | done | `phase-9-feed-detail` | `cc34369` | `9e8d53d` |
 | P10 Search | done | `phase-10-search` | `8faa930` | `77f03e2` |
+| P11 Category manager | done | `phase-11-categories` | pending | pending |
 
 ## P0 — Bootstrap
 
@@ -41,15 +42,15 @@ at the first query; no `item_fts` rebuild.
 
 ## P2 — Auth
 
-scrypt N=2^15 r=8 p=1, 32-byte key/16-byte salt; AES-256-GCM vault keyed from
-`scrypt(password, crypto.salt)`, 12-byte IV; lockout 5 failures/15 min doubling
-to 24 h; `l30_session` HttpOnly, SameSite=Lax, 30 days, rotated on login and
-password change. 29 tests; audit 0/0/1/0. Fixed: reset is one transaction;
-`mustChangePassword` blocks all APIs except password/session/logout; `/api/*`
-no-store. Accepted: password route unthrottled (session already held);
-password change drops undecryptable secrets; unknown peer shares one lockout
-bucket; raw session ids (§S9). Deviations: sync `deriveKey`, 64 MiB scrypt
-maxmem, `Handle` from `@sveltejs/kit/hooks`, one navigation-resolve disable.
+scrypt N=2^15 r=8 p=1; AES-256-GCM vault keyed from `scrypt(password,
+crypto.salt)`; lockout 5 failures/15 min doubling to 24 h; `l30_session`
+HttpOnly, SameSite=Lax, 30 days, rotated on login and password change. 29
+tests; audit 0/0/1/0. Fixed: reset is one transaction; `mustChangePassword`
+blocks all APIs except password/session/logout; `/api/*` no-store. Accepted:
+password route unthrottled (session already held); password change drops
+undecryptable secrets; unknown peer shares one lockout bucket; raw session ids
+(§S9). Deviations: sync `deriveKey`, 64 MiB scrypt maxmem, `Handle` from
+`@sveltejs/kit/hooks`.
 
 ## P3 — Sources and the fetch pass
 
@@ -68,72 +69,55 @@ parser).
 `util/url.ts`; `util/dedup.ts` (`titleKey`, `jaccard`); `util/rank.ts`.
 Canonical URL, identical normalised title, or Jaccard ≥0.72 within 48 h and the
 same category; a match adds `item_source` and bumps `source_count`. Excerpts
-≤800; missing dates estimated; script-based language. 29 new tests (155);
-audit 0/0/1/0. Fixed: pinned `rss-parser`. Accepted: 48 h Jaccard scan (200 ×
-window) with 64-token samples; concurrent title inserts can duplicate; a URL in
-two categories keeps the first; item + link are two statements.
+≤800; missing dates estimated; script-based language. 29 new tests (155); audit
+0/0/1/0. Fixed: pinned `rss-parser`. Accepted: 48 h Jaccard scan (200 × window)
+with 64-token samples; concurrent title inserts can duplicate; a URL in two
+categories keeps the first; item + link are two statements.
 
 ## P5 — Feed API
 
 `feed/query.ts` holds parsing, the §S7 keyset cursor and one Drizzle query. The
-cursor is base64url `[source_count, published_at, id]`, strictly validated.
-`limit` is 1–100 (default 50) and always required internally. Effective date is
-`published_at`, or `fetched_at` when estimated. `q` is a multi-token literal
-`LIKE` over title/excerpt, with `%`, `_`, `\` escaped and caps of 200 chars /
-12 tokens. `GET /api/feed` returns `{items,nextCursor}`; `GET /api/items/[id]`
-returns `{item,sources,summary}` with source names only, no feed URLs.
-`readJson` caps bodies at 256 KiB (413 `body_too_large`). 57 new tests (212
-total); 20k-row p95 24 ms vs 120 ms; gates green; audit 0/0/1/0; no new
-dependency or migration.
+cursor is base64url `[source_count, published_at, id]`. `limit` is 1–100
+(default 50). Effective date is `published_at`, or `fetched_at` when estimated.
+`q` is a multi-token literal `LIKE` over title/excerpt, escaped, capped at 200
+chars / 12 tokens. `GET /api/feed` returns `{items,nextCursor}`;
+`GET /api/items/[id]` returns `{item,sources,summary}` with source names only.
+`readJson` caps bodies at 256 KiB (413). 57 new tests (212); 20k-row p95 24 ms
+vs 120 ms; audit 0/0/1/0; no dependency or migration.
 
-Pen-test: no critical/high. Two low accepted:
-
-1. Rank key is mutable mid-scroll: a fetch that adds a source to a row below
-   the cursor moves `source_count` 1→2 above it, so the rest of that scroll
-   skips the row until refresh. The smallest fix sorts by immutable
-   `(published_at, id)`, which changes §S7's locked rank.
-2. Hostile 100k-char titles cross the wire 50 times. Truncating the wire
-   projection hides the full title the detail pane promises to wrap; P8's
-   render clamp and the P15 payload budget are the defence.
+Pen-test: no critical/high. Accepted low: (1) rank key is mutable mid-scroll —
+a fetch adding a source moves `source_count` past the cursor and the row is
+skipped until refresh; fixing it changes §S7's locked rank. (2) Hostile
+100k-char titles cross the wire 50 times; P8's render clamp and the P15 payload
+budget are the defence.
 
 Deviations: `src/lib/types.ts` is the §S1 shared shape; `q` stays a LIKE
-baseline until P10; the 200/12 caps are not in §S13; 256 KiB is a transport
-bound; no new index; `FeedParams.limit` is required.
+baseline until P10; 256 KiB is a transport bound; `FeedParams.limit` required.
 
 ## P6 — Summaries
 
-`ai/provider.ts` maps `ai.providers` to a `LanguageModel` (OpenAI, Anthropic
-and Google use their adapters; the rest use `createOpenAICompatible`). The
-first enabled valid entry wins; the cache key is `<provider>:<model>`;
-`secret.ai.<id>.key` is decrypted only for a generation. `ai/prompt.ts` keeps
-user data out of the system prompt and wraps title/source/date/excerpt (≤6000
-chars) in an escaped `<article>` marked untrusted. `ai/summary.ts` validates
-strict JSON (summary ≤480, 2–4 key points, optional why ≤180), rejects URLs,
-markdown, HTML, control and bidi characters, makes exactly one repair, then
+`ai/provider.ts` maps `ai.providers` to a `LanguageModel`; first enabled valid
+entry wins; cache key `<provider>:<model>`; `secret.ai.<id>.key` decrypted only
+for a generation. `ai/prompt.ts` keeps user data out of the system prompt and
+wraps title/source/date/excerpt (≤6000) in an escaped `<article>` marked
+untrusted. `ai/summary.ts` validates strict JSON (summary ≤480, 2–4 key points,
+why ≤180), rejects URLs/markdown/HTML/control/bidi, makes one repair, then
 stores nothing; citations come from `item_source`. `POST
 /api/items/[id]/summary` serves cache before the vault; `POST
-/api/settings/ai/test` makes one tiny call and saves nothing. The detail
-response adds `keyPoints` and `whyItMatters`. 70 new tests (282 total); gates
-green; audit 0/0/1/0; migration `0002_optimal_blockbuster.sql` adds the two
-columns.
+/api/settings/ai/test` saves nothing. 70 new tests (282); audit 0/0/1/0;
+migration `0002_optimal_blockbuster.sql`.
 
-Pen-test: no critical/high. Medium fixed: the test route could send a stored
-key to any request `baseUrl`; now only to the configured endpoint, else 400.
-Output rejects HTML/URLs/markdown/control/bidi; citations are server-side.
-
-Accepted limits: no per-session AI rate limit or in-flight dedupe (parallel
-paid calls are bounded by auth, the item/model cache, 700 output tokens, a 60 s
-timeout and one repair; a rate limit belongs to a later settings phase);
-provider base URLs are owner-controlled and the SDK follows their redirects,
-while a request-supplied endpoint never receives the stored key.
+Pen-test: medium fixed — the test route could send a stored key to any request
+`baseUrl`; now only to the configured endpoint, else 400. Accepted: no
+per-session AI rate limit or in-flight dedupe (bounded by auth, cache, 700
+output tokens, 60 s timeout, one repair); provider base URLs are
+owner-controlled while a request-supplied endpoint never receives the key.
 
 Deviations: `l30_vault` is a second HttpOnly cookie holding the
-password-derived data key encrypted under the session id, so later requests
-decrypt AI keys without global state (§S19); DB theft yields no key, cached
-summaries still read and generation is 409 `ai_locked` until sign-in. `ai`
-7.0.179 plus four `@ai-sdk/*` adapters are §S1's stack (Node has no provider
-clients). `ai.providers` / `secret.ai.<id>.key` names are for P12. The 60 s /
-30 s timeouts and `maxRetries: 0` are bounded-cost additions.
+password-derived data key encrypted under the session id (§S19); DB theft
+yields no key, cached summaries still read, generation is 409 `ai_locked`. `ai`
+7.0.179 plus four adapters are §S1's stack. 60 s / 30 s timeouts and
+`maxRetries: 0` are bounded-cost additions.
 
 ## P7 — Categories
 
@@ -142,56 +126,43 @@ clients). `ai.providers` / `secret.ai.<id>.key` names are for P12. The 60 s /
 pinned custom sources, all items when a custom category pins none, and scores
 keyed by `sha1(prompt)`. `feed/query.ts` projects the cached `score`/`reason`
 only when a scored category admits the row. `ai/score.ts` scores 20 per call,
-200 per open, skips cached rows, caps titles at 300 and excerpts at 800,
-temperature 0, 900 output tokens, one repair, missing id stored as 0; `both`
-excludes keyword hits in SQL before the 200 cap. Routes: `/api/categories`
-CRUD (builtin 403, unique names, `usr-<slug>` ids), `/rescore` SSE
-(`progress`/`degraded`/`done`, optional empty body and `reset`), `/feed-check`,
-and `POST /api/sources` (one probe, one transaction, no row on failure).
-Seeded builtins now own their six source pins. 87 new tests (369 total); gates
-green; audit 0/0/1/0; no migration, no dependency.
+200 per open, skips cached rows, temperature 0, one repair, missing id stored
+as 0; `both` excludes keyword hits in SQL before the cap. Routes:
+`/api/categories` CRUD (builtin 403, unique names, `usr-<slug>` ids),
+`/rescore` SSE, `/feed-check`, and `POST /api/sources` (one probe, one
+transaction). 87 new tests (369); audit 0/0/1/0; no migration, no dependency.
 
-Pen-test fixes: high — SSRF guard now covers IPv4-mapped/compatible IPv6,
-ULA, link-local, multicast, NAT64, CGNAT and `*.localhost`, throws typed
-`UnsafeUrlError`, rechecks every redirect, omits credentials, and bounds a
-feed title to 120 chars before it becomes a source name. Medium — the `both`
-budget excludes keyword hits in SQL; score prompts cap titles; a mid-open
-query failure still closes the SSE stream with `degraded` + `done`.
+Pen-test fixes: high — SSRF guard now covers IPv4-mapped/compatible IPv6, ULA,
+link-local, multicast, NAT64, CGNAT and `*.localhost`, throws typed
+`UnsafeUrlError`, rechecks every redirect, omits credentials, and bounds a feed
+title to 120 chars. Medium — the `both` budget excludes keyword hits in SQL; a
+mid-open query failure still closes the stream with `degraded` + `done`.
 
-Accepted limits: 10k keywords take 63 s on 1,000 items versus 892 ms with FTS
-(exact punctuation/boundary kept; single-owner, no crash); DNS rebinding
-unchecked; no per-session AI rate limit (P6); old prompt-hash rows orphaned;
-SQLite `lower()` folds ASCII only; an empty custom category shows every item
-until a layer is set; source URL uniqueness is checked before insert, not
-constrained.
+Accepted limits: 10k keywords take 63 s on 1,000 items versus 892 ms with FTS;
+DNS rebinding unchecked; no per-session AI rate limit (P6); old prompt-hash
+rows orphaned; SQLite `lower()` folds ASCII only; an empty custom category
+shows every item; source URL uniqueness is checked before insert.
 
-Deviations: scoring runs from `/rescore`, not `GET /api/feed`, so the feed
-stays read-only; each keyword is capped at 200 chars; `itemCount` counts
-cached/visible items; source ids are `src-<sha1>`.
+Deviations: scoring runs from `/rescore`, not `GET /api/feed`; keywords capped
+at 200 chars; source ids are `src-<sha1>`.
 
 ## P8 — UI shell
 
-`@theme` exposes every §S11 colour, radius, spacing and text token; `app.css`
-adds the base type scale, focus ring and hand-written `.pane`, `.btn`, `.seg`,
-`.chip`, `.tag`, `.search`, `.iconbtn`, `.fav`, `.item` classes. `/app` is a
-100vh `auto/minmax(0,1fr)/auto` grid with full-bleed square top/status bars
-and three 10px panes separated by 2px. The logo and favicon share one locked
-glyph; the favicon is an inline data URI. Theme is read from `l30_theme`
-before paint; no cookie follows `prefers-color-scheme` through `light-dark()`.
-5 new tests (374 total); gates green; audit 0/0/1/0; no dependency or
-migration.
+`@theme` exposes every §S11 token; `app.css` adds the base type scale, focus
+ring and hand-written `.pane`, `.btn`, `.seg`, `.chip`, `.tag`, `.search`,
+`.iconbtn`, `.fav`, `.item` classes. `/app` is a 100vh `auto/minmax(0,1fr)/auto`
+grid with full-bleed square top/status bars and three 10px panes separated by
+2px. Theme is read from `l30_theme` before paint; no cookie follows
+`prefers-color-scheme` through `light-dark()`. 5 new tests (374); audit
+0/0/1/0; no dependency or migration.
 
-Pen-test: low — below 320px the topbar's automatic minimum clipped its
-actions; `min-width: 0` on the bar and search fixes it, with no overflow at
-280. SvelteKit's runtime announcer inserts one fixed inline style, so
-`style-src` allows `unsafe-hashes` plus that exact hash and no
-`unsafe-inline`; scripts get a per-request nonce. The constant glyph is
-`{@html}` and its test rejects scripts/handlers; malformed theme cookies fall
-back to system.
+Pen-test: low — below 320px the topbar's automatic minimum clipped its actions;
+`min-width: 0` fixes it. `style-src` allows `unsafe-hashes` plus the announcer's
+exact hash and no `unsafe-inline`; scripts get a per-request nonce. The
+constant glyph is `{@html}` and its test rejects scripts/handlers.
 
-Deviations: the theme class is injected through an `app.html` placeholder,
-not a script; CSP moved to `vite.config.ts` so SvelteKit can nonce its
-bootstrap; the announcer hash is tied to the pinned SvelteKit version.
+Deviations: the theme class is injected through an `app.html` placeholder, not
+a script; CSP lives in `vite.config.ts` so SvelteKit can nonce its bootstrap.
 
 ## P9 — Feed and detail
 
@@ -200,43 +171,62 @@ refreshes through `/api/feed` and `/api/refresh`. `ItemRow` clamps the title to
 two lines and shows initials, relative time, source count and a `why` callout;
 `FeedPane` covers skeleton, empty, error and Load more; `DetailPane` renders
 attribution, summary, key points, citations, the generate action and a
-relevance footer, with the summary scrolling inside the pane. `sourceName`
-joins the feed projection; `format.ts` adds relative time, initials,
-control/bidi stripping and http(s)-only hrefs. 57 new tests (431 total); full
-gate green; audit 0/0/1/0; no dependency or migration.
+relevance footer. `format.ts` adds relative time, initials, control/bidi
+stripping and http(s)-only hrefs. 57 new tests (431); full gate green; audit
+0/0/1/0; no dependency or migration.
 
 Pen-test: medium — the detail route has no category context, so the selected
-feed row now supplies `score`/`reason`; low — fav initials now strip bidi and
-controls. Accepted: repeated Load more grows the DOM (50 per click, user-
-driven); below 720px the detail pane is hidden (P13 navigation); refresh and
-feed requests have no abort on unmount (bounded by request ids and 100 rounds).
+row now supplies `score`/`reason`; low — fav initials strip bidi and controls.
+Accepted: repeated Load more grows the DOM; below 720px the detail pane is
+hidden (P13); refresh and feed requests have no abort on unmount.
 
-Deviations: time presets, category filter, cursor pagination and refresh are
-wired here; refresh polls `{batch:true}` instead of SSE; the live
-`Scoring n of m` footer stays in P11; source errors stay in P13.
+Deviations: refresh polls `{batch:true}` instead of SSE; the live `Scoring n of
+m` footer stays in P11; source errors stay in P13.
 
 ## P10 — Search
 
 `search/fts.ts` quotes every whitespace token, doubles embedded quotes and
 prefixes the last one; the query is always bound. `queryFeed` ranks with
-`-bm25(item_fts,3.0,1.0)`, then `published_at desc, id asc`, hydrates the page
-through the existing feed projection and keeps the opaque keyset cursor
-(`rank`, `published_at`, `id`). The topbar search debounces 250 ms and only
-searches from two characters. Boot probes `pragma_module_list`; an FTS5-less
-target skips migration `0001` and search falls back to one escaped title
-`LIKE`. 28 new tests (459 total); full gate green; audit 0/0/1/0; no dependency
-or migration.
+`-bm25(item_fts,3.0,1.0)`, then `published_at desc, id asc`, and keeps the
+opaque keyset cursor (`rank`, `published_at`, `id`). The topbar search debounces
+250 ms and only searches from two characters. Boot probes `pragma_module_list`;
+an FTS5-less target skips migration `0001` and search falls back to one escaped
+title `LIKE`. 28 new tests (459); audit 0/0/1/0; no dependency or migration.
 
 Pen-test: no critical/high. Fixed low — `q=%00%00` passed the length check but
-built an empty MATCH and returned 500; NUL is now stripped at parse, with a
-test. Accepted: bm25 is corpus-dependent, so inserts during a scroll can shift
-the rest of that scroll; a mid-scroll FTS table loss ignores the rank cursor;
+built an empty MATCH and returned 500; NUL is now stripped at parse. Accepted:
+bm25 is corpus-dependent, so inserts during a scroll can shift the rest of it;
 the LIKE fallback full-scans titles; `VACUUM` would renumber `item.rowid` and
-stale the index until a rebuild.
+stale the index.
 
-Deviations: the search cursor is a separate shape from the feed cursor on the
-server but stays opaque on the wire; the boot probe and skipped migration are
-the fallback path §S13 requires; `/` focus and Esc clear remain P13.
+Deviations: the search cursor is a separate shape server-side but stays opaque
+on the wire; `/` focus and Esc clear remain P13.
+
+## P11 — Category manager
+
+`CategoryPanel.svelte` lives inside `/app` as a pane, not a route: list, move
+up/down, rename, delete, re-score, and a create form (name, source checkboxes,
+feed URL checked inline through `/api/categories/feed-check`, prompt, keywords,
+threshold). Pure logic is in `category-panel.ts` (`moveCategory`,
+`parseKeywords`, `takeScoreEvents`). Reorder PATCHes `sortOrder` only for rows
+whose value changed. 11 files; 38 tests in the changed set; full gate green;
+audit 0/0/1/0; no dependency, no migration.
+
+Pen-test fixes: high — reorder was a no-op when legacy rows shared
+`sortOrder` 0 with builtins, so `moveCategory` now returns a positional
+`{id, sortOrder}` per row; high — builtin categories could not be reordered at
+all, now a `sortOrder`-only PATCH is allowed (`orderOnly`) while content and
+blend changes still 403; medium — a remote feed title was rendered straight
+into the panel, now through `displayText()`.
+
+Accepted limits: no rate limit on `/feed-check` or `/rescore` (authenticated,
+10 s timeout, 5 MiB cap, 200-item score cap each); one open rescore SSE stream
+per tab, no server-side concurrency cap; DNS rebinding and
+`127.0.0.1.nip.io`-style names still pass the SSRF literal-host check (P3/P7).
+
+Deviations: `FeedCategory` removed from `lib/types.ts` in favour of the shared
+`CategoryView`; the app loader widens categories through `categoryViews()`;
+sources are loaded once on mount.
 
 ## Working rules adopted mid-project
 

@@ -35,6 +35,7 @@ export const patchCategoryBody = z
 		keywords: z.array(keyword).optional(),
 		prompt: patchPrompt,
 		aiThreshold: z.number().min(0).max(1).optional(),
+		sortOrder: z.number().int().min(0).max(100000).optional(),
 		sourceIds: z.array(sourceId).optional()
 	})
 	.strict();
