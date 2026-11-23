@@ -17,7 +17,7 @@ and its merge.
 | P2 Auth | done | `phase-2-auth` | `55f99c1` | `9be19aa` |
 | P3 Sources and fetch | done | `phase-3-sources` | `9b418d8` | `a4fbce6` |
 | Docs: skill lookup rule | done | `docs-skill-lookup-rule` | `1a0b6b8` | `42d32ac` |
-| P4 Ingest | next | `phase-4-ingest` | — | — |
+| P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | pending |
 
 ## P0 — Bootstrap
 
@@ -155,6 +155,47 @@ Accepted as known limitations:
   is P8.
 - `rss-parser 3.13.0` added: Node has no XML parser, and hand-rolling one over
   hostile feeds is worse.
+
+## P4 — Ingest
+
+`util/url.ts` was already in place from P3; P4 added `util/dedup.ts`
+(`titleKey`, `jaccard`), `util/rank.ts` (`compareRank`) and the §S7 dedup in
+`ingest/insert.ts`: canonical URL, identical normalised title, or Jaccard
+≥ 0.72 within 48h, all same-category. A match keeps the existing row and only
+adds `item_source`, bumping `source_count` when the link is new. Excerpts are
+HTML-stripped and capped at 800, missing dates become `published_estimated`,
+and language is a script heuristic (BCP-47, §S20).
+
+29 new tests across `src/lib/util/{dedup,rank}.test.ts` and
+`tests/ingest.test.ts`. Gates green (155 tests, build); `audit` critical 0 /
+high 0 / moderate 1 / low 0.
+
+Fixed before the merge:
+
+- `rss-parser` was the one floating specifier (`^3.13.0`); pinned to `3.13.0`
+  as §S1 requires. The lockfile change is the specifier only.
+
+Deviations:
+
+- The ranking comparator lives in `util/rank.ts`, which §1 does not list.
+  §S23 wants one unit per file next to the source and P4 requires the
+  comparator; P5's feed query imports it.
+
+Accepted as known limitations:
+
+- Jaccard compares every candidate inside the 48h window: O(200 incoming ×
+  window size), with titles sampled to 64 tokens. An inverted index waits
+  until P5 measures the real feed.
+- Two sources inserting different URLs for the same story concurrently can
+  create two rows. Canonical-URL duplicates are protected by the item primary
+  key; the title/Jaccard read-then-write window is not.
+- A canonical URL that appears in two categories keeps whichever category
+  inserted first, not "first source in seed order". Enforcing seed order needs
+  a source priority column and a rewrite of the existing row, which
+  contradicts "cross-category is never merged".
+- Item and `item_source` are two statements, not one transaction. A crash
+  between them leaves an item with no attribution; the pass would have to fail
+  at exactly that point.
 
 ## Working rules adopted mid-project
 
