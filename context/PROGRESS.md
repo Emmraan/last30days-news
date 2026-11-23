@@ -19,6 +19,7 @@ the plan and code hold the full rationale.
 | P5 Feed API | done | `phase-5-feed-api` | `10c7f91` | `ba496be` |
 | P6 Summaries | done | `phase-6-summaries` | `918808f` | `7a70e3b` |
 | P7 Categories | done | `phase-7-categories` | `d06dda2` | `a844770` |
+| P8 UI shell | done | `phase-8-shell` | `47da9d5` | pending |
 
 ## P0 — Bootstrap
 
@@ -203,6 +204,30 @@ constrained.
 Deviations: scoring runs from `/rescore`, not `GET /api/feed`, so the feed
 stays read-only; each keyword is capped at 200 chars; `itemCount` counts
 cached/visible items; source ids are `src-<sha1>`.
+
+## P8 — UI shell
+
+`@theme` exposes every §S11 colour, radius, spacing and text token; `app.css`
+adds the base type scale, focus ring and hand-written `.pane`, `.btn`, `.seg`,
+`.chip`, `.tag`, `.search`, `.iconbtn`, `.fav`, `.item` classes. `/app` is a
+100vh `auto/minmax(0,1fr)/auto` grid with full-bleed square top/status bars
+and three 10px panes separated by 2px. The logo and favicon share one locked
+glyph; the favicon is an inline data URI. Theme is read from `l30_theme`
+before paint; no cookie follows `prefers-color-scheme` through `light-dark()`.
+5 new tests (374 total); gates green; audit 0/0/1/0; no dependency or
+migration.
+
+Pen-test: low — below 320px the topbar's automatic minimum clipped its
+actions; `min-width: 0` on the bar and search fixes it, with no overflow at
+280. SvelteKit's runtime announcer inserts one fixed inline style, so
+`style-src` allows `unsafe-hashes` plus that exact hash and no
+`unsafe-inline`; scripts get a per-request nonce. The constant glyph is
+`{@html}` and its test rejects scripts/handlers; malformed theme cookies fall
+back to system.
+
+Deviations: the theme class is injected through an `app.html` placeholder,
+not a script; CSP moved to `vite.config.ts` so SvelteKit can nonce its
+bootstrap; the announcer hash is tied to the pinned SvelteKit version.
 
 ## Working rules adopted mid-project
 
