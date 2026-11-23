@@ -17,5 +17,5 @@ export const load: PageServerLoad = async ({ locals }) => {
 		categoryViews(locals.db, rows)
 	]);
 
-	return { feed, categories, now };
+	return { feed, categories, now, mustChangePassword: locals.mustChangePassword };
 };

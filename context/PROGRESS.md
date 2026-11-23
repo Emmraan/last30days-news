@@ -23,6 +23,7 @@ the plan and code hold the full rationale.
 | P9 Feed and detail | done | `phase-9-feed-detail` | `cc34369` | `9e8d53d` |
 | P10 Search | done | `phase-10-search` | `8faa930` | `77f03e2` |
 | P11 Category manager | done | `phase-11-categories` | `6695835` | `27dfa41` |
+| P12 Settings | done | `phase-12-settings` | pending | pending |
 
 ## P0 — Bootstrap
 
@@ -227,6 +228,29 @@ per tab, no server-side concurrency cap; DNS rebinding and
 Deviations: `FeedCategory` removed from `lib/types.ts` in favour of the shared
 `CategoryView`; the app loader widens categories through `categoryViews()`;
 sources are loaded once on mount.
+
+## P12 — Settings
+
+`SettingsPanel.svelte` is a `/app` overlay, not a route: theme picker, password
+block, and one row per provider (model, base URL, enable, key state). The
+password form is `PasswordForm.svelte`, shared by the panel and the first-run
+banner in `/app`. `GET`/`PATCH /api/settings` return `{theme, ids, providers}`
+with `keyConfigured` and never key material; the whole PATCH body is validated
+before the first write; changing a provider's `baseUrl` deletes its stored key.
+Theme is a cookie from the PATCH response, not a DB row. First-run detection
+reuses `locals.mustChangePassword`; while it is set the panel only renders the
+password block, since §S9 blocks every other API. 8 files; 30 tests in the
+changed set; full gate green (43 files, 489 tests); audit 0/0/1/0; no
+dependency, no migration.
+
+Pen-test: no critical/high. The test button already refused to send a stored key
+to a request-supplied `baseUrl` (P6). Accepted: no rate limit on the test
+button or on PATCH (authenticated, 30 s timeout, 5 output tokens, 32-provider
+cap); the theme cookie is readable by script (it is not a secret and the class
+must land before paint).
+
+Deviations: theme lives in `l30_theme` only, so a second browser keeps its own
+choice; `/app?change=1` from login is still unread, the banner covers it.
 
 ## Working rules adopted mid-project
 

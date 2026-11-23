@@ -6,6 +6,7 @@
 	import FeedPane from '#lib/components/FeedPane.svelte';
 	import StatusBar from '#lib/components/StatusBar.svelte';
 	import TopBar from '#lib/components/TopBar.svelte';
+	import SettingsPanel from '#lib/components/SettingsPanel.svelte';
 	import { displayText } from '#lib/format';
 	import type { CategoryView } from '#lib/server/categories/store';
 	import type { FeedPage, Item, ItemDetail, Summary } from '#lib/types';
@@ -25,6 +26,9 @@
 	// svelte-ignore state_referenced_locally
 	let categories = $state<CategoryView[]>([...data.categories]);
 	let panelOpen = $state(false);
+	let settingsOpen = $state(false);
+	// svelte-ignore state_referenced_locally
+	let mustChangePassword = $state(data.mustChangePassword);
 	let query = $state('');
 	// Only two or more characters are a search; one character means "no filter".
 	const activeQuery = $derived([...query.trim()].length >= MIN_SEARCH_CHARS ? query.trim() : '');
@@ -316,14 +320,25 @@
 </svelte:head>
 
 <div class="shell">
-	<TopBar
-		{preset}
-		onpreset={choosePreset}
-		onrefresh={refresh}
-		{refreshing}
-		{query}
-		onquery={chooseQuery}
-	/>
+	<div class="top">
+		<TopBar
+			{preset}
+			onpreset={choosePreset}
+			onrefresh={refresh}
+			{refreshing}
+			{query}
+			onquery={chooseQuery}
+			onsettings={() => (settingsOpen = true)}
+		/>
+		{#if mustChangePassword}
+			<p class="firstrun" role="status">
+				The first-run password is still in place.
+				<button class="link" type="button" onclick={() => (settingsOpen = true)}>
+					Change it now</button
+				>.
+			</p>
+		{/if}
+	</div>
 	<div class="fetchbar" class:on={refreshing} aria-hidden="true"><span></span></div>
 
 	<div class="body">
@@ -408,6 +423,14 @@
 		{categories}
 		onchange={applyCategories}
 		onclose={() => (panelOpen = false)}
+	/>
+{/if}
+
+{#if settingsOpen}
+	<SettingsPanel
+		{mustChangePassword}
+		onpasswordchanged={() => (mustChangePassword = false)}
+		onclose={() => (settingsOpen = false)}
 	/>
 {/if}
 
@@ -506,6 +529,28 @@
 		flex: none;
 		padding: 6px;
 		box-shadow: inset 0 1px 0 var(--line);
+	}
+
+	.firstrun {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin: 0;
+		padding: 6px 12px;
+		background: color-mix(in srgb, var(--warn) 12%, var(--bg));
+		box-shadow: inset 0 -1px 0 var(--line);
+		color: var(--txt-2);
+		font-size: 12px;
+	}
+
+	.link {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--accent);
+		font: inherit;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 
 	.fetchbar {
