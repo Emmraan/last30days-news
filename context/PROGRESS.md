@@ -18,7 +18,7 @@ the plan and code hold the full rationale.
 | P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | `e945c70` |
 | P5 Feed API | done | `phase-5-feed-api` | `10c7f91` | `ba496be` |
 | P6 Summaries | done | `phase-6-summaries` | `918808f` | `7a70e3b` |
-| P7 Categories | done | `phase-7-categories` | `d06dda2` | pending |
+| P7 Categories | done | `phase-7-categories` | `d06dda2` | `a844770` |
 
 ## P0 — Bootstrap
 
