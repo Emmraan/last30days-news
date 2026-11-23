@@ -33,6 +33,7 @@ type EventInit = {
 	mustChangePassword?: boolean;
 	ip?: string;
 	vaultKey?: Buffer;
+	fetch?: typeof globalThis.fetch;
 };
 
 /** Builds the subset of RequestEvent a `+server.ts` handler actually reads. */
@@ -65,7 +66,7 @@ export function makeEvent(init: EventInit) {
 			setHeaders: () => {},
 			isDataRequest: false,
 			isSubRequest: false,
-			fetch: globalThis.fetch
+			fetch: init.fetch ?? globalThis.fetch
 		} as never,
 		jar
 	};

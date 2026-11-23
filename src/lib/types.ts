@@ -11,6 +11,9 @@ export type Item = {
 	language: string | null;
 	category: string;
 	sourceCount: number;
+	/** Present only when the request filtered by a scored category (§S8). */
+	score?: number | null;
+	reason?: string | null;
 };
 
 export type Summary = {

@@ -73,3 +73,28 @@ export async function readJson<T>(request: Request, schema: ZodType<T>): Promise
 		return { ok: false, response: apiError(400, 'validation', 'Invalid request body.') };
 	return { ok: true, data: parsed.data };
 }
+
+/** A POST action with no parameters still accepts an empty body. */
+export async function readOptionalJson<T>(
+	request: Request,
+	schema: ZodType<T>
+): Promise<Parsed<T | undefined>> {
+	const text = await readCapped(request);
+	if (text === null)
+		return {
+			ok: false,
+			response: apiError(413, 'body_too_large', 'Body is too large.')
+		};
+	if (text.trim() === '') return { ok: true, data: undefined };
+
+	let raw: unknown;
+	try {
+		raw = JSON.parse(text);
+	} catch {
+		return { ok: false, response: apiError(400, 'invalid_json', 'Body must be JSON.') };
+	}
+	const parsed = schema.safeParse(raw);
+	if (!parsed.success)
+		return { ok: false, response: apiError(400, 'validation', 'Invalid request body.') };
+	return { ok: true, data: parsed.data };
+}
