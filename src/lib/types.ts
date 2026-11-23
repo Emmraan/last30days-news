@@ -16,6 +16,8 @@ export type Item = {
 export type Summary = {
 	model: string;
 	body: string;
+	keyPoints: string[];
+	whyItMatters: string | null;
 	citations: { n: number; source_id: string; url: string }[];
 	createdAt: number;
 };

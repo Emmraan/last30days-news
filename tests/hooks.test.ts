@@ -7,6 +7,7 @@ import { SESSION_COOKIE, createSession } from '#lib/server/auth/session';
 import { setSetting } from '#lib/server/settings';
 import { hashPassword } from '#lib/server/auth/password';
 import { newSalt } from '#lib/server/auth/secret';
+import { VAULT_COOKIE, setVaultCookie } from '#lib/server/auth/vault-cookie';
 import { cookieJar } from './events';
 
 // The hook opens its own handle from the data dir, so the test points it at a
@@ -65,6 +66,19 @@ test('an API route without a session is a 401', async () => {
 	expect(res.status).toBe(401);
 });
 
+test('the two AI write routes are not reachable without a session', async () => {
+	for (const path of ['/api/items/x/summary', '/api/settings/ai/test']) {
+		const { event } = eventFor({
+			path,
+			method: 'POST',
+			body: '{}',
+			origin: 'http://127.0.0.1:4477'
+		});
+		const res = await handle({ event, resolve: ok });
+		expect(res.status).toBe(401);
+	}
+});
+
 test('other API routes are refused while the default password is still in use', async () => {
 	const id = await createSession(seeded.db);
 	const { event } = eventFor({ path: '/api/feed', session: id });
@@ -89,6 +103,39 @@ test('once a password is stored the guard stops demanding a change', async () =>
 	const { event } = eventFor({ path: '/api/feed', session: id });
 	const res = await handle({ event, resolve: ok });
 	expect(res.status).toBe(200);
+});
+
+test('a valid vault cookie is exposed as locals.vaultKey', async () => {
+	const id = await createSession(seeded.db);
+	const key = Buffer.alloc(32, 7);
+	const { event, jar } = eventFor({ path: '/api/feed', session: id });
+	setVaultCookie(jar.cookies, id, key, new URL('http://127.0.0.1:4477'));
+	let seen: Buffer | undefined;
+	const res = await handle({
+		event,
+		resolve: async (ev) => {
+			seen = ev.locals.vaultKey;
+			return ok();
+		}
+	});
+	expect(res.status).toBe(200);
+	expect(seen?.equals(key)).toBe(true);
+});
+
+test('a tampered vault cookie leaves locals.vaultKey undefined', async () => {
+	const id = await createSession(seeded.db);
+	const { event, jar } = eventFor({ path: '/api/feed', session: id });
+	jar.jar.set(VAULT_COOKIE, 'tampered');
+	let seen: Buffer | undefined = Buffer.alloc(1);
+	const res = await handle({
+		event,
+		resolve: async (ev) => {
+			seen = ev.locals.vaultKey;
+			return ok();
+		}
+	});
+	expect(res.status).toBe(200);
+	expect(seen).toBeUndefined();
 });
 
 test('API responses are not cacheable', async () => {

@@ -48,6 +48,8 @@ export async function GET({ params, locals }: RequestEvent) {
 		.select({
 			model: summary.model,
 			body: summary.body,
+			keyPoints: summary.keyPoints,
+			whyItMatters: summary.whyItMatters,
 			citations: summary.citations,
 			createdAt: summary.createdAt
 		})

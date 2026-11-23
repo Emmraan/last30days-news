@@ -5,6 +5,7 @@ import { apiError, readJson } from '#lib/server/api';
 import { hashPassword, verifyPassword } from '#lib/server/auth/password';
 import { createSession, destroyAllSessions } from '#lib/server/auth/session';
 import { setSessionCookie } from '#lib/server/auth/cookie';
+import { setVaultCookie } from '#lib/server/auth/vault-cookie';
 import { decryptSecret, deriveKey, encryptSecret, newSalt } from '#lib/server/auth/secret';
 import { SALT_KEY, deleteSecrets, getSalt, listSecrets } from '#lib/server/auth/vault';
 import { getSetting, setSetting } from '#lib/server/settings';
@@ -62,7 +63,9 @@ export async function POST({ request, cookies, url, locals }: RequestEvent) {
 	});
 
 	await destroyAllSessions(db);
-	setSessionCookie(cookies, await createSession(db), url);
+	const sessionId = await createSession(db);
+	setSessionCookie(cookies, sessionId, url);
+	setVaultCookie(cookies, sessionId, newKey, url);
 	log('info', 'auth.password', { ip, secrets: Object.keys(plain).length });
 
 	return json({ authenticated: true, mustChangePassword: false });

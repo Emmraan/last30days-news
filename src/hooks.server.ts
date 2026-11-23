@@ -3,6 +3,7 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { createDb } from '#lib/server/db';
 import { readSession } from '#lib/server/auth/session';
 import { SESSION_COOKIE } from '#lib/server/auth/session';
+import { readVaultCookie } from '#lib/server/auth/vault-cookie';
 import { getSetting } from '#lib/server/settings';
 import { log } from '#lib/server/log';
 
@@ -50,6 +51,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const id = event.cookies.get(SESSION_COOKIE);
 	const session = await readSession(db, id);
 	event.locals.sessionId = session?.id;
+	event.locals.vaultKey = session ? readVaultCookie(event.cookies, session.id) : undefined;
 	event.locals.mustChangePassword = session ? !(await getSetting(db, 'auth.password')) : false;
 
 	try {

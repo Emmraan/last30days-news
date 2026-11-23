@@ -32,6 +32,7 @@ type EventInit = {
 	sessionId?: string;
 	mustChangePassword?: boolean;
 	ip?: string;
+	vaultKey?: Buffer;
 };
 
 /** Builds the subset of RequestEvent a `+server.ts` handler actually reads. */
@@ -56,7 +57,8 @@ export function makeEvent(init: EventInit) {
 				db: init.db,
 				sessionId: init.sessionId,
 				mustChangePassword: init.mustChangePassword ?? false,
-				ip: init.ip ?? '127.0.0.1'
+				ip: init.ip ?? '127.0.0.1',
+				vaultKey: init.vaultKey
 			},
 			platform: undefined,
 			route: { id: null },
