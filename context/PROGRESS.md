@@ -24,6 +24,7 @@ the plan and code hold the full rationale.
 | P10 Search | done | `phase-10-search` | `8faa930` | `77f03e2` |
 | P11 Category manager | done | `phase-11-categories` | `6695835` | `27dfa41` |
 | P12 Settings | done | `phase-12-settings` | `f2e74d5` | `675a551` |
+| P13 Keyboard and offline | done | `phase-13-keyboard-states` | _pending_ | _pending_ |
 
 ## P0 — Bootstrap
 
@@ -251,6 +252,29 @@ must land before paint).
 
 Deviations: theme lives in `l30_theme` only, so a second browser keeps its own
 choice; `/app?change=1` from login is still unread, the banner covers it.
+
+## P13 — Keyboard and offline states
+
+`src/lib/util/keys.ts` is the pure §S14 map (`resolveKey`, `stepIndex`); `/app`
+binds one `keydown` listener on `window`. A text field owns every key except
+`Esc`; a focused button keeps `Enter`, so the toolbar stays usable from the
+keyboard. `g` arms a 1 s chord and only `s` completes it. `j`/`k` walk in-memory
+items and an `$effect` scrolls the selected row into view with `block: 'nearest'`,
+so the page never scrolls. `?` opens `HelpOverlay.svelte`, a bordered two-column
+panel with no backdrop; `Esc` closes help, then settings, then categories, then
+blurs a field, then clears the detail. `online`/`offline` listeners drive an
+offline bar in `/app` and a `Disconnected` status bar with a Retry button. Global
+reduced-motion block already existed; the help panel adds no motion. 7 files;
+48 tests in the changed set; full gate green (44 files, 521 tests); audit
+0/0/1/0; no dependency, no migration.
+
+Pen-test: no critical/high after fix H1 — `Enter` was swallowed while a toolbar
+button had focus, breaking keyboard activation; `activable` in the key context
+plus a table case covers it. Accepted: shortcuts stay live while the help panel
+is open (it is not a modal, so nothing is trapped); Retry while still offline
+just fails again; `navigator.onLine` can be wrong behind a dead proxy.
+
+Deviations: none.
 
 ## Working rules adopted mid-project
 
