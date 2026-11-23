@@ -83,6 +83,11 @@ export const summary = sqliteTable(
 			.references(() => item.id, { onDelete: 'cascade' }),
 		model: text('model').notNull(),
 		body: text('body').notNull(),
+		keyPoints: text('key_points', { mode: 'json' })
+			.$type<string[]>()
+			.notNull()
+			.default([]),
+		whyItMatters: text('why_it_matters'),
 		citations: text('citations', { mode: 'json' })
 			.$type<{ n: number; source_id: string; url: string }[]>()
 			.notNull()

@@ -15,6 +15,13 @@
       "when": 1795365671645,
       "tag": "0001_item_fts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795423920238,
+      "tag": "0002_optimal_blockbuster",
+      "breakpoints": true
     }
   ]
 }

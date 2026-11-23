@@ -5,6 +5,8 @@ import { POST as changePassword } from '../src/routes/api/auth/password/+server'
 import { POST as reset } from '../src/routes/api/auth/reset/+server';
 import { GET as sessionInfo } from '../src/routes/api/auth/session/+server';
 import { SESSION_COOKIE } from '#lib/server/auth/session';
+import { VAULT_COOKIE, readVaultCookie } from '#lib/server/auth/vault-cookie';
+import { getSalt } from '#lib/server/auth/vault';
 import { hashPassword, verifyPassword } from '#lib/server/auth/password';
 import { decryptSecret, deriveKey, encryptSecret, newSalt } from '#lib/server/auth/secret';
 import { getSetting, setSetting } from '#lib/server/settings';
@@ -57,6 +59,12 @@ test('first run with no stored password accepts last30 and demands a change', as
 	expect(cookie.maxAge).toBe(30 * 24 * 60 * 60);
 	expect(cookie.secure).toBe(false);
 	expect(jar.jar.get(SESSION_COOKIE)).toMatch(/^[0-9a-f]{64}$/);
+	const vault = readVaultCookie(jar.cookies, jar.jar.get(SESSION_COOKIE)!);
+	const salt = await getSalt(db);
+	expect(vault).toBeDefined();
+	expect(vault!.length).toBe(32);
+	expect(vault!.equals(deriveKey('last30', salt!))).toBe(true);
+	expect(jar.opts.get(VAULT_COOKIE)).toMatchObject({ httpOnly: true, sameSite: 'lax', path: '/' });
 	expect(await getSetting(db, 'auth.password')).toBeNull();
 });
 
@@ -78,6 +86,9 @@ test('a stored password logs in and does not demand a change', async () => {
 	expect(res.status).toBe(200);
 	expect(res.body).toEqual({ authenticated: true, mustChangePassword: false });
 	expect(jar.jar.has(SESSION_COOKIE)).toBe(true);
+	const salt = await getSalt(db);
+	const vault = readVaultCookie(jar.cookies, jar.jar.get(SESSION_COOKIE)!);
+	expect(vault!.equals(deriveKey('correct horse', salt!))).toBe(true);
 });
 
 test('a wrong password is a 401 with no cookie and a recorded failure', async () => {
@@ -158,6 +169,7 @@ test('logout deletes the session row and clears the cookie', async () => {
 	expect(jar.jar.has(SESSION_COOKIE)).toBe(false);
 	const { rows } = await client.execute({ sql: 'select count(*) from session where id = ?', args: [id] });
 	expect(Number(rows[0][0])).toBe(0);
+	expect(jar.jar.has(VAULT_COOKIE)).toBe(false);
 });
 
 test('logout without a session still succeeds and is idempotent', async () => {
@@ -202,6 +214,7 @@ test('changing the password re-encrypts stored secrets and keeps them usable', a
 	expect(rows.map((r) => String(r.id))).not.toContain(sessionId);
 	expect(jar.jar.get(SESSION_COOKIE)).toMatch(/^[0-9a-f]{64}$/);
 	expect(jar.jar.get(SESSION_COOKIE)).not.toBe(sessionId);
+	expect(readVaultCookie(jar.cookies, jar.jar.get(SESSION_COOKIE)!)!.equals(deriveKey('new password 1', newSalt))).toBe(true);
 });
 
 test('changing the password rejects a wrong current password and an unchanged next', async () => {
@@ -254,6 +267,7 @@ test('reset wipes password, sessions and secrets, rewrites the salt, keeps data'
 	expect(await getSetting<string>(db, 'secret.openai.apiKey')).toBeNull();
 	expect((await getSetting<string>(db, 'crypto.salt'))!).not.toBe(oldSalt);
 	expect(jar.jar.has(SESSION_COOKIE)).toBe(false);
+	expect(jar.jar.has(VAULT_COOKIE)).toBe(false);
 	const sessionCount = await client.execute('select count(*) from session');
 	expect(Number(sessionCount.rows[0][0])).toBe(0);
 	const { rows } = await client.execute('select count(*) from item');

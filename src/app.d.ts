@@ -12,6 +12,8 @@ declare global {
 			sessionId: string | undefined;
 			mustChangePassword: boolean;
 			ip: string;
+			/** Derived from the password and carried by an HttpOnly cookie, not stored in the DB. */
+			vaultKey: Buffer | undefined;
 		}
 	}
 }

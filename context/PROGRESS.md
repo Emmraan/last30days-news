@@ -19,6 +19,7 @@ and its merge.
 | Docs: skill lookup rule | done | `docs-skill-lookup-rule` | `1a0b6b8` | `42d32ac` |
 | P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | `e945c70` |
 | P5 Feed API | done | `phase-5-feed-api` | `10c7f91` | `ba496be` |
+| P6 Summaries | done | `phase-6-summaries` | `918808f` | pending |
 
 ## P0 — Bootstrap
 
@@ -256,6 +257,66 @@ Deviations:
   locked.
 - `FeedParams.limit` is required rather than optional, so an internal caller
   cannot forget the bound.
+
+## P6 — Summaries
+
+`ai/provider.ts` turns `ai.providers` into a `LanguageModel`: OpenAI, Anthropic
+and Google use their own adapters; OpenRouter, Groq, DeepSeek, Ollama, LM
+Studio and a custom endpoint use `createOpenAICompatible` with a base URL.
+Entries are parsed one at a time and the first enabled valid one is active;
+the cache key is `<provider>:<model>` and `secret.ai.<id>.key` is decrypted
+only when a generation is needed. `ai/prompt.ts` keeps the system prompt free
+of user data and wraps title/source/date/excerpt (≤6000 chars) in an escaped
+`<article>`; the text is declared untrusted. `ai/summary.ts` validates strict
+JSON (summary ≤480, 2–4 key points, optional why ≤180), rejects URLs, markdown,
+HTML, control and bidi characters, makes exactly one repair call, then stores
+nothing; citations come from `item_source`. `POST /api/items/[id]/summary`
+serves a cached summary before it asks for the key, and `POST
+/api/settings/ai/test` makes one tiny call and saves nothing. `GET
+/api/items/[id]` now carries `keyPoints` and `whyItMatters`.
+
+70 new tests (282 total): provider config/factory, prompt escaping and caps,
+output validation, real-DB generation/caching/citations/repair, the two routes,
+vault-cookie round-trip and auth cookie flow. Gates green (lint, typecheck,
+test, build); `audit:gate` critical 0 / high 0 / moderate 1 / low 0. New
+migration `0002_optimal_blockbuster.sql` adds `summary.key_points` and
+`summary.why_it_matters`.
+
+Pen-tester pass: no critical or high findings. One medium was fixed before the
+commit: `/api/settings/ai/test` would send a stored key to any base URL in the
+request, letting a session point it at a host it controls. A stored key now
+only travels to the endpoint it was configured for; a different endpoint needs
+the key in the request. Reproducing test in `tests/ai-test-route.test.ts`.
+The summary output rejects HTML, URLs, markdown, control and bidi characters,
+so a hostile model reply cannot become markup or a spoofed direction; the
+citations are built server-side and the model cannot supply them.
+
+Accepted as known limitations:
+
+- No per-session rate limit or in-flight dedupe on AI generation. A signed-in
+  user can issue parallel requests for different items, each a paid call.
+  Every call is bounded by 700 output tokens, a 60 s timeout, one repair and
+  the `(item_id, model)` cache; a rate limit belongs to a later settings phase.
+- A provider base URL is owner-controlled. The SDK follows redirects from that
+  endpoint, so a hostile configured endpoint is outside the threat model; a
+  request-supplied endpoint never receives the stored key.
+
+Deviations:
+
+- `l30_vault` is a second HttpOnly cookie, next to §S9's `l30_session`. It holds
+  the password-derived data key encrypted under the session id, so a later
+  request can decrypt AI keys without a process-wide cache (§S19). The DB has
+  the session ids but not this ciphertext, so a stolen database still yields no
+  key. Sessions without the cookie can read a cached summary; generation is
+  `409 ai_locked` until the user signs in again. Existing P2 sessions stay
+  valid for everything that does not need a key.
+- `ai` 7.0.179 and the four `@ai-sdk/*` adapters are §S1's pinned AI SDK. Node
+  has no client for these provider protocols and hand-rolling them would
+  duplicate auth, retries and response parsing.
+- The summary columns and the `ai.providers` / `secret.ai.<id>.key` setting
+  names are new; P12 should reuse them when it builds the settings screen.
+- The 60 s summary timeout, 30 s test timeout and `maxRetries: 0` are not in
+  §S8; they bound a failed or looping provider call.
 
 ## Working rules adopted mid-project
 

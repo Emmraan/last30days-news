@@ -7,6 +7,7 @@ import { clearFailures, lockState, recordFailure } from '#lib/server/auth/rate';
 import { destroyAllSessions } from '#lib/server/auth/session';
 import { deleteSecrets } from '#lib/server/auth/vault';
 import { clearSessionCookie } from '#lib/server/auth/cookie';
+import { clearVaultCookie } from '#lib/server/auth/vault-cookie';
 import { deleteSetting, setSetting } from '#lib/server/settings';
 import { newSalt } from '#lib/server/auth/secret';
 import { SALT_KEY } from '#lib/server/auth/vault';
@@ -51,6 +52,7 @@ export async function POST({ request, cookies, locals }: RequestEvent) {
 	await destroyAllSessions(db);
 	await clearFailures(db, ip);
 	clearSessionCookie(cookies);
+	clearVaultCookie(cookies);
 	log('info', 'auth.reset', { ip });
 
 	return json({ authenticated: false, mustChangePassword: false });

@@ -133,6 +133,8 @@ test('GET /api/items/[id] returns the item, its sources, and the newest cached s
 			itemId: target.id,
 			model: 'new/model',
 			body: 'New summary',
+			keyPoints: ['Faster part', 'Same price'],
+			whyItMatters: 'Buyers get more for the same money.',
 			citations: [{ n: 1, source_id: 'verge', url: 'https://example.com/other' }],
 			createdAt: T0,
 			tokensIn: 20,
@@ -161,7 +163,12 @@ test('GET /api/items/[id] returns the item, its sources, and the newest cached s
 	const sources = body.sources as Record<string, unknown>[];
 	expect(sources.map((s) => s.name)).toEqual(['Ars Technica', 'The Verge']);
 	expect(sources[0]).toMatchObject({ id: 'ars', url: target.url });
-	expect(body.summary).toMatchObject({ model: 'new/model', body: 'New summary' });
+	expect(body.summary).toMatchObject({
+		model: 'new/model',
+		body: 'New summary',
+		keyPoints: ['Faster part', 'Same price'],
+		whyItMatters: 'Buyers get more for the same money.'
+	});
 
 	// The feed's own URL is not part of the article payload (§S24 info leak).
 	expect(res.raw).not.toContain('https://feeds.arstechnica.com');

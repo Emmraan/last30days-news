@@ -6,6 +6,8 @@ import { DUMMY_HASH, verifyPassword } from '#lib/server/auth/password';
 import { lockState, clearFailures, recordFailure } from '#lib/server/auth/rate';
 import { createSession } from '#lib/server/auth/session';
 import { setSessionCookie } from '#lib/server/auth/cookie';
+import { setVaultCookie } from '#lib/server/auth/vault-cookie';
+import { keyFor } from '#lib/server/auth/vault';
 import { getSetting } from '#lib/server/settings';
 import { log } from '#lib/server/log';
 
@@ -48,8 +50,10 @@ export async function POST({ request, cookies, url, locals }: RequestEvent) {
 	}
 
 	await clearFailures(db, ip);
+	const vaultKey = await keyFor(db, parsed.data.password);
 	const id = await createSession(db);
 	setSessionCookie(cookies, id, url);
+	setVaultCookie(cookies, id, vaultKey, url);
 	log('info', 'auth.login', { ip, firstRun: !stored });
 	return json({ authenticated: true, mustChangePassword: !stored });
 }
