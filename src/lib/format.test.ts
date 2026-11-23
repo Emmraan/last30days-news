@@ -82,6 +82,16 @@ test('displayText removes controls and bidi overrides', () => {
 	expect(displayText('  padded  ')).toBe('padded');
 });
 
+test('displayText decodes the entities feeds emit', () => {
+	expect(displayText('Read more [&#8230;]')).toBe('Read more […]');
+	expect(displayText('Tom &amp; Jerry')).toBe('Tom & Jerry');
+	expect(displayText('&lt;b&gt;not markup&lt;/b&gt;')).toBe('<b>not markup</b>');
+	expect(displayText('It&rsquo;s here&nbsp;now')).toBe('It’s here now');
+	expect(displayText('&#x2014; dash')).toBe('— dash');
+	// An unknown or malformed entity stays literal rather than vanishing.
+	expect(displayText('&nosuch; &#xZZ;')).toBe('&nosuch; &#xZZ;');
+});
+
 test('displayText normalises Unicode without changing plain text', () => {
 	expect(displayText('cafe\u0301')).toBe('café');
 	expect(displayText('Plain text - unchanged')).toBe('Plain text - unchanged');

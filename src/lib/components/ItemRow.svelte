@@ -45,19 +45,17 @@
 <style>
 	.row {
 		box-sizing: border-box;
-		min-height: 74px;
 	}
 
 	.head {
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr) auto;
 		align-items: start;
-		gap: 8px;
-		min-height: 38px;
+		gap: 9px;
 	}
 
 	.head .fav {
-		margin-top: 2px;
+		margin-top: 1px;
 	}
 
 	.title {
@@ -69,12 +67,13 @@
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
 		color: var(--txt);
-		font-size: 14px;
-		line-height: 1.35;
+		font-size: 13.5px;
+		font-weight: 500;
+		line-height: 1.4;
 	}
 
 	.when {
-		margin-top: 2px;
+		margin-top: 1px;
 		color: var(--txt-3);
 		font-family: var(--font-mono);
 		font-size: 11px;
@@ -88,11 +87,10 @@
 		align-items: center;
 		gap: 6px;
 		min-width: 0;
-		margin-top: 2px;
-		padding-left: 24px;
+		margin-top: 3px;
+		padding-left: 27px;
 		color: var(--txt-3);
-		font-family: var(--font-mono);
-		font-size: 10px;
+		font-size: 11.5px;
 		line-height: 1.4;
 	}
 

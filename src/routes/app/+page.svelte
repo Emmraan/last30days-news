@@ -312,6 +312,14 @@
 		}
 	}
 
+	/** Counts are server-side per category, so a refresh has to re-read them. */
+	async function loadCategories() {
+		const res = await fetch('/api/categories');
+		if (!res.ok) return;
+		const body = (await res.json()) as { categories: CategoryView[] };
+		applyCategories(body.categories);
+	}
+
 	async function openItem(id: string) {
 		if (selectedId === id && detailState === 'ready') return;
 
@@ -432,6 +440,7 @@
 				if (!done || done.type !== 'done' || done.sources === 0) break;
 			}
 			await loadFeed('silent');
+			await loadCategories();
 		} catch {
 			feedError = 'Refresh failed.';
 		} finally {
@@ -478,6 +487,7 @@
 					class="iconbtn"
 					type="button"
 					aria-label="Add category"
+					title="Add category"
 					onclick={() => (panelOpen = true)}
 				>
 					<Plus size={14} aria-hidden="true" />
@@ -504,13 +514,15 @@
 						onclick={() => chooseCategory(entry.id)}
 					>
 						<span class="side-label">{displayText(entry.name) || entry.id}</span>
+						<span class="side-count mono">{entry.itemCount}</span>
 					</button>
 				{/each}
 			</div>
 
 			<div class="side-foot">
 				<button class="side-item" type="button" onclick={() => (panelOpen = true)}>
-					Manage categories
+					<Plus size={14} aria-hidden="true" />
+					<span class="side-label">Manage categories</span>
 				</button>
 			</div>
 		</aside>
@@ -581,10 +593,10 @@
 
 	.body {
 		display: grid;
-		grid-template-columns: 252px minmax(0, 1fr) 424px;
-		gap: 2px;
+		grid-template-columns: 236px minmax(0, 1fr) 420px;
+		gap: 10px;
 		min-height: 0;
-		padding: 0 0 2px;
+		padding: 0 12px 10px;
 		background: var(--bg);
 	}
 
@@ -598,16 +610,16 @@
 		justify-content: space-between;
 		gap: 8px;
 		flex: none;
-		height: 38px;
-		padding: 0 10px 0 12px;
-		box-shadow: inset 0 -1px 0 var(--line);
+		height: 44px;
+		padding: 0 8px 0 14px;
+		box-shadow: none;
 	}
 
 	.pane-head h2 {
-		font-family: var(--font-sans);
-		font-size: 11px;
+		font-family: var(--font-mono);
+		font-size: 10.5px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.11em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -616,27 +628,30 @@
 		display: flex;
 		flex: 1;
 		flex-direction: column;
-		gap: 1px;
+		gap: 2px;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 6px;
+		padding: 0 8px 8px;
 	}
 
 	.side-item {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 9px;
 		width: 100%;
-		height: 30px;
-		padding: 0 8px;
+		height: 34px;
+		padding: 0 10px;
 		border: 0;
-		border-radius: 6px;
+		border-radius: 9px;
 		background: transparent;
 		color: var(--txt-2);
 		font: inherit;
 		font-size: 13px;
 		text-align: left;
 		cursor: pointer;
+		transition:
+			background-color 110ms var(--ease),
+			color 110ms var(--ease);
 	}
 
 	.side-item:hover {
@@ -645,8 +660,9 @@
 	}
 
 	.side-item.on {
-		background: var(--active);
+		background: var(--card);
 		color: var(--txt);
+		box-shadow: 0 0 0 1px var(--line);
 	}
 
 	.side-item:disabled {
@@ -661,10 +677,25 @@
 		white-space: nowrap;
 	}
 
+	.side-count {
+		margin-left: auto;
+		color: var(--txt-3);
+		font-size: 11px;
+	}
+
+	.side-item.on .side-count {
+		color: var(--txt-2);
+	}
+
 	.side-foot {
 		flex: none;
-		padding: 6px;
+		padding: 8px;
 		box-shadow: inset 0 1px 0 var(--line);
+	}
+
+	.mono {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.firstrun {

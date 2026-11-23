@@ -119,19 +119,22 @@
 						</p>
 					</section>
 				{:else}
-					{#if detail.item.excerpt}
-						<p class="excerpt">{displayText(detail.item.excerpt)}</p>
-					{:else}
-						<p class="excerpt muted">No excerpt saved for this item.</p>
-					{/if}
-
-					<div class="generate">
-						<button class="btn" type="button" disabled={generating} onclick={ongenerate}>
-							{generating ? 'Generating...' : 'Generate summary'}
-						</button>
-						{#if generateError}
-							<p class="gen-error" role="alert">{generateError}</p>
+					<div class="excerpt-block">
+						<h2 class="label">Excerpt</h2>
+						{#if detail.item.excerpt}
+							<p class="excerpt">{displayText(detail.item.excerpt)}</p>
+						{:else}
+							<p class="excerpt muted">No excerpt saved for this item.</p>
 						{/if}
+
+						<div class="generate">
+							<button class="btn" type="button" disabled={generating} onclick={ongenerate}>
+								{generating ? 'Generating...' : 'Generate summary'}
+							</button>
+							{#if generateError}
+								<p class="gen-error" role="alert">{generateError}</p>
+							{/if}
+						</div>
 					</div>
 				{/if}
 			</article>
@@ -153,16 +156,16 @@
 		justify-content: space-between;
 		gap: 8px;
 		flex: none;
-		height: 38px;
-		padding: 0 10px 0 12px;
-		box-shadow: inset 0 -1px 0 var(--line);
+		height: 44px;
+		padding: 0 14px;
+		box-shadow: none;
 	}
 
 	.pane-head h2 {
-		font-family: var(--font-sans);
-		font-size: 11px;
+		font-family: var(--font-mono);
+		font-size: 10.5px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.11em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -171,13 +174,15 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 14px 16px 0;
+		padding: 4px 18px 20px;
 	}
 
 	.title {
 		overflow-wrap: anywhere;
 		font-size: 20px;
-		line-height: 1.3;
+		font-weight: 600;
+		line-height: 1.28;
+		letter-spacing: -0.012em;
 	}
 
 	.byline {
@@ -228,16 +233,18 @@
 	}
 
 	.summary {
-		margin-top: 18px;
+		margin-top: 20px;
+		padding-top: 16px;
+		box-shadow: inset 0 1px 0 var(--line);
 	}
 
 	.summary h2 {
 		margin-top: 16px;
 		color: var(--txt-3);
-		font-family: var(--font-sans);
-		font-size: 11px;
+		font-family: var(--font-mono);
+		font-size: 10.5px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.11em;
 		text-transform: uppercase;
 	}
 
@@ -297,11 +304,27 @@
 	}
 
 	.excerpt {
-		margin: 16px 0 0;
+		margin: 8px 0 0;
+		max-width: 62ch;
 		color: var(--txt-2);
 		font-size: 14px;
-		line-height: 1.55;
+		line-height: 1.65;
 		overflow-wrap: anywhere;
+	}
+
+	.excerpt-block {
+		margin-top: 18px;
+		padding-top: 16px;
+		box-shadow: inset 0 1px 0 var(--line);
+	}
+
+	.label {
+		color: var(--txt-3);
+		font-family: var(--font-mono);
+		font-size: 10.5px;
+		font-weight: 600;
+		letter-spacing: 0.11em;
+		text-transform: uppercase;
 	}
 
 	.excerpt.muted {

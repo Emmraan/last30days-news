@@ -114,12 +114,11 @@
 	.topbar {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		height: var(--h-top);
+		gap: 12px;
+		height: 58px;
 		min-width: 0;
-		padding: 0 12px;
+		padding: 0 14px;
 		background: var(--bg);
-		box-shadow: 0 1px 0 var(--line);
 	}
 
 	.brand {
@@ -138,17 +137,77 @@
 	}
 
 	.search {
-		flex: 0 1 400px;
+		flex: 0 1 420px;
 		min-width: 0;
-		margin-left: 4px;
+		margin-left: 6px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		height: 34px;
+		padding: 0 12px;
+		border: 1px solid transparent;
+		border-radius: var(--pill);
+		background: var(--raise);
+		color: var(--txt-3);
+		transition:
+			border-color 110ms var(--ease),
+			background-color 110ms var(--ease);
+	}
+
+	.search:focus-within {
+		border-color: var(--line-2);
+		background: var(--card);
+	}
+
+	.search input {
+		flex: 1;
+		min-width: 0;
+		border: 0;
+		background: none;
+		color: var(--txt);
+		font: inherit;
+		font-size: 13px;
+		outline: none;
+	}
+
+	.search input::placeholder {
+		color: var(--txt-3);
+	}
+
+	/* The shared segmented control is square; on the toolbar a pill reads better. */
+	.seg {
+		height: 34px;
+		padding: 3px;
+		border: 0;
+		border-radius: var(--pill);
+		background: var(--raise);
+	}
+
+	.seg > button {
+		height: 28px;
+		padding: 0 13px;
+		border-radius: var(--pill);
+		font-size: 12.5px;
+	}
+
+	.seg > button[aria-pressed='true'] {
+		background: var(--card);
+		color: var(--txt);
+		box-shadow: 0 0 0 1px var(--line);
 	}
 
 	.actions {
 		display: flex;
 		align-items: center;
-		gap: 2px;
+		gap: 4px;
 		flex: none;
 		margin-left: auto;
+	}
+
+	.iconbtn {
+		width: 32px;
+		height: 32px;
+		border-radius: 10px;
 	}
 
 	@media (max-width: 940px) {

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=light" />
+		%sveltekit.head%
+		<script>
+			// The site ships no client JS; this small script is the only thing that runs,
+			// and it exists so the theme choice survives a reload. Applied before paint.
+			try {
+				const saved = localStorage.getItem('l30-theme');
+				if (saved === 'light' || saved === 'dark') {
+					document.documentElement.classList.add(saved);
+				}
+			} catch {}
+		</script>
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+		<script>
+			// Everything here exists because `csr = false` means no hydration.
+			const root = document.documentElement;
+			const button = document.getElementById('theme-toggle');
+			const current = () =>
+				root.classList.contains('light')
+					? 'light'
+					: root.classList.contains('dark')
+						? 'dark'
+						: matchMedia('(prefers-color-scheme: light)').matches
+							? 'light'
+							: 'dark';
+
+			button?.addEventListener('click', () => {
+				const next = current() === 'dark' ? 'light' : 'dark';
+				root.classList.remove('dark', 'light');
+				root.classList.add(next);
+				try {
+					localStorage.setItem('l30-theme', next);
+				} catch {}
+			});
+
+			// In-page sections without a hash in the URL; no hydration to do it for us.
+			for (const link of document.querySelectorAll('[data-scroll]')) {
+				link.addEventListener('click', () => {
+					link.closest('details')?.removeAttribute('open');
+					const target = document.getElementById(link.dataset.scroll || '');
+					if (!target) return;
+					target.scrollIntoView({
+						behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+						block: 'start'
+					});
+				});
+			}
+
+			// The sections menu is a native <details>; close it like a flyout.
+			const menu = document.querySelector('details.menu');
+			document.addEventListener('click', (event) => {
+				if (menu?.open && !menu.contains(event.target)) menu.removeAttribute('open');
+			});
+			document.addEventListener('keydown', (event) => {
+				if (event.key === 'Escape') menu?.removeAttribute('open');
+			});
+
+			// Install command: package-manager tabs and the copy button.
+			const cmd = document.getElementById('install-cmd');
+			const copy = document.getElementById('copy-install');
+			const status = document.getElementById('copy-status');
+			const tabs = Array.from(document.querySelectorAll('.tab[data-cmd]'));
+
+			const reset = () => {
+				copy?.classList.remove('done');
+				copy?.setAttribute('aria-label', 'Copy install command');
+				if (status) status.textContent = '';
+			};
+
+			for (const tab of tabs) {
+				tab.addEventListener('click', () => {
+					for (const other of tabs) {
+						other.setAttribute('aria-pressed', String(other === tab));
+					}
+					const command = tab.dataset.cmd || '';
+					if (cmd) cmd.textContent = command;
+					if (copy) copy.dataset.copy = command;
+					reset();
+				});
+			}
+
+			copy?.addEventListener('click', async () => {
+				const command = copy.dataset.copy || '';
+				const done = () => {
+					copy.classList.add('done');
+					copy.setAttribute('aria-label', 'Install command copied');
+					if (status) status.textContent = 'Install command copied';
+					setTimeout(() => {
+						copy.classList.remove('done');
+						copy.setAttribute('aria-label', 'Copy install command');
+						if (status) status.textContent = '';
+					}, 1600);
+				};
+
+				try {
+					await navigator.clipboard.writeText(command);
+					done();
+				} catch {
+					// Older browsers and plain-http hosts: select and copy by hand.
+					const field = document.createElement('textarea');
+					field.value = command;
+					field.setAttribute('readonly', '');
+					field.style.position = 'fixed';
+					field.style.opacity = '0';
+					document.body.append(field);
+					field.select();
+					try {
+						document.execCommand('copy');
+						done();
+					} catch {}
+					field.remove();
+				}
+			});
+		</script>
+	</body>
+</html>

@@ -93,16 +93,16 @@
 		justify-content: space-between;
 		gap: 8px;
 		flex: none;
-		height: 38px;
-		padding: 0 10px 0 12px;
-		box-shadow: inset 0 -1px 0 var(--line);
+		height: 44px;
+		padding: 0 14px;
+		box-shadow: none;
 	}
 
 	.pane-head h2 {
-		font-family: var(--font-sans);
-		font-size: 11px;
+		font-family: var(--font-mono);
+		font-size: 10.5px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.11em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -122,13 +122,13 @@
 		flex-direction: column;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 6px;
+		padding: 0 8px 8px;
 	}
 
 	.list {
 		display: flex;
 		flex-direction: column;
-		gap: 1px;
+		gap: 2px;
 	}
 
 	.feed-error {

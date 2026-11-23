@@ -44,12 +44,11 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-		height: var(--h-sb);
-		padding: 0 12px;
+		height: 36px;
+		padding: 0 14px;
 		background: var(--bg);
-		box-shadow: 0 -1px 0 var(--line);
 		color: var(--txt-3);
-		font-size: 12px;
+		font-size: 11.5px;
 		line-height: 1;
 	}
 
