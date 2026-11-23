@@ -18,6 +18,7 @@ and its merge.
 | P3 Sources and fetch | done | `phase-3-sources` | `9b418d8` | `a4fbce6` |
 | Docs: skill lookup rule | done | `docs-skill-lookup-rule` | `1a0b6b8` | `42d32ac` |
 | P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | `e945c70` |
+| P5 Feed API | done | `phase-5-feed-api` | `10c7f91` | pending |
 
 ## P0 — Bootstrap
 
@@ -197,6 +198,64 @@ Accepted as known limitations:
 - Item and `item_source` are two statements, not one transaction. A crash
   between them leaves an item with no attribution; the pass would have to fail
   at exactly that point.
+
+## P5 — Feed API
+
+`feed/query.ts` holds the read path: parameter parsing, the §S7 keyset
+cursor, and one Drizzle query. The cursor is base64url of
+`[source_count, published_at, id]`, validated strictly and compared with the
+same tuple the SQL sorts by. `limit` is 1–100 (default 50) and always
+required internally, so no caller can run an unbounded feed query. Time
+filters use the effective date (§S3): `published_at`, or `fetched_at` when
+`published_estimated`. `q` is a multi-token, case-insensitive literal `LIKE`
+over title and excerpt, with `%`, `_` and `\` escaped and caps of 200 chars /
+12 tokens; P10 replaces it with FTS5 and bm25. `GET /api/feed` returns
+`{items,nextCursor}`. `GET /api/items/[id]` returns `{item,sources,summary}`
+with source names but no feed URLs, and the newest cached summary or null.
+
+57 new tests: 29 unit in `feed/query.test.ts` (cursor round-trip and forgery,
+parameter edges), 9 integration in `tests/feed.test.ts`, 14 route cases in
+`tests/feed-routes.test.ts`, 5 in `tests/api.test.ts`. The 20k-row test walks
+400 pages at `limit=50`, asserts every id exactly once, and measures p95
+24 ms against the 120 ms budget. `readJson` now caps bodies at 256 KiB while
+reading, closing the P2 deferral; oversized bodies are 413 `body_too_large`.
+Full suite 212 tests. Gates green; `audit:gate` critical 0 / high 0 /
+moderate 1 / low 0. No new dependency and no migration.
+
+Pen-tester pass: no critical or high findings. Verified auth (the hook's
+existing 401 and `password_change_required` tests already cover `/api/feed`),
+inert FTS/SQL metacharacters in `q` and `category`, forged and overseized
+cursors, `limit=100000`, the 2-char search minimum, JSON bodies over the cap,
+`no-store` on API responses, and no disabled feed URL in the detail payload.
+Two low findings are accepted:
+
+1. **Low — the rank key is mutable mid-scroll.** Reproduction: page once,
+   then let a fetch pass add a second source to a row below the cursor; its
+   `source_count` 1→2 moves it above the cursor, so the rest of that scroll
+   skips it until refresh. The smallest fix is to sort by an immutable
+   `(published_at,id)` and use `source_count` only as a badge, which changes
+   §S7's locked rank. The row is never lost, so it waits for a rank redesign.
+2. **Low — titles cross the wire verbatim.** A hostile feed can store a
+   100k-char title, and the feed payload carries it 50 times. The smallest
+   fix truncates the wire projection, but that hides the full title the detail
+   pane promises to wrap. P8's render clamp and the P15 payload budget are the
+   planned defence; this continues P4's decision to store titles raw.
+
+Deviations:
+
+- `src/lib/types.ts` is the §S1 shared shape file, first needed by the feed
+  and detail responses.
+- `q` is a `LIKE` baseline until P10 owns FTS5, bm25 and the exact query
+  builder. P5 still enforces the 2-char minimum and composes `q` with the
+  other filters as `AND`.
+- The 200-char / 12-token search caps are not in §S13. They bound the LIKE
+  fan-out; §S24 lists the hostile-input axis.
+- The 256 KiB body cap is a transport bound, not a product cap on prompts. It
+  satisfies the P2 note: Vercel had none, `adapter-node` caps at 512 KiB.
+- No new index. 20k rows re-sort within the budget and §S2's index set is
+  locked.
+- `FeedParams.limit` is required rather than optional, so an internal caller
+  cannot forget the bound.
 
 ## Working rules adopted mid-project
 
