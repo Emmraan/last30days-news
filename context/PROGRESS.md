@@ -17,7 +17,7 @@ and its merge.
 | P2 Auth | done | `phase-2-auth` | `55f99c1` | `9be19aa` |
 | P3 Sources and fetch | done | `phase-3-sources` | `9b418d8` | `a4fbce6` |
 | Docs: skill lookup rule | done | `docs-skill-lookup-rule` | `1a0b6b8` | `42d32ac` |
-| P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | pending |
+| P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | `e945c70` |
 
 ## P0 — Bootstrap
 
