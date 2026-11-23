@@ -18,7 +18,7 @@ and its merge.
 | P3 Sources and fetch | done | `phase-3-sources` | `9b418d8` | `a4fbce6` |
 | Docs: skill lookup rule | done | `docs-skill-lookup-rule` | `1a0b6b8` | `42d32ac` |
 | P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | `e945c70` |
-| P5 Feed API | done | `phase-5-feed-api` | `10c7f91` | pending |
+| P5 Feed API | done | `phase-5-feed-api` | `10c7f91` | `ba496be` |
 
 ## P0 — Bootstrap
 
