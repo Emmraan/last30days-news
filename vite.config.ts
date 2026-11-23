@@ -8,7 +8,33 @@ import { defineConfig } from 'vitest/config';
 const adapter = process.env.VERCEL === '1' ? adapterVercel() : adapterNode();
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit({ adapter })],
+	plugins: [
+		tailwindcss(),
+		sveltekit({
+			adapter,
+			// SvelteKit hashes or nonces the inline bootstrap script it emits;
+			// without this the static CSP header blocks hydration entirely.
+			csp: {
+				mode: 'auto',
+				directives: {
+					'default-src': ['self'],
+					'base-uri': ['none'],
+					'form-action': ['self'],
+					'frame-ancestors': ['none'],
+					'object-src': ['none'],
+					'script-src': ['self'],
+					// SvelteKit's screen-reader announcer is inserted at runtime with
+					// one fixed inline style; allow exactly that style, not inline CSS.
+					'style-src': [
+						'self',
+						'unsafe-hashes',
+						'sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo='
+					],
+					'img-src': ['self', 'data:']
+				}
+			}
+		})
+	],
 	test: {
 		include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
 		environment: 'node'
