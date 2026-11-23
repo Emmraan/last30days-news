@@ -28,9 +28,9 @@ adding a new one; the plan and code hold the full rationale.
 | P13 Keyboard and offline | done | `phase-13-keyboard-states` | `7e8176f` | `d6191b4` |
 | Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
 | Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
-| P14 Landing v1 | reverted | `phase-14-landing` | — | branch deleted |
-| R1 Dashboard redesign | committed | `redesign-dashboard` | `d32c8d4` | — (not merged) |
-| R2 Landing v2 | committed | `redesign-dashboard` | `d32c8d4` | — (not merged) |
+| P14 Landing v1 | reverted | `phase-14-landing` | — | branch deleted; name reused for R1/R2 |
+| R1 Dashboard redesign | committed | `phase-14-landing` | `d32c8d4` | — (not merged) |
+| R2 Landing v2 | committed | `phase-14-landing` | `d32c8d4` | — (not merged) |
 | P15 Install, budgets, CI | not started | — | — | — |
 
 ## P0 — Bootstrap
@@ -305,7 +305,7 @@ scripts and WebP shots were later removed. The landing uses real markup only.
 
 ## R2 — Landing v2
 
-Committed in `d32c8d4` on `redesign-dashboard`; not merged. Own SvelteKit app in
+Committed in `d32c8d4` on `phase-14-landing`; not merged. Own SvelteKit app in
 `landing/`: workspace package, `adapter-static`, `prerender = true`, `csr = false`,
 zero server code, `#lib`, tokens copied from the app. Full page built with real
 markup only: nav, hero (npx/npm/pnpm/yarn/bun install runner with copy, three-pane
@@ -330,7 +330,7 @@ micro-motion, thin scrollbar. Landing check 0 errors/0 warnings; build exit 0;
 
 ## R1 — Dashboard redesign
 
-Committed in `d32c8d4` on `redesign-dashboard`; not merged. Radius tokens now
+Committed in `d32c8d4` on `phase-14-landing`; not merged. Radius tokens now
 12/16/20; 10px body gutters with 12px outer padding; sidebar 236px, 34px rows,
 `--card` + ring active row, per-category counts and a manage row; toolbar 58px
 with pill search, pill presets and 32px icon buttons; 44px mono pane heads;
