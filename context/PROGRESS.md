@@ -22,7 +22,7 @@ the plan and code hold the full rationale.
 | P8 UI shell | done | `phase-8-shell` | `47da9d5` | `0e7ab65` |
 | P9 Feed and detail | done | `phase-9-feed-detail` | `cc34369` | `9e8d53d` |
 | P10 Search | done | `phase-10-search` | `8faa930` | `77f03e2` |
-| P11 Category manager | done | `phase-11-categories` | pending | pending |
+| P11 Category manager | done | `phase-11-categories` | `6695835` | `27dfa41` |
 
 ## P0 — Bootstrap
 
