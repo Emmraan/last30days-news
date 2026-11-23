@@ -9,12 +9,16 @@
 		preset,
 		onpreset,
 		onrefresh,
-		refreshing
+		refreshing,
+		query,
+		onquery
 	}: {
 		preset: Preset;
 		onpreset: (preset: Preset) => void;
 		onrefresh: () => void;
 		refreshing: boolean;
+		query: string;
+		onquery: (value: string) => void;
 	} = $props();
 
 	function toggleTheme() {
@@ -43,7 +47,13 @@
 
 	<div class="search" role="search">
 		<Search size={14} aria-hidden="true" />
-		<input type="search" placeholder="Search items" aria-label="Search items" disabled />
+		<input
+			type="search"
+			placeholder="Search items"
+			aria-label="Search items"
+			value={query}
+			oninput={(event) => onquery(event.currentTarget.value)}
+		/>
 	</div>
 
 	<div class="seg" role="group" aria-label="Time range">

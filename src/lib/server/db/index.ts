@@ -22,12 +22,26 @@ export function resolveDataDir(): string {
 	return join(process.env.XDG_DATA_HOME ?? join(homedir(), '.local', 'share'), 'last30days-news');
 }
 
+async function supportsFts5(client: Client): Promise<boolean> {
+	try {
+		const { rows } = await client.execute(
+			"select count(*) as n from pragma_module_list where name = 'fts5'"
+		);
+		return Number(rows[0]?.n ?? 0) > 0;
+	} catch {
+		// An engine that cannot list modules may still build FTS5; let the
+		// migration try rather than silently downgrading search.
+		return true;
+	}
+}
+
 async function applyMigrations(client: Client) {
 	await client.execute(
 		'create table if not exists __migration (name text primary key, applied_at integer not null)'
 	);
 	const { rows } = await client.execute('select name from __migration');
 	const applied = new Set(rows.map((r) => String(r.name)));
+	const fts5 = await supportsFts5(client);
 
 	// Byte order, not localeCompare: migration order must not depend on the
 	// machine's collation, or two hosts apply the same files in two orders.
@@ -35,6 +49,14 @@ async function applyMigrations(client: Client) {
 	for (const [path, sql] of pending) {
 		const name = path.slice(path.lastIndexOf('/') + 1);
 		if (applied.has(name)) continue;
+		// §S13: a build without FTS5 still boots; search uses the LIKE fallback.
+		if (!fts5 && /using\s+fts5/i.test(sql)) {
+			await client.execute({
+				sql: 'insert into __migration (name, applied_at) values (?, ?)',
+				args: [name, Date.now()]
+			});
+			continue;
+		}
 		// One transaction per file: a crash mid-migration must not leave the
 		// DDL applied but unrecorded, or the next boot replays it and fails.
 		const tx = await client.transaction('write');

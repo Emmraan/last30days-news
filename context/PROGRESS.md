@@ -21,6 +21,7 @@ the plan and code hold the full rationale.
 | P7 Categories | done | `phase-7-categories` | `d06dda2` | `a844770` |
 | P8 UI shell | done | `phase-8-shell` | `47da9d5` | `0e7ab65` |
 | P9 Feed and detail | done | `phase-9-feed-detail` | `cc34369` | `9e8d53d` |
+| P10 Search | done | `phase-10-search` | `8faa930` | pending |
 
 ## P0 — Bootstrap
 
@@ -213,6 +214,29 @@ feed requests have no abort on unmount (bounded by request ids and 100 rounds).
 Deviations: time presets, category filter, cursor pagination and refresh are
 wired here; refresh polls `{batch:true}` instead of SSE; the live
 `Scoring n of m` footer stays in P11; source errors stay in P13.
+
+## P10 — Search
+
+`search/fts.ts` quotes every whitespace token, doubles embedded quotes and
+prefixes the last one; the query is always bound. `queryFeed` ranks with
+`-bm25(item_fts,3.0,1.0)`, then `published_at desc, id asc`, hydrates the page
+through the existing feed projection and keeps the opaque keyset cursor
+(`rank`, `published_at`, `id`). The topbar search debounces 250 ms and only
+searches from two characters. Boot probes `pragma_module_list`; an FTS5-less
+target skips migration `0001` and search falls back to one escaped title
+`LIKE`. 28 new tests (459 total); full gate green; audit 0/0/1/0; no dependency
+or migration.
+
+Pen-test: no critical/high. Fixed low — `q=%00%00` passed the length check but
+built an empty MATCH and returned 500; NUL is now stripped at parse, with a
+test. Accepted: bm25 is corpus-dependent, so inserts during a scroll can shift
+the rest of that scroll; a mid-scroll FTS table loss ignores the rank cursor;
+the LIKE fallback full-scans titles; `VACUUM` would renumber `item.rowid` and
+stale the index until a rebuild.
+
+Deviations: the search cursor is a separate shape from the feed cursor on the
+server but stays opaque on the wire; the boot probe and skipped migration are
+the fallback path §S13 requires; `/` focus and Esc clear remain P13.
 
 ## Working rules adopted mid-project
 

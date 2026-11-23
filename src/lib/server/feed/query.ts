@@ -1,7 +1,9 @@
-import { and, asc, desc, eq, gt, lt, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 import type { Db } from '../db';
 import { item } from '../db/schema';
 import type { Item } from '#lib/types';
+import { log } from '../log';
+import { buildFtsQuery } from '../search/fts';
 import {
 	categoryVisibleCondition,
 	loadCategoryFilter,
@@ -24,12 +26,15 @@ const HEX_ID = /^[0-9a-f]{40}$/;
 /** §S7 rank tuple: source_count desc, published_at desc, id asc. */
 export type Cursor = { sourceCount: number; publishedAt: number; id: string };
 
+/** §S13 search rank: higher is better, matching the feed's descending order. */
+export type SearchCursor = { rank: number; publishedAt: number; id: string };
+
 export type FeedParams = {
 	from?: number;
 	to?: number;
 	category?: string;
 	q?: string;
-	cursor?: Cursor;
+	cursor?: Cursor | SearchCursor;
 	limit: number;
 };
 
@@ -62,6 +67,31 @@ export function decodeCursor(value: string): Cursor | null {
 	return { sourceCount: sourceCount as number, publishedAt: publishedAt as number, id };
 }
 
+export function encodeSearchCursor(cursor: SearchCursor): string {
+	return Buffer.from(
+		JSON.stringify([cursor.rank, cursor.publishedAt, cursor.id]),
+		'utf8'
+	).toString('base64url');
+}
+
+export function decodeSearchCursor(value: string): SearchCursor | null {
+	if (!value || value.length > MAX_CURSOR_LENGTH || !BASE64URL.test(value)) return null;
+
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+	} catch {
+		return null;
+	}
+
+	if (!Array.isArray(parsed) || parsed.length !== 3) return null;
+	const [rank, publishedAt, id] = parsed;
+	if (typeof rank !== 'number' || !Number.isFinite(rank) || rank < 0) return null;
+	if (!Number.isSafeInteger(publishedAt) || publishedAt < 0) return null;
+	if (typeof id !== 'string' || !HEX_ID.test(id)) return null;
+	return { rank, publishedAt: publishedAt as number, id };
+}
+
 function intParam(raw: string | null): number | undefined | null {
 	if (raw === null) return undefined;
 	if (!/^\d+$/.test(raw)) return null;
@@ -92,7 +122,9 @@ export function parseFeedQuery(search: URLSearchParams): ParsedFeedQuery {
 	const rawQuery = search.get('q');
 	let q: string | undefined;
 	if (rawQuery !== null) {
-		const trimmed = rawQuery.trim();
+		// A NUL reaches FTS5 as an unterminated string. Drop it at the boundary
+		// so hostile input can never turn into a 500 from the query builder.
+		const trimmed = rawQuery.replace(/\u0000/g, ' ').trim();
 		if (trimmed) {
 			if ([...trimmed].length < MIN_QUERY_CHARS)
 				return {
@@ -117,9 +149,9 @@ export function parseFeedQuery(search: URLSearchParams): ParsedFeedQuery {
 	}
 
 	const rawCursor = search.get('cursor');
-	let cursor: Cursor | undefined;
+	let cursor: Cursor | SearchCursor | undefined;
 	if (rawCursor !== null) {
-		const decoded = decodeCursor(rawCursor);
+		const decoded = q !== undefined ? decodeSearchCursor(rawCursor) : decodeCursor(rawCursor);
 		if (!decoded) return { ok: false, code: 'invalid_cursor', message: 'Cursor is not valid.' };
 		cursor = decoded;
 	}
@@ -131,12 +163,17 @@ export function parseFeedQuery(search: URLSearchParams): ParsedFeedQuery {
 
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, '\\$&');
 
-function matchesToken(token: string) {
-	const pattern = `%${escapeLike(token)}%`;
-	return or(
-		sql`${item.title} like ${pattern} escape '\\'`,
-		sql`coalesce(${item.excerpt}, '') like ${pattern} escape '\\'`
-	);
+const FTS_MISSING = /no such table:\s*item_fts|no such module:\s*fts5|unable to use function match/i;
+const missingFts = new WeakSet<Db>();
+let loggedFtsMissing = false;
+
+function isFtsMissing(err: unknown): boolean {
+	let current: unknown = err;
+	for (let depth = 0; current && depth < 3; depth++) {
+		if (FTS_MISSING.test(current instanceof Error ? current.message : String(current))) return true;
+		current = current instanceof Error ? current.cause : undefined;
+	}
+	return false;
 }
 
 /**
@@ -162,23 +199,6 @@ export async function queryFeed(
 		if (!categoryFilter) return { items: [], nextCursor: null };
 		const visible = categoryVisibleCondition(categoryFilter);
 		if (visible) conditions.push(visible);
-	}
-
-	if (params.q) {
-		for (const token of params.q.split(/\s+/)) {
-			const match = matchesToken(token);
-			if (match) conditions.push(match);
-		}
-	}
-
-	if (params.cursor) {
-		const { sourceCount, publishedAt, id } = params.cursor;
-		const after = or(
-			lt(item.sourceCount, sourceCount),
-			and(eq(item.sourceCount, sourceCount), lt(item.publishedAt, publishedAt)),
-			and(eq(item.sourceCount, sourceCount), eq(item.publishedAt, publishedAt), gt(item.id, id))
-		);
-		if (after) conditions.push(after);
 	}
 
 	const base = {
@@ -234,6 +254,79 @@ export async function queryFeed(
 				)`
 			}
 		: base;
+
+	if (params.q) {
+		if (!missingFts.has(db)) {
+			try {
+				const rank = sql<number>`-bm25(item_fts, 3.0, 1.0)`;
+				const where = [sql`item_fts match ${buildFtsQuery(params.q)}`, ...conditions];
+
+				if (params.cursor && 'rank' in params.cursor) {
+					const cursor = params.cursor;
+					where.push(sql`(
+						${rank} < ${cursor.rank}
+						or (${rank} = ${cursor.rank} and ${item.publishedAt} < ${cursor.publishedAt})
+						or (${rank} = ${cursor.rank} and ${item.publishedAt} = ${cursor.publishedAt} and ${item.id} > ${cursor.id})
+					)`);
+				}
+
+				const ranked = await db.all<{ id: string; rank: number; publishedAt: number }>(sql`
+					select ${item.id} as id, ${rank} as rank, ${item.publishedAt} as publishedAt
+					from item_fts
+					join item on item.rowid = item_fts.rowid
+					where ${and(...where)}
+					order by rank desc, ${item.publishedAt} desc, ${item.id} asc
+					limit ${params.limit + 1}
+				`);
+
+				const pageIds = ranked.slice(0, params.limit).map((row) => row.id);
+				const hydrated = pageIds.length
+					? ((await db
+							.select(selection)
+							.from(item)
+							.where(inArray(item.id, pageIds))
+							.all()) as Item[])
+					: [];
+				const byId = new Map(hydrated.map((row) => [row.id, row]));
+				const page = pageIds
+					.map((id) => byId.get(id))
+					.filter((row): row is Item => row !== undefined);
+				const last = ranked[params.limit - 1];
+				const nextCursor =
+					ranked.length > params.limit && last
+						? encodeSearchCursor({
+								rank: last.rank,
+								publishedAt: last.publishedAt,
+								id: last.id
+							})
+						: null;
+
+				return { items: page, nextCursor };
+			} catch (err) {
+				if (!isFtsMissing(err)) throw err;
+				missingFts.add(db);
+				if (!loggedFtsMissing) {
+					loggedFtsMissing = true;
+					log('warn', 'boot', { fts5: false, fallback: 'like' });
+				}
+			}
+		}
+
+		// §S13 fallback: a target without FTS5 gets the whole input as one title
+		// LIKE. It is deliberately weaker than the indexed search, but never 500s.
+		const pattern = `%${escapeLike(params.q)}%`;
+		conditions.push(sql`${item.title} like ${pattern} escape '\\'`);
+	}
+
+	if (params.cursor && 'sourceCount' in params.cursor) {
+		const { sourceCount, publishedAt, id } = params.cursor;
+		const after = or(
+			lt(item.sourceCount, sourceCount),
+			and(eq(item.sourceCount, sourceCount), lt(item.publishedAt, publishedAt)),
+			and(eq(item.sourceCount, sourceCount), eq(item.publishedAt, publishedAt), gt(item.id, id))
+		);
+		if (after) conditions.push(after);
+	}
 
 	const rows = (await db
 		.select(selection)

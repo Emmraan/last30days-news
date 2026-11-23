@@ -2,6 +2,7 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import DetailPane from '../src/lib/components/DetailPane.svelte';
 import ItemRow from '../src/lib/components/ItemRow.svelte';
+import TopBar from '../src/lib/components/TopBar.svelte';
 import type { Item, ItemDetail } from '../src/lib/types';
 
 const NOW = Date.UTC(2026, 10, 20, 12);
@@ -149,5 +150,24 @@ describe('DetailPane', () => {
 
 		const unscored = detailPane({ item: baseItem, sources: [], summary: null });
 		expect(unscored).not.toContain('Relevance');
+	});
+});
+
+describe('TopBar', () => {
+	it('enables the search field and reflects the current query', () => {
+		const body = render(TopBar, {
+			props: {
+				preset: '24h',
+				onpreset: () => undefined,
+				onrefresh: () => undefined,
+				refreshing: false,
+				query: 'alpha beta',
+				onquery: () => undefined
+			}
+		}).body;
+
+		expect(body).toContain('type="search"');
+		expect(body).not.toMatch(/type="search"[^>]*disabled/);
+		expect(body).toContain('value="alpha beta"');
 	});
 });
