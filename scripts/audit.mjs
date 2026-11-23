@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// `pnpm audit` only prints a flat advisory list. This prints the severity
-// counts so critical/high are impossible to skim past, and fails the gate on
-// them (moderate and below are reported but do not block).
+// pnpm's built-in audit only prints a flat advisory list. This prints the
+// severity counts so critical/high are impossible to skim past, and fails the
+// gate on them (moderate and below are reported but do not block). Run it as
+// `pnpm audit:gate`; `pnpm audit` is the built-in and cannot be shadowed.
 import { execSync } from 'node:child_process';
 
 let raw = '';

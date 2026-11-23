@@ -12,8 +12,10 @@ second lockfile. Versions are pinned exact in `package.json`
 Gates: `pnpm lint:changed`, `pnpm typecheck:changed` and
 `pnpm test:changed` after every edit — they look only at new and modified
 files, so the loop stays fast. The full gate (`pnpm lint && pnpm typecheck
-&& pnpm test && pnpm build && pnpm audit`) runs once per phase, before the
-merge, and in CI. Never run the full suite as the inner dev loop.
+&& pnpm test && pnpm build && pnpm audit:gate`) runs once per phase, before
+the merge, and in CI. `pnpm audit` is pnpm's built-in command and cannot be
+shadowed by a script; `audit:gate` is the project's severity gate. Never run
+the full suite as the inner dev loop.
 
 Branches: a branch is for planned work — a phase from `context/PLAN.md`, or a
 feature big enough to be worth one (`phase-N-<slug>`, `feat-<slug>`). Small

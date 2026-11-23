@@ -22,7 +22,7 @@
     "test": "vitest run",
     "test:changed": "node scripts/changed.mjs --test",
     "test:e2e": "playwright test",
-    "audit": "node scripts/audit.mjs",
+    "audit:gate": "node scripts/audit.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "devDependencies": {

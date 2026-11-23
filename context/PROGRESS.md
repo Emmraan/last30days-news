@@ -37,8 +37,9 @@ Deviations:
 - pnpm 12.16.1 ignores the `pnpm` field in `package.json`, so
   `allowBuilds: { esbuild: true }` lives in `pnpm-workspace.yaml`.
 - `bin/last30days.js` deferred to P14.
-- `pnpm audit` exits 1 on any finding, so the gate is `node scripts/audit.mjs`:
-  it prints severity counts and exits 1 only on critical or high.
+- `pnpm audit` is pnpm's built-in command and cannot be shadowed by a script.
+  The gate is `pnpm audit:gate` (`node scripts/audit.mjs`): it prints severity
+  counts and exits 1 only on critical or high.
 
 ## P1 — Database
 
