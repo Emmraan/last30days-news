@@ -2,7 +2,20 @@
 	import { resolve } from '$app/paths';
 	import { RefreshCw, Search, Settings, SunMoon } from 'lucide-svelte';
 	import { THEME_COOKIE } from '#lib/theme';
+	import { PRESETS, type Preset } from '#lib/util/time';
 	import Logo from './Logo.svelte';
+
+	let {
+		preset,
+		onpreset,
+		onrefresh,
+		refreshing
+	}: {
+		preset: Preset;
+		onpreset: (preset: Preset) => void;
+		onrefresh: () => void;
+		refreshing: boolean;
+	} = $props();
 
 	function toggleTheme() {
 		const root = document.documentElement;
@@ -34,13 +47,25 @@
 	</div>
 
 	<div class="seg" role="group" aria-label="Time range">
-		<button type="button" aria-pressed="true" disabled>24h</button>
-		<button type="button" aria-pressed="false" disabled>7d</button>
-		<button type="button" aria-pressed="false" disabled>30d</button>
+		{#each PRESETS as option (option)}
+			<button
+				type="button"
+				aria-pressed={preset === option}
+				onclick={() => onpreset(option)}
+			>{option}</button>
+		{/each}
 	</div>
 
 	<div class="actions">
-		<button class="iconbtn" type="button" aria-label="Refresh feed" disabled>
+		<button
+			class="iconbtn"
+			type="button"
+			aria-label="Refresh feed"
+			title="Refresh feed"
+			disabled={refreshing}
+			aria-busy={refreshing}
+			onclick={onrefresh}
+		>
 			<RefreshCw size={15} aria-hidden="true" />
 		</button>
 		<button class="iconbtn" type="button" aria-label="Open settings" disabled>

@@ -192,7 +192,18 @@ export async function queryFeed(
 		excerpt: item.excerpt,
 		language: item.language,
 		category: item.category,
-		sourceCount: item.sourceCount
+		sourceCount: item.sourceCount,
+		// §S12 rows need a stable source label for the fav badge. A multi-source
+		// item picks the first name alphabetically so paging never reshuffles it.
+		// The outer table must be written out: Drizzle renders ${item.id} as a
+		// bare "id", which the subquery would resolve to source.id instead.
+		sourceName: sql<string | null>`(
+			select source.name from item_source
+			join source on source.id = item_source.source_id
+			where item_source.item_id = item.id
+			order by source.name
+			limit 1
+		)`
 	};
 
 	// §S9: the reason is rendered as the row's why callout, so it is read from
@@ -208,7 +219,7 @@ export async function queryFeed(
 				score: sql<number | null>`(
 					select category_item.score from category_item
 					where category_item.category_id = ${categoryFilter!.category.id}
-						and category_item.item_id = ${item.id}
+						and category_item.item_id = item.id
 						and category_item.prompt_hash = ${promptHash(prompt!)}
 						and category_item.score >= ${categoryFilter!.category.aiThreshold}
 					limit 1
@@ -216,7 +227,7 @@ export async function queryFeed(
 				reason: sql<string | null>`(
 					select category_item.reason from category_item
 					where category_item.category_id = ${categoryFilter!.category.id}
-						and category_item.item_id = ${item.id}
+						and category_item.item_id = item.id
 						and category_item.prompt_hash = ${promptHash(prompt!)}
 						and category_item.score >= ${categoryFilter!.category.aiThreshold}
 					limit 1

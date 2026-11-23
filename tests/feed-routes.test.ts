@@ -63,6 +63,26 @@ test('GET /api/feed returns the default 50-item page and a cursor', async () => 
 	expect(second.body!.nextCursor).toBeNull();
 });
 
+test('GET /api/feed includes one attributed source name per item', async () => {
+	const { db } = await freshDb();
+	await seed(db);
+	const attributed = row(0);
+	const orphan = row(1);
+	await db.insert(item).values([attributed, orphan]);
+	await db.insert(itemSource).values([
+		{ itemId: attributed.id, sourceId: 'verge', url: attributed.url, rawTitle: null },
+		{ itemId: attributed.id, sourceId: 'ars', url: attributed.url, rawTitle: null }
+	]);
+
+	const res = await read(await getFeed(makeEvent({ db, url: feedUrl() }).event));
+	const items = res.body!.items as Record<string, unknown>[];
+	const first = items.find((entry) => entry.id === attributed.id);
+	const second = items.find((entry) => entry.id === orphan.id);
+
+	expect(first?.sourceName).toBe('Ars Technica');
+	expect(second?.sourceName).toBeNull();
+});
+
 test.each([
 	['limit=0', 'invalid_limit'],
 	['limit=101', 'invalid_limit'],

@@ -1,6 +1,24 @@
+<script lang="ts">
+	import type { Preset } from '#lib/util/time';
+
+	let {
+		count,
+		preset,
+		refreshing
+	}: { count: number; preset: Preset; refreshing: boolean } = $props();
+
+	const label = $derived(`${count} ${count === 1 ? 'item' : 'items'}`);
+</script>
+
 <footer class="statusbar">
-	<span class="state"><span class="dot" aria-hidden="true"></span>Ready</span>
-	<span class="meta"><span class="mono">0 items</span><span aria-hidden="true">·</span><span class="mono">24h</span></span>
+	<span class="state"><span class="dot" aria-hidden="true"></span>{refreshing
+			? 'Refreshing'
+			: 'Ready'}</span>
+	<span class="meta"
+		><span class="mono">{label}</span><span aria-hidden="true">·</span><span class="mono"
+			>{preset}</span
+		></span
+	>
 </footer>
 
 <style>

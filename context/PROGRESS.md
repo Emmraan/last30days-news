@@ -20,94 +20,57 @@ the plan and code hold the full rationale.
 | P6 Summaries | done | `phase-6-summaries` | `918808f` | `7a70e3b` |
 | P7 Categories | done | `phase-7-categories` | `d06dda2` | `a844770` |
 | P8 UI shell | done | `phase-8-shell` | `47da9d5` | `0e7ab65` |
+| P9 Feed and detail | done | `phase-9-feed-detail` | `cc34369` | pending |
 
 ## P0 — Bootstrap
 
-Node 26.13.0 and pnpm 12.16.1 pinned exact. Gates green; audit 0.
-
-Deviations: TypeScript 6.0.3 because SvelteKit 3.4.0 rejects 7; no
-`svelte.config.js`, the adapter is chosen in `vite.config.ts`; `#lib/*`
-subpath imports replace `$lib`; `allowBuilds: {esbuild: true}` lives in
-`pnpm-workspace.yaml`; `bin/last30days.js` deferred to P14; `audit:gate`
-wraps pnpm's built-in audit.
+Node 26.13.0 / pnpm 12.16.1 pinned exact. TypeScript 6.0.3 because SvelteKit
+3.4.0 rejects 7; adapter chosen in `vite.config.ts`; `#lib/*` replaces `$lib`;
+`allowBuilds` lives in `pnpm-workspace.yaml`; `bin/` is P14. Gates green;
+audit 0.
 
 ## P1 — Database
 
-`createDb()` is async and runs embedded `import.meta.glob` migrations tracked
-in `__migration`, one transaction per file. 7 tests; gates green; audit
-0 critical / 0 high / 1 moderate.
-
-Review fix: migration order is byte order, not `localeCompare`, with a test.
-
-Accepted limits: libSQL's 5 s busy timeout; `0700` is a no-op on Windows; two
-processes can race a migration (desktop single instance, lock file P14); no
-pre-migration backup; no index on `session.expires_at` or
-`item_source.source_id`; a Turso URL without a token fails at the first query;
-`item_fts` has no rebuild step.
+`createDb()` is async, runs embedded `import.meta.glob` migrations tracked in
+`__migration`, one transaction per file in byte order. 7 tests; audit 0/0/1/0.
+Accepted: 5 s busy timeout; `0700` is a no-op on Windows; migration race
+possible (desktop lock P14); no pre-migration backup; no index on
+`session.expires_at`/`item_source.source_id`; a Turso URL without a token fails
+at the first query; no `item_fts` rebuild.
 
 ## P2 — Auth
 
-scrypt N=2^15 r=8 p=1, 32-byte key, 16-byte salt; AES-256-GCM vault keyed by
-`scrypt(password, crypto.salt)`, 12-byte IV per secret; lockout 5 failures per
-15 min, doubling to 24 h; `l30_session` HttpOnly, SameSite=Lax, 30 days,
-rotated on login and password change. 29 tests; gates green; audit moderate 1.
-
-Pen-test fixes: high — reset is one transaction (a crash left no password and
-`last30` worked); medium — `mustChangePassword` blocks every API except
-password/session/logout; medium — `/api/*` sends `cache-control: no-store`.
-
-Accepted limits: password route unthrottled (session already held; a per-IP
-lock could freeze the owner out); `readJson` body cap added in P5; password
-change drops undecryptable secrets; prune calls land in P3; an unknown peer
-shares one lockout bucket; session ids stored raw per §S9.
-
-Deviations: `deriveKey` is synchronous; both scrypt calls pass `maxmem: 64 MiB`
-(Node's 32 MiB default rejects the params); `Handle` moved to
-`@sveltejs/kit/hooks`; one `svelte/no-navigation-without-resolve` disable for a
-runtime `?next=`.
+scrypt N=2^15 r=8 p=1, 32-byte key/16-byte salt; AES-256-GCM vault keyed from
+`scrypt(password, crypto.salt)`, 12-byte IV; lockout 5 failures/15 min doubling
+to 24 h; `l30_session` HttpOnly, SameSite=Lax, 30 days, rotated on login and
+password change. 29 tests; audit 0/0/1/0. Fixed: reset is one transaction;
+`mustChangePassword` blocks all APIs except password/session/logout; `/api/*`
+no-store. Accepted: password route unthrottled (session already held);
+password change drops undecryptable secrets; unknown peer shares one lockout
+bucket; raw session ids (§S9). Deviations: sync `deriveKey`, 64 MiB scrypt
+maxmem, `Handle` from `@sveltejs/kit/hooks`, one navigation-resolve disable.
 
 ## P3 — Sources and the fetch pass
 
-`rss`, `hn` and `json` adapters return one `RawItem`. `runPass` takes due
-sources, four in flight, 10 s timeout, 500/1500 ms jittered retries, 200
-items/source, writes status and error, disables a source after three failures
-and prunes after the pass. Routes: `GET /api/sources`, `PATCH
-/api/sources/[id]` (`{enabled}`), `POST /api/refresh` (SSE locally,
-`{batch:true}` on Vercel). 40 tests, fixtures only; gates green; audit
-moderate 1.
-
-Pen-test fixes: high — 5 MiB decompressed body cap (zip bombs too); high — SSRF
-guard (http(s) only, no loopback/private/link-local/.internal, max three manual
-redirects, re-check every location); medium — slice before mapping so 50k
-items do not allocate 50k objects; medium — a disconnected SSE client no longer
-aborts the pass.
-
-Accepted limits: DNS rebinding not defended (literal host checked, resolved IP
-not pinned); no in-flight guard on refresh; `lastError` echoes the feed URL and
-status; titles stored raw (P8 clamp). `rss-parser 3.13.0` added because Node has
-no XML parser.
+`rss`/`hn`/`json` adapters; four in flight, 10 s timeout, 500/1500 ms retries,
+200 items/source, three-strike disable, post-pass prune. `GET /api/sources`,
+`PATCH /api/sources/[id]`, `POST /api/refresh` (SSE locally, `{batch:true}` on
+Vercel). 40 tests, fixtures only; audit 0/0/1/0. Fixed: 5 MiB decompressed cap;
+SSRF guard (http(s), no loopback/private/link-local/.internal, three redirects
+re-checked); slice before map; a disconnected SSE client no longer aborts the
+pass. Accepted: DNS rebinding; no in-flight refresh guard; `lastError` echoes
+the URL/status; raw titles (P8 clamp). `rss-parser` added (no stdlib XML
+parser).
 
 ## P4 — Ingest
 
-`util/url.ts` from P3; P4 adds `util/dedup.ts` (`titleKey`, `jaccard`),
-`util/rank.ts` (`compareRank`) and §S7 dedup in `ingest/insert.ts`: canonical
-URL, identical normalised title, or Jaccard ≥0.72 within 48 h, same category.
-A match keeps the row, adds `item_source` and bumps `source_count` for a new
-link. Excerpts stripped and capped at 800; missing dates become
-`published_estimated`; language is a script heuristic. 29 new tests (155
-total); gates green; audit 0/0/1/0.
-
-Fixed before merge: `rss-parser` was the one floating specifier; pinned to
-`3.13.0`.
-
-Deviations: the comparator lives in `util/rank.ts`, which §1 does not list; P4
-needs it and P5 imports it.
-
-Accepted limits: Jaccard scans the 48 h window (200 × window), titles sampled
-to 64 tokens; concurrent different-URL inserts can create two rows (canonical
-URL is protected by the item primary key, the title/Jaccard window is not); a
-URL in two categories keeps the first insert; item and `item_source` are two
-statements, not one transaction.
+`util/url.ts`; `util/dedup.ts` (`titleKey`, `jaccard`); `util/rank.ts`.
+Canonical URL, identical normalised title, or Jaccard ≥0.72 within 48 h and the
+same category; a match adds `item_source` and bumps `source_count`. Excerpts
+≤800; missing dates estimated; script-based language. 29 new tests (155);
+audit 0/0/1/0. Fixed: pinned `rss-parser`. Accepted: 48 h Jaccard scan (200 ×
+window) with 64-token samples; concurrent title inserts can duplicate; a URL in
+two categories keeps the first; item + link are two statements.
 
 ## P5 — Feed API
 
@@ -228,6 +191,28 @@ back to system.
 Deviations: the theme class is injected through an `app.html` placeholder,
 not a script; CSP moved to `vite.config.ts` so SvelteKit can nonce its
 bootstrap; the announcer hash is tied to the pinned SvelteKit version.
+
+## P9 — Feed and detail
+
+`/app` server-loads the 24h feed and categories, then filters, paginates and
+refreshes through `/api/feed` and `/api/refresh`. `ItemRow` clamps the title to
+two lines and shows initials, relative time, source count and a `why` callout;
+`FeedPane` covers skeleton, empty, error and Load more; `DetailPane` renders
+attribution, summary, key points, citations, the generate action and a
+relevance footer, with the summary scrolling inside the pane. `sourceName`
+joins the feed projection; `format.ts` adds relative time, initials,
+control/bidi stripping and http(s)-only hrefs. 57 new tests (431 total); full
+gate green; audit 0/0/1/0; no dependency or migration.
+
+Pen-test: medium — the detail route has no category context, so the selected
+feed row now supplies `score`/`reason`; low — fav initials now strip bidi and
+controls. Accepted: repeated Load more grows the DOM (50 per click, user-
+driven); below 720px the detail pane is hidden (P13 navigation); refresh and
+feed requests have no abort on unmount (bounded by request ids and 100 rounds).
+
+Deviations: time presets, category filter, cursor pagination and refresh are
+wired here; refresh polls `{batch:true}` instead of SSE; the live
+`Scoring n of m` footer stays in P11; source errors stay in P13.
 
 ## Working rules adopted mid-project
 

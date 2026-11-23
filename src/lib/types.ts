@@ -11,6 +11,8 @@ export type Item = {
 	language: string | null;
 	category: string;
 	sourceCount: number;
+	/** Feed rows only: the attribution label shown beside the row. */
+	sourceName?: string | null;
 	/** Present only when the request filtered by a scored category (§S8). */
 	score?: number | null;
 	reason?: string | null;
@@ -23,4 +25,28 @@ export type Summary = {
 	whyItMatters: string | null;
 	citations: { n: number; source_id: string; url: string }[];
 	createdAt: number;
+};
+
+export type FeedPage = {
+	items: Item[];
+	nextCursor: string | null;
+};
+
+export type ItemSource = {
+	id: string;
+	name: string;
+	url: string;
+	rawTitle: string | null;
+};
+
+export type ItemDetail = {
+	item: Omit<Item, 'sourceName'>;
+	sources: ItemSource[];
+	summary: Summary | null;
+};
+
+export type FeedCategory = {
+	id: string;
+	name: string;
+	builtin: boolean;
 };

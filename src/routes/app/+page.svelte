@@ -1,8 +1,276 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
 	import { Plus } from 'lucide-svelte';
+	import DetailPane from '#lib/components/DetailPane.svelte';
+	import FeedPane from '#lib/components/FeedPane.svelte';
 	import StatusBar from '#lib/components/StatusBar.svelte';
 	import TopBar from '#lib/components/TopBar.svelte';
+	import { displayText } from '#lib/format';
+	import type { FeedPage, Item, ItemDetail, Summary } from '#lib/types';
+	import { PRESET_LABEL, presetRange, type Preset } from '#lib/util/time';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+
+	const LIMIT = 50;
+
+	let preset = $state<Preset>('24h');
+	let category = $state<string | null>(null);
+	// The client owns the feed after hydration; page data is only the first page.
+	// svelte-ignore state_referenced_locally
+	let items = $state<Item[]>([...data.feed.items]);
+	// svelte-ignore state_referenced_locally
+	let nextCursor = $state<string | null>(data.feed.nextCursor);
+	let feedState = $state<'ready' | 'loading' | 'error'>('ready');
+	let feedError = $state('');
+	let loadingMore = $state(false);
+
+	let selectedId = $state<string | null>(null);
+	let detail = $state<ItemDetail | null>(null);
+	let detailState = $state<'idle' | 'loading' | 'error' | 'ready'>('idle');
+	let detailError = $state('');
+	let generating = $state(false);
+	let generateError = $state('');
+
+	// The server clock avoids an SSR mismatch; the interval updates it after mount.
+	// svelte-ignore state_referenced_locally
+	let now = $state(data.now);
+	let refreshing = $state(false);
+
+	let feedRequest = 0;
+	let detailRequest = 0;
+	let summaryRequest = 0;
+	let failedMode: 'reset' | 'more' | 'silent' = 'reset';
+
+	const categoryName = $derived(
+		category
+			? (data.categories.find((entry) => entry.id === category)?.name ?? category)
+			: ''
+	);
+	const detailCategoryName = $derived(
+		detail
+			? (data.categories.find((entry) => entry.id === detail?.item.category)?.name ??
+				detail.item.category)
+			: ''
+	);
+	const emptyText = $derived(
+		`No items${categoryName ? ` in ${displayText(categoryName)}` : ''} in the last ${PRESET_LABEL[preset]}. Refresh to fetch.`
+	);
+
+	onMount(() => {
+		const timer = setInterval(() => {
+			now = Date.now();
+		}, 60_000);
+		return () => clearInterval(timer);
+	});
+
+	async function loadFeed(mode: 'reset' | 'more' | 'silent') {
+		if (mode === 'more' && (!nextCursor || loadingMore)) return;
+
+		const request = ++feedRequest;
+		const range = presetRange(preset, Date.now());
+		const params = new URLSearchParams({
+			from: String(range.from),
+			to: String(range.to),
+			limit: String(LIMIT)
+		});
+		if (category) params.set('category', category);
+		if (mode === 'more' && nextCursor) params.set('cursor', nextCursor);
+
+		if (mode === 'reset') {
+			feedState = 'loading';
+			items = [];
+			nextCursor = null;
+			loadingMore = false;
+		} else if (mode === 'more') {
+			loadingMore = true;
+		}
+		feedError = '';
+
+		try {
+			const res = await fetch(`/api/feed?${params.toString()}`);
+			if (request !== feedRequest) return;
+			if (!res.ok) throw new Error('feed request failed');
+			const page = (await res.json()) as FeedPage;
+			if (request !== feedRequest) return;
+
+			if (mode === 'more') {
+				const seen = new Set(items.map((entry) => entry.id));
+				items = [...items, ...page.items.filter((entry) => !seen.has(entry.id))];
+			} else {
+				items = page.items;
+			}
+			nextCursor = page.nextCursor;
+			feedState = 'ready';
+		} catch {
+			if (request !== feedRequest) return;
+			failedMode = mode;
+			if (mode === 'reset') {
+				feedState = 'error';
+				items = [];
+				nextCursor = null;
+				feedError = 'Could not load items.';
+			} else if (mode === 'more') {
+				feedError = 'Could not load more items.';
+			} else {
+				feedError = 'Could not refresh items.';
+			}
+		} finally {
+			if (request === feedRequest) loadingMore = false;
+		}
+	}
+
+	function clearDetail() {
+		detailRequest++;
+		summaryRequest++;
+		selectedId = null;
+		detail = null;
+		detailState = 'idle';
+		detailError = '';
+		generating = false;
+		generateError = '';
+	}
+
+	function choosePreset(value: Preset) {
+		if (value === preset) return;
+		preset = value;
+		clearDetail();
+		void loadFeed('reset');
+	}
+
+	function chooseCategory(value: string | null) {
+		if (value === category) return;
+		category = value;
+		clearDetail();
+		void loadFeed('reset');
+	}
+
+	async function openItem(id: string) {
+		if (selectedId === id && detailState === 'ready') return;
+
+		const request = ++detailRequest;
+		summaryRequest++;
+		selectedId = id;
+		detail = null;
+		detailState = 'loading';
+		detailError = '';
+		generating = false;
+		generateError = '';
+
+		try {
+			const res = await fetch(`/api/items/${encodeURIComponent(id)}`);
+			if (request !== detailRequest) return;
+			if (!res.ok) {
+				detailState = 'error';
+				detailError =
+					res.status === 404 ? 'This item no longer exists.' : 'Could not load this item.';
+				return;
+			}
+			const body = (await res.json()) as ItemDetail;
+			if (request !== detailRequest) return;
+			// The detail route has no category context, so the scored row is the
+			// only place the active category's score and reason exist.
+			const row = items.find((entry) => entry.id === id);
+			detail = {
+				...body,
+				item: { ...body.item, score: row?.score ?? null, reason: row?.reason ?? null }
+			};
+			detailState = 'ready';
+		} catch {
+			if (request !== detailRequest) return;
+			detailState = 'error';
+			detailError = 'Could not load this item.';
+		}
+	}
+
+	function retryDetail() {
+		if (selectedId) void openItem(selectedId);
+	}
+
+	function mapSummaryError(code: string | undefined): string {
+		switch (code) {
+			case 'ai_not_configured':
+				return 'No AI provider is set up.';
+			case 'ai_locked':
+			case 'unauthenticated':
+				return 'Sign in again to unlock AI keys.';
+			case 'ai_invalid_output':
+			case 'ai_failed':
+				return 'The AI provider did not return a summary. Try again.';
+			case 'not_found':
+				return 'This item no longer exists.';
+			default:
+				return 'Could not generate a summary. Try again.';
+		}
+	}
+
+	async function generateSummary() {
+		if (!detail || generating) return;
+
+		const id = detail.item.id;
+		const request = ++summaryRequest;
+		generating = true;
+		generateError = '';
+
+		try {
+			const res = await fetch(`/api/items/${encodeURIComponent(id)}/summary`, {
+				method: 'POST'
+			});
+			const body = (await res.json().catch(() => null)) as {
+				summary?: Summary;
+				error?: { code?: string };
+			} | null;
+			if (request !== summaryRequest || detail?.item.id !== id) return;
+
+			if (!res.ok || !body?.summary) {
+				generateError = mapSummaryError(body?.error?.code);
+				return;
+			}
+			detail = { ...detail, summary: body.summary };
+		} catch {
+			if (request === summaryRequest && detail?.item.id === id) {
+				generateError = 'Could not generate a summary. Try again.';
+			}
+		} finally {
+			if (request === summaryRequest) generating = false;
+		}
+	}
+
+	function loadMore() {
+		void loadFeed('more');
+	}
+
+	function retryFeed() {
+		void loadFeed(failedMode === 'more' && nextCursor ? 'more' : 'reset');
+	}
+
+	type RefreshEvent = { type: 'source' } | { type: 'done'; sources: number };
+
+	async function refresh() {
+		if (refreshing) return;
+
+		refreshing = true;
+		feedError = '';
+
+		try {
+			for (let round = 0; round < 100; round++) {
+				const res = await fetch('/api/refresh', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ batch: true })
+				});
+				if (!res.ok) throw new Error('refresh failed');
+				const body = (await res.json()) as { events: RefreshEvent[] };
+				const done = body.events.find((event) => event.type === 'done');
+				if (!done || done.type !== 'done' || done.sources === 0) break;
+			}
+			await loadFeed('silent');
+		} catch {
+			feedError = 'Refresh failed.';
+		} finally {
+			refreshing = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -10,7 +278,8 @@
 </svelte:head>
 
 <div class="shell">
-	<TopBar />
+	<TopBar {preset} onpreset={choosePreset} onrefresh={refresh} {refreshing} />
+	<div class="fetchbar" class:on={refreshing} aria-hidden="true"><span></span></div>
 
 	<div class="body">
 		<aside class="pane sidebar" aria-label="Categories">
@@ -21,32 +290,65 @@
 				</button>
 			</div>
 
-			<nav class="side-nav" aria-label="Feed filters">
-				<a class="side-item on" href={resolve('/app')} aria-current="page">All items</a>
-			</nav>
+			<div class="side-nav" role="group" aria-label="Feed filters">
+				<button
+					class="side-item"
+					class:on={category === null}
+					type="button"
+					aria-pressed={category === null}
+					onclick={() => chooseCategory(null)}
+				>
+					<span class="side-label">All items</span>
+				</button>
+				{#each data.categories as entry (entry.id)}
+					<button
+						class="side-item"
+						class:on={category === entry.id}
+						type="button"
+						aria-pressed={category === entry.id}
+						title={displayText(entry.name) || entry.id}
+						onclick={() => chooseCategory(entry.id)}
+					>
+						<span class="side-label">{displayText(entry.name) || entry.id}</span>
+					</button>
+				{/each}
+			</div>
 
 			<div class="side-foot">
 				<button class="side-item" type="button" disabled>Manage categories</button>
 			</div>
 		</aside>
 
-		<main class="pane feed" aria-label="Feed">
-			<div class="pane-head">
-				<h2>Latest</h2>
-				<span class="pane-meta">24 hours</span>
-			</div>
-			<div class="pane-empty">No items in the last 24 hours. Refresh to fetch.</div>
-		</main>
+		<FeedPane
+			{items}
+			state={feedState}
+			error={feedError}
+			{nextCursor}
+			{selectedId}
+			{now}
+			{preset}
+			{categoryName}
+			{loadingMore}
+			{emptyText}
+			onselect={openItem}
+			onmore={loadMore}
+			onretry={retryFeed}
+		/>
 
-		<section class="pane detail" aria-label="Item detail">
-			<div class="pane-head">
-				<h2>Detail</h2>
-			</div>
-			<div class="pane-empty">Select an item to read it.</div>
-		</section>
+		<DetailPane
+			state={detailState}
+			{detail}
+			error={detailError}
+			categoryName={detailCategoryName}
+			{now}
+			{generating}
+			{generateError}
+			onretry={retryDetail}
+			ongenerate={generateSummary}
+		/>
 	</div>
 
-	<StatusBar />
+	<StatusBar count={items.length} {preset} {refreshing} />
 </div>
 
 <style>
@@ -91,16 +393,13 @@
 		color: var(--txt-3);
 	}
 
-	.pane-meta {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		color: var(--txt-3);
-	}
-
 	.side-nav {
 		display: flex;
+		flex: 1;
 		flex-direction: column;
 		gap: 1px;
+		min-height: 0;
+		overflow-y: auto;
 		padding: 6px;
 	}
 
@@ -136,40 +435,83 @@
 		cursor: default;
 	}
 
+	.side-label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
 	.side-foot {
-		margin-top: auto;
+		flex: none;
 		padding: 6px;
 		box-shadow: inset 0 1px 0 var(--line);
 	}
 
-	.pane-empty {
-		display: grid;
-		place-items: center;
-		flex: 1;
-		padding: 24px;
-		color: var(--txt-3);
-		font-family: var(--font-mono);
-		font-size: 12px;
-		line-height: 1.5;
-		text-align: center;
+	.fetchbar {
+		position: fixed;
+		z-index: 4;
+		top: var(--h-top);
+		right: 0;
+		left: 0;
+		height: 2px;
+		overflow: hidden;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 100ms var(--ease);
+	}
+
+	.fetchbar.on {
+		opacity: 1;
+	}
+
+	.fetchbar span {
+		display: block;
+		width: 28%;
+		height: 100%;
+		background: var(--accent);
+		animation: fetch 1.2s linear infinite;
+	}
+
+	@keyframes fetch {
+		from {
+			transform: translateX(-100%);
+		}
+
+		to {
+			transform: translateX(360%);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.fetchbar span {
+			width: 100%;
+			animation: none;
+		}
 	}
 
 	@media (max-width: 1280px) {
 		.body {
-			grid-template-columns: 252px minmax(0, 1fr);
-		}
-
-		.detail {
-			display: none;
+			grid-template-columns: 200px minmax(0, 1fr) 360px;
 		}
 	}
 
 	@media (max-width: 940px) {
 		.body {
-			grid-template-columns: minmax(0, 1fr);
+			grid-template-columns: minmax(0, 1fr) 360px;
 		}
 
 		.sidebar {
+			display: none;
+		}
+	}
+
+	@media (max-width: 720px) {
+		.body {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		:global(.detail-pane) {
 			display: none;
 		}
 	}
