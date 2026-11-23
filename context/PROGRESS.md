@@ -24,7 +24,7 @@ the plan and code hold the full rationale.
 | P10 Search | done | `phase-10-search` | `8faa930` | `77f03e2` |
 | P11 Category manager | done | `phase-11-categories` | `6695835` | `27dfa41` |
 | P12 Settings | done | `phase-12-settings` | `f2e74d5` | `675a551` |
-| P13 Keyboard and offline | done | `phase-13-keyboard-states` | _pending_ | _pending_ |
+| P13 Keyboard and offline | done | `phase-13-keyboard-states` | `7e8176f` | `d6191b4` |
 
 ## P0 — Bootstrap
 
