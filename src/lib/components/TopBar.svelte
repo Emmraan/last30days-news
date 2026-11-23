@@ -11,7 +11,8 @@
 		onrefresh,
 		refreshing,
 		query,
-		onquery
+		onquery,
+		onsettings
 	}: {
 		preset: Preset;
 		onpreset: (preset: Preset) => void;
@@ -19,6 +20,7 @@
 		refreshing: boolean;
 		query: string;
 		onquery: (value: string) => void;
+		onsettings: () => void;
 	} = $props();
 
 	function toggleTheme() {
@@ -78,7 +80,13 @@
 		>
 			<RefreshCw size={15} aria-hidden="true" />
 		</button>
-		<button class="iconbtn" type="button" aria-label="Open settings" disabled>
+		<button
+			class="iconbtn"
+			type="button"
+			aria-label="Open settings"
+			title="Open settings"
+			onclick={onsettings}
+		>
 			<Settings size={15} aria-hidden="true" />
 		</button>
 		<button

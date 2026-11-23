@@ -2,6 +2,8 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import DetailPane from '../src/lib/components/DetailPane.svelte';
 import CategoryPanel from '../src/lib/components/CategoryPanel.svelte';
+import PasswordForm from '../src/lib/components/PasswordForm.svelte';
+import SettingsPanel from '../src/lib/components/SettingsPanel.svelte';
 import ItemRow from '../src/lib/components/ItemRow.svelte';
 import TopBar from '../src/lib/components/TopBar.svelte';
 import type { CategoryView } from '../src/lib/server/categories/store';
@@ -225,12 +227,63 @@ describe('TopBar', () => {
 				onrefresh: () => undefined,
 				refreshing: false,
 				query: 'alpha beta',
-				onquery: () => undefined
+				onquery: () => undefined,
+				onsettings: () => undefined
 			}
 		}).body;
 
 		expect(body).toContain('type="search"');
 		expect(body).not.toMatch(/type="search"[^>]*disabled/);
 		expect(body).toContain('value="alpha beta"');
+	});
+
+	it('opens the settings panel from the toolbar', () => {
+		const body = render(TopBar, {
+			props: {
+				preset: '24h',
+				onpreset: () => undefined,
+				onrefresh: () => undefined,
+				refreshing: false,
+				query: '',
+				onquery: () => undefined,
+				onsettings: () => undefined
+			}
+		}).body;
+
+		expect(body).toMatch(/aria-label="Open settings"(?![^>]*disabled)/);
+	});
+});
+
+describe('SettingsPanel', () => {
+	it('renders the theme, password and provider sections', () => {
+		const body = render(SettingsPanel, { props: { onclose: () => undefined } }).body;
+
+		expect(body).toContain('aria-label="Settings"');
+		expect(body).toContain('aria-label="Theme"');
+		expect(body).toContain('aria-label="Change password"');
+		expect(body).toContain('AI providers');
+		expect(body).toContain('Resetting the app deletes the password');
+	});
+
+	it('shows the first-run banner only while the password is unchanged', () => {
+		const flagged = render(SettingsPanel, {
+			props: { mustChangePassword: true, onclose: () => undefined }
+		}).body;
+		const clean = render(SettingsPanel, {
+			props: { mustChangePassword: false, onclose: () => undefined }
+		}).body;
+
+		expect(flagged).toContain('The first-run password is still in place.');
+		expect(clean).not.toContain('The first-run password is still in place.');
+	});
+});
+
+describe('PasswordForm', () => {
+	it('asks for the current password and a repeated new one', () => {
+		const body = render(PasswordForm).body;
+
+		expect(body).toContain('autocomplete="current-password"');
+		expect(body.match(/autocomplete="new-password"/g)).toHaveLength(2);
+		expect(body).toContain('minlength="8"');
 	});
 });
