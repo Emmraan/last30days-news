@@ -66,8 +66,15 @@ test('an API route without a session is a 401', async () => {
 	expect(res.status).toBe(401);
 });
 
-test('the two AI write routes are not reachable without a session', async () => {
-	for (const path of ['/api/items/x/summary', '/api/settings/ai/test']) {
+test('AI and category write routes are not reachable without a session', async () => {
+	for (const path of [
+		'/api/items/x/summary',
+		'/api/settings/ai/test',
+		'/api/categories',
+		'/api/categories/x/rescore',
+		'/api/categories/feed-check',
+		'/api/sources'
+	]) {
 		const { event } = eventFor({
 			path,
 			method: 'POST',

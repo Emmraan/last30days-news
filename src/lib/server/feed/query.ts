@@ -2,6 +2,12 @@ import { and, asc, desc, eq, gt, lt, or, sql, type SQL } from 'drizzle-orm';
 import type { Db } from '../db';
 import { item } from '../db/schema';
 import type { Item } from '#lib/types';
+import {
+	categoryVisibleCondition,
+	loadCategoryFilter,
+	promptHash,
+	type CategoryFilter
+} from '../categories/filter';
 
 export const DEFAULT_LIMIT = 50;
 export const MAX_LIMIT = 100;
@@ -150,7 +156,13 @@ export async function queryFeed(
 		if (params.to !== undefined) conditions.push(sql`${effective} <= ${params.to}`);
 	}
 
-	if (params.category) conditions.push(eq(item.category, params.category));
+	let categoryFilter: CategoryFilter | null = null;
+	if (params.category) {
+		categoryFilter = await loadCategoryFilter(db, params.category);
+		if (!categoryFilter) return { items: [], nextCursor: null };
+		const visible = categoryVisibleCondition(categoryFilter);
+		if (visible) conditions.push(visible);
+	}
 
 	if (params.q) {
 		for (const token of params.q.split(/\s+/)) {
@@ -169,25 +181,56 @@ export async function queryFeed(
 		if (after) conditions.push(after);
 	}
 
-	const rows: Item[] = await db
-		.select({
-			id: item.id,
-			title: item.title,
-			url: item.url,
-			author: item.author,
-			publishedAt: item.publishedAt,
-			publishedEstimated: item.publishedEstimated,
-			fetchedAt: item.fetchedAt,
-			excerpt: item.excerpt,
-			language: item.language,
-			category: item.category,
-			sourceCount: item.sourceCount
-		})
+	const base = {
+		id: item.id,
+		title: item.title,
+		url: item.url,
+		author: item.author,
+		publishedAt: item.publishedAt,
+		publishedEstimated: item.publishedEstimated,
+		fetchedAt: item.fetchedAt,
+		excerpt: item.excerpt,
+		language: item.language,
+		category: item.category,
+		sourceCount: item.sourceCount
+	};
+
+	// §S9: the reason is rendered as the row's why callout, so it is read from
+	// the same cache row that admitted the item, never from a model response.
+	const prompt = categoryFilter?.category.prompt?.trim();
+	const withScore =
+		categoryFilter !== null &&
+		categoryFilter.category.matchMode !== 'keywords' &&
+		Boolean(prompt);
+	const selection = withScore
+		? {
+				...base,
+				score: sql<number | null>`(
+					select category_item.score from category_item
+					where category_item.category_id = ${categoryFilter!.category.id}
+						and category_item.item_id = ${item.id}
+						and category_item.prompt_hash = ${promptHash(prompt!)}
+						and category_item.score >= ${categoryFilter!.category.aiThreshold}
+					limit 1
+				)`,
+				reason: sql<string | null>`(
+					select category_item.reason from category_item
+					where category_item.category_id = ${categoryFilter!.category.id}
+						and category_item.item_id = ${item.id}
+						and category_item.prompt_hash = ${promptHash(prompt!)}
+						and category_item.score >= ${categoryFilter!.category.aiThreshold}
+					limit 1
+				)`
+			}
+		: base;
+
+	const rows = (await db
+		.select(selection)
 		.from(item)
 		.where(conditions.length ? and(...conditions) : undefined)
 		.orderBy(desc(item.sourceCount), desc(item.publishedAt), asc(item.id))
 		.limit(params.limit + 1)
-		.all();
+		.all()) as Item[];
 
 	const page = rows.slice(0, params.limit);
 	const last = page[page.length - 1];

@@ -1,4 +1,4 @@
-import { category, source } from './schema';
+import { category, categorySource, source } from './schema';
 import type { Db } from './index';
 
 // §S4 builtin categories and §S5 seeded sources. Insert-or-ignore so every
@@ -70,5 +70,9 @@ export async function seed(db: Db) {
 	await db
 		.insert(source)
 		.values(SOURCES.map((s) => ({ ...s, enabled: true, createdAt: now })))
+		.onConflictDoNothing();
+	await db
+		.insert(categorySource)
+		.values(SOURCES.map((s) => ({ categoryId: s.category, sourceId: s.id })))
 		.onConflictDoNothing();
 }
