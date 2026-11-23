@@ -15,7 +15,11 @@ export async function PATCH({ params, request, locals }: RequestEvent) {
 
 	const row = await locals.db.select().from(category).where(eq(category.id, params.id)).get();
 	if (!row) return apiError(404, 'not_found', 'No such category.');
-	if (row.builtin)
+	// A builtin's name, prompt, mode and keywords are fixed, but its position in the
+	// list is presentation, so the panel may still reorder it.
+	const fields = Object.keys(data);
+	const orderOnly = fields.length === 1 && fields[0] === 'sortOrder';
+	if (row.builtin && !orderOnly)
 		return apiError(403, 'builtin_category', 'Builtin categories cannot be changed.');
 
 	if (data.name !== undefined && (await nameTaken(locals.db, data.name, row.id)))
@@ -45,7 +49,8 @@ export async function PATCH({ params, request, locals }: RequestEvent) {
 				matchMode: nextMode,
 				keywords: data.keywords === undefined ? row.keywords : cleanKeywords(data.keywords),
 				prompt: nextPrompt,
-				aiThreshold: data.aiThreshold ?? row.aiThreshold
+				aiThreshold: data.aiThreshold ?? row.aiThreshold,
+				sortOrder: data.sortOrder ?? row.sortOrder
 			})
 			.where(eq(category.id, row.id));
 

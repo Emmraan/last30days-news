@@ -1,8 +1,10 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import DetailPane from '../src/lib/components/DetailPane.svelte';
+import CategoryPanel from '../src/lib/components/CategoryPanel.svelte';
 import ItemRow from '../src/lib/components/ItemRow.svelte';
 import TopBar from '../src/lib/components/TopBar.svelte';
+import type { CategoryView } from '../src/lib/server/categories/store';
 import type { Item, ItemDetail } from '../src/lib/types';
 
 const NOW = Date.UTC(2026, 10, 20, 12);
@@ -150,6 +152,67 @@ describe('DetailPane', () => {
 
 		const unscored = detailPane({ item: baseItem, sources: [], summary: null });
 		expect(unscored).not.toContain('Relevance');
+	});
+});
+
+describe('CategoryPanel', () => {
+	const views: CategoryView[] = [
+		{
+			id: 'technology',
+			name: 'Technology',
+			builtin: true,
+			matchMode: 'keywords',
+			keywords: ['chips'],
+			prompt: null,
+			aiThreshold: 0.6,
+			sortOrder: 0,
+			createdAt: NOW,
+			keywordCount: 1,
+			itemCount: 12,
+			hasPrompt: false,
+			sourceIds: []
+		},
+		{
+			id: 'usr-chips',
+			name: '<b>Chips</b>',
+			builtin: false,
+			matchMode: 'ai',
+			keywords: [],
+			prompt: 'Chip design.',
+			aiThreshold: 0.7,
+			sortOrder: 2,
+			createdAt: NOW,
+			keywordCount: 0,
+			itemCount: 3,
+			hasPrompt: true,
+			sourceIds: []
+		}
+	];
+
+	const body = render(CategoryPanel, {
+		props: { categories: views, onchange: () => undefined, onclose: () => undefined }
+	}).body;
+
+	it('lists builtin and custom rows without offering mutation on a builtin', () => {
+		expect(body).toContain('Technology');
+		expect(body).toContain('Builtin');
+		expect(body).not.toContain('aria-label="Rename Technology"');
+		expect(body).not.toContain('aria-label="Delete Technology"');
+	});
+
+	it('escapes a hostile name and offers rename, move and delete', () => {
+		expect(body).not.toContain('<b>Chips</b>');
+		expect(body).toContain('&lt;b>Chips');
+		expect(body).toContain('aria-label="Rename &lt;b>Chips');
+		expect(body).toContain('aria-label="Move &lt;b>Chips');
+		expect(body).toContain('aria-label="Delete &lt;b>Chips');
+	});
+
+	it('renders the create form with a feed URL check target', () => {
+		expect(body).toContain('New category');
+		expect(body).toContain('Create category');
+		expect(body).toContain('placeholder="https://example.com/feed.xml"');
+		expect(body).toContain('https://example.com/feed.xml');
 	});
 });
 

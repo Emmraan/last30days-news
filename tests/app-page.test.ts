@@ -2,7 +2,8 @@ import { expect, test } from 'vitest';
 import { load } from '../src/routes/app/+page.server';
 import { item, itemSource } from '#lib/server/db/schema';
 import { seed } from '#lib/server/db/seed';
-import type { FeedCategory, FeedPage } from '#lib/types';
+import type { FeedPage } from '#lib/types';
+import type { CategoryView } from '#lib/server/categories/store';
 import { freshDb } from './helper';
 
 const HOUR = 60 * 60 * 1000;
@@ -23,7 +24,7 @@ function row(i: number, publishedAt: number) {
 	};
 }
 
-type LoadData = { feed: FeedPage; categories: FeedCategory[]; now: number };
+type LoadData = { feed: FeedPage; categories: CategoryView[]; now: number };
 
 test('the app load returns the last 24 hours and the category list', async () => {
 	const { db } = await freshDb();
@@ -44,9 +45,17 @@ test('the app load returns the last 24 hours and the category list', async () =>
 	expect(data.feed.items.map((entry) => entry.id)).toEqual([recent.id]);
 	expect(data.feed.items[0].sourceName).toBe('Ars Technica');
 	expect(data.feed.nextCursor).toBeNull();
-	expect(data.categories).toEqual([
-		{ id: 'technology', name: 'Technology', builtin: true },
-		{ id: 'ai', name: 'AI', builtin: true }
-	]);
+	expect(data.categories.map((entry) => entry.id)).toEqual(['technology', 'ai']);
+	// The panel needs the full view, not just the label: order, sources and prompt.
+	expect(data.categories[0]).toMatchObject({
+		id: 'technology',
+		name: 'Technology',
+		builtin: true,
+		matchMode: 'keywords',
+		sortOrder: 0,
+		hasPrompt: false
+	});
+	expect(Array.isArray(data.categories[0].keywords)).toBe(true);
+	expect(Array.isArray(data.categories[0].sourceIds)).toBe(true);
 	expect(data.now).toBeGreaterThanOrEqual(now);
 });

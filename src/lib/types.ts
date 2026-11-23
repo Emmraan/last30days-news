@@ -44,9 +44,3 @@ export type ItemDetail = {
 	sources: ItemSource[];
 	summary: Summary | null;
 };
-
-export type FeedCategory = {
-	id: string;
-	name: string;
-	builtin: boolean;
-};

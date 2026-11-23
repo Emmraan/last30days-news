@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Plus } from 'lucide-svelte';
+	import CategoryPanel from '#lib/components/CategoryPanel.svelte';
 	import DetailPane from '#lib/components/DetailPane.svelte';
 	import FeedPane from '#lib/components/FeedPane.svelte';
 	import StatusBar from '#lib/components/StatusBar.svelte';
 	import TopBar from '#lib/components/TopBar.svelte';
 	import { displayText } from '#lib/format';
+	import type { CategoryView } from '#lib/server/categories/store';
 	import type { FeedPage, Item, ItemDetail, Summary } from '#lib/types';
 	import { PRESET_LABEL, presetRange, type Preset } from '#lib/util/time';
 	import type { PageData } from './$types';
@@ -18,6 +20,11 @@
 
 	let preset = $state<Preset>('24h');
 	let category = $state<string | null>(null);
+	// The panel owns category mutations, so the sidebar reads a local copy that
+	// it can replace after a create, rename, reorder or delete.
+	// svelte-ignore state_referenced_locally
+	let categories = $state<CategoryView[]>([...data.categories]);
+	let panelOpen = $state(false);
 	let query = $state('');
 	// Only two or more characters are a search; one character means "no filter".
 	const activeQuery = $derived([...query.trim()].length >= MIN_SEARCH_CHARS ? query.trim() : '');
@@ -50,12 +57,12 @@
 
 	const categoryName = $derived(
 		category
-			? (data.categories.find((entry) => entry.id === category)?.name ?? category)
+			? (categories.find((entry) => entry.id === category)?.name ?? category)
 			: ''
 	);
 	const detailCategoryName = $derived(
 		detail
-			? (data.categories.find((entry) => entry.id === detail?.item.category)?.name ??
+			? (categories.find((entry) => entry.id === detail?.item.category)?.name ??
 				detail.item.category)
 			: ''
 	);
@@ -165,6 +172,15 @@
 		category = value;
 		clearDetail();
 		void loadFeed('reset');
+	}
+
+	function applyCategories(next: CategoryView[]) {
+		categories = next;
+		// A deleted category cannot stay the active filter; fall back to All items
+		// instead of showing an empty feed the user cannot explain.
+		if (category && !next.some((entry) => entry.id === category)) {
+			chooseCategory(null);
+		}
 	}
 
 	async function openItem(id: string) {
@@ -314,7 +330,12 @@
 		<aside class="pane sidebar" aria-label="Categories">
 			<div class="pane-head">
 				<h2>Categories</h2>
-				<button class="iconbtn" type="button" aria-label="Add category" disabled>
+				<button
+					class="iconbtn"
+					type="button"
+					aria-label="Add category"
+					onclick={() => (panelOpen = true)}
+				>
 					<Plus size={14} aria-hidden="true" />
 				</button>
 			</div>
@@ -329,7 +350,7 @@
 				>
 					<span class="side-label">All items</span>
 				</button>
-				{#each data.categories as entry (entry.id)}
+				{#each categories as entry (entry.id)}
 					<button
 						class="side-item"
 						class:on={category === entry.id}
@@ -344,7 +365,9 @@
 			</div>
 
 			<div class="side-foot">
-				<button class="side-item" type="button" disabled>Manage categories</button>
+				<button class="side-item" type="button" onclick={() => (panelOpen = true)}>
+					Manage categories
+				</button>
 			</div>
 		</aside>
 
@@ -379,6 +402,14 @@
 
 	<StatusBar count={items.length} {preset} {refreshing} />
 </div>
+
+{#if panelOpen}
+	<CategoryPanel
+		{categories}
+		onchange={applyCategories}
+		onclose={() => (panelOpen = false)}
+	/>
+{/if}
 
 <style>
 	.shell {

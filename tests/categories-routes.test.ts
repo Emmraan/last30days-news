@@ -169,7 +169,7 @@ test('POST /api/categories rejects a duplicate name case-insensitively and a mis
 	expect((await createCategory(noPrompt.event)).status).toBe(400);
 });
 
-test('PATCH and DELETE reject a builtin category', async () => {
+test('PATCH rejects builtin content changes but allows a reorder', async () => {
 	const { db } = await fixture();
 	const patch = makeEvent({
 		db,
@@ -181,6 +181,26 @@ test('PATCH and DELETE reject a builtin category', async () => {
 	const patched = await read(await patchCategory(patch.event));
 	expect(patched.status).toBe(403);
 	expect(patched.body).toEqual({ error: { code: 'builtin_category', message: expect.any(String) } });
+
+	const blend = makeEvent({
+		db,
+		method: 'PATCH',
+		url: 'http://127.0.0.1:4477/api/categories/technology',
+		params: { id: 'technology' },
+		body: { sortOrder: 5, name: 'Renamed' }
+	});
+	expect((await patchCategory(blend.event)).status).toBe(403);
+
+	const reorder = makeEvent({
+		db,
+		method: 'PATCH',
+		url: 'http://127.0.0.1:4477/api/categories/technology',
+		params: { id: 'technology' },
+		body: { sortOrder: 5 }
+	});
+	const moved = await read(await patchCategory(reorder.event));
+	expect(moved.status).toBe(200);
+	expect(moved.body!.category).toMatchObject({ name: 'Technology', sortOrder: 5 });
 
 	const remove = makeEvent({
 		db,
@@ -205,6 +225,63 @@ test('PATCH changes a custom category prompt and source links', async () => {
 	expect(res.body!.category).toMatchObject({ prompt: 'Chip companies', sourceIds: ['ars'] });
 	const links = await db.select().from(categorySource).where(eq(categorySource.categoryId, 'usr-chips')).all();
 	expect(links.map((l) => l.sourceId)).toEqual(['ars']);
+});
+
+test('PATCH moves a custom category by sortOrder alone', async () => {
+	const { db } = await fixture();
+	await db.insert(category).values({
+		id: 'usr-more',
+		name: 'More',
+		builtin: false,
+		matchMode: 'keywords',
+		keywords: [],
+		prompt: null,
+		aiThreshold: 0.6,
+		sortOrder: 3,
+		createdAt: T0
+	});
+	const order = async () => {
+		const res = await read(await listCategories(makeEvent({ db }).event));
+		return (res.body!.categories as { id: string; sortOrder: number }[]).map((row) => row.id);
+	};
+	expect(await order()).toEqual(['technology', 'ai', 'usr-chips', 'usr-more']);
+
+	for (const [id, sortOrder] of [
+		['usr-chips', 3],
+		['usr-more', 2]
+	] as const) {
+		const res = await read(
+			await patchCategory(
+				makeEvent({
+					db,
+					method: 'PATCH',
+					url: `http://127.0.0.1:4477/api/categories/${id}`,
+					params: { id },
+					body: { sortOrder }
+				}).event
+			)
+		);
+		expect(res.status).toBe(200);
+		expect(res.body!.category).toMatchObject({ id, sortOrder, name: id === 'usr-chips' ? 'Chips' : 'More' });
+	}
+
+	expect(await order()).toEqual(['technology', 'ai', 'usr-more', 'usr-chips']);
+});
+
+test('PATCH rejects a non-integer sortOrder', async () => {
+	const { db } = await fixture();
+	const res = await read(
+		await patchCategory(
+			makeEvent({
+				db,
+				method: 'PATCH',
+				url: 'http://127.0.0.1:4477/api/categories/usr-chips',
+				params: { id: 'usr-chips' },
+				body: { sortOrder: 1.5 }
+			}).event
+		)
+	);
+	expect(res.status).toBe(400);
 });
 
 test('DELETE disables its sources and moves their items instead of deleting them', async () => {
