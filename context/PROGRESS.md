@@ -19,7 +19,7 @@ and its merge.
 | Docs: skill lookup rule | done | `docs-skill-lookup-rule` | `1a0b6b8` | `42d32ac` |
 | P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | `e945c70` |
 | P5 Feed API | done | `phase-5-feed-api` | `10c7f91` | `ba496be` |
-| P6 Summaries | done | `phase-6-summaries` | `918808f` | pending |
+| P6 Summaries | done | `phase-6-summaries` | `918808f` | `7a70e3b` |
 
 ## P0 — Bootstrap
 
