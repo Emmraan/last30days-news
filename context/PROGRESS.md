@@ -18,6 +18,7 @@ the plan and code hold the full rationale.
 | P4 Ingest | done | `phase-4-ingest` | `2c6ecd5` | `e945c70` |
 | P5 Feed API | done | `phase-5-feed-api` | `10c7f91` | `ba496be` |
 | P6 Summaries | done | `phase-6-summaries` | `918808f` | `7a70e3b` |
+| P7 Categories | done | `phase-7-categories` | `d06dda2` | pending |
 
 ## P0 — Bootstrap
 
@@ -168,6 +169,40 @@ summaries still read and generation is 409 `ai_locked` until sign-in. `ai`
 7.0.179 plus four `@ai-sdk/*` adapters are §S1's stack (Node has no provider
 clients). `ai.providers` / `secret.ai.<id>.key` names are for P12. The 60 s /
 30 s timeouts and `maxRetries: 0` are bounded-cost additions.
+
+## P7 — Categories
+
+`feed/keywords.ts` matches ASCII word boundaries and escapes GLOB wildcards.
+`categories/filter.ts` uses `item.category` for builtins, `item_source` for
+pinned custom sources, all items when a custom category pins none, and scores
+keyed by `sha1(prompt)`. `feed/query.ts` projects the cached `score`/`reason`
+only when a scored category admits the row. `ai/score.ts` scores 20 per call,
+200 per open, skips cached rows, caps titles at 300 and excerpts at 800,
+temperature 0, 900 output tokens, one repair, missing id stored as 0; `both`
+excludes keyword hits in SQL before the 200 cap. Routes: `/api/categories`
+CRUD (builtin 403, unique names, `usr-<slug>` ids), `/rescore` SSE
+(`progress`/`degraded`/`done`, optional empty body and `reset`), `/feed-check`,
+and `POST /api/sources` (one probe, one transaction, no row on failure).
+Seeded builtins now own their six source pins. 87 new tests (369 total); gates
+green; audit 0/0/1/0; no migration, no dependency.
+
+Pen-test fixes: high — SSRF guard now covers IPv4-mapped/compatible IPv6,
+ULA, link-local, multicast, NAT64, CGNAT and `*.localhost`, throws typed
+`UnsafeUrlError`, rechecks every redirect, omits credentials, and bounds a
+feed title to 120 chars before it becomes a source name. Medium — the `both`
+budget excludes keyword hits in SQL; score prompts cap titles; a mid-open
+query failure still closes the SSE stream with `degraded` + `done`.
+
+Accepted limits: 10k keywords take 63 s on 1,000 items versus 892 ms with FTS
+(exact punctuation/boundary kept; single-owner, no crash); DNS rebinding
+unchecked; no per-session AI rate limit (P6); old prompt-hash rows orphaned;
+SQLite `lower()` folds ASCII only; an empty custom category shows every item
+until a layer is set; source URL uniqueness is checked before insert, not
+constrained.
+
+Deviations: scoring runs from `/rescore`, not `GET /api/feed`, so the feed
+stays read-only; each keyword is capped at 200 chars; `itemCount` counts
+cached/visible items; source ids are `src-<sha1>`.
 
 ## Working rules adopted mid-project
 
