@@ -5,6 +5,8 @@ import CategoryPanel from '../src/lib/components/CategoryPanel.svelte';
 import PasswordForm from '../src/lib/components/PasswordForm.svelte';
 import SettingsPanel from '../src/lib/components/SettingsPanel.svelte';
 import ItemRow from '../src/lib/components/ItemRow.svelte';
+import StatusBar from '../src/lib/components/StatusBar.svelte';
+import HelpOverlay from '../src/lib/components/HelpOverlay.svelte';
 import TopBar from '../src/lib/components/TopBar.svelte';
 import type { CategoryView } from '../src/lib/server/categories/store';
 import type { Item, ItemDetail } from '../src/lib/types';
@@ -228,7 +230,8 @@ describe('TopBar', () => {
 				refreshing: false,
 				query: 'alpha beta',
 				onquery: () => undefined,
-				onsettings: () => undefined
+				onsettings: () => undefined,
+				onhelp: () => undefined
 			}
 		}).body;
 
@@ -246,11 +249,60 @@ describe('TopBar', () => {
 				refreshing: false,
 				query: '',
 				onquery: () => undefined,
-				onsettings: () => undefined
+				onsettings: () => undefined,
+				onhelp: () => undefined
 			}
 		}).body;
 
 		expect(body).toMatch(/aria-label="Open settings"(?![^>]*disabled)/);
+	});
+
+	it('offers a keyboard map', () => {
+		const body = render(TopBar, {
+			props: {
+				preset: '24h',
+				onpreset: () => undefined,
+				onrefresh: () => undefined,
+				refreshing: false,
+				query: '',
+				onquery: () => undefined,
+				onsettings: () => undefined,
+				onhelp: () => undefined
+			}
+		}).body;
+
+		expect(body).toContain('aria-label="Keyboard shortcuts"');
+	});
+});
+
+describe('HelpOverlay', () => {
+	it('lists every shortcut the page binds', () => {
+		const body = render(HelpOverlay, { props: { onclose: () => undefined } }).body;
+
+		for (const keys of ['j / k', 'Enter', 'Esc', '/', '1 2 3', 'r', 'g then s', '?']) {
+			expect(body).toContain(keys);
+		}
+	});
+});
+
+describe('StatusBar', () => {
+	it('reports the item count and preset', () => {
+		const body = render(StatusBar, {
+			props: { count: 1, preset: '7d', refreshing: false }
+		}).body;
+
+		expect(body).toContain('1 item');
+		expect(body).toContain('7d');
+		expect(body).toContain('Ready');
+	});
+
+	it('says disconnected and offers a retry while offline', () => {
+		const body = render(StatusBar, {
+			props: { count: 4, preset: '24h', refreshing: false, offline: true, onretry: () => undefined }
+		}).body;
+
+		expect(body).toContain('Disconnected');
+		expect(body).toContain('Retry');
 	});
 });
 

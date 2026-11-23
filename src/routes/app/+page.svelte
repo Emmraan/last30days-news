@@ -4,12 +4,14 @@
 	import CategoryPanel from '#lib/components/CategoryPanel.svelte';
 	import DetailPane from '#lib/components/DetailPane.svelte';
 	import FeedPane from '#lib/components/FeedPane.svelte';
+	import HelpOverlay from '#lib/components/HelpOverlay.svelte';
 	import StatusBar from '#lib/components/StatusBar.svelte';
 	import TopBar from '#lib/components/TopBar.svelte';
 	import SettingsPanel from '#lib/components/SettingsPanel.svelte';
 	import { displayText } from '#lib/format';
 	import type { CategoryView } from '#lib/server/categories/store';
 	import type { FeedPage, Item, ItemDetail, Summary } from '#lib/types';
+	import { resolveKey, stepIndex } from '#lib/util/keys';
 	import { PRESET_LABEL, presetRange, type Preset } from '#lib/util/time';
 	import type { PageData } from './$types';
 
@@ -41,6 +43,12 @@
 	let feedState = $state<'ready' | 'loading' | 'error'>('ready');
 	let feedError = $state('');
 	let loadingMore = $state(false);
+	let helpOpen = $state(false);
+	// True between `g` and the key that completes the chord; a stray `g` must not
+	// arm the chord forever, hence the timer.
+	let awaitingG = $state(false);
+	let chordTimer: ReturnType<typeof setTimeout> | undefined;
+	let offline = $state(false);
 
 	let selectedId = $state<string | null>(null);
 	let detail = $state<ItemDetail | null>(null);
@@ -60,14 +68,12 @@
 	let failedMode: 'reset' | 'more' | 'silent' = 'reset';
 
 	const categoryName = $derived(
-		category
-			? (categories.find((entry) => entry.id === category)?.name ?? category)
-			: ''
+		category ? (categories.find((entry) => entry.id === category)?.name ?? category) : ''
 	);
 	const detailCategoryName = $derived(
 		detail
 			? (categories.find((entry) => entry.id === detail?.item.category)?.name ??
-				detail.item.category)
+					detail.item.category)
 			: ''
 	);
 	const emptyText = $derived(
@@ -78,10 +84,129 @@
 		const timer = setInterval(() => {
 			now = Date.now();
 		}, 60_000);
+
+		const setOffline = () => {
+			offline = !navigator.onLine;
+		};
+		setOffline();
+		window.addEventListener('online', setOffline);
+		window.addEventListener('offline', setOffline);
+
+		window.addEventListener('keydown', onKeydown);
+
 		return () => {
 			clearInterval(timer);
 			if (searchTimer) clearTimeout(searchTimer);
+			if (chordTimer) clearTimeout(chordTimer);
+			window.removeEventListener('online', setOffline);
+			window.removeEventListener('offline', setOffline);
+			window.removeEventListener('keydown', onKeydown);
 		};
+	});
+
+	function isTyping(target: EventTarget | null): boolean {
+		return (
+			target instanceof HTMLElement &&
+			Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+		);
+	}
+
+	function isActivable(target: EventTarget | null): boolean {
+		return (
+			target instanceof HTMLElement &&
+			Boolean(target.closest('button, a[href], summary, [role="button"]'))
+		);
+	}
+
+	function focusSearch() {
+		document.querySelector<HTMLInputElement>('.topbar input[type="search"]')?.focus();
+	}
+
+	/** `j`/`k` move the selection; the list keeps the row in view, never the page. */
+	function step(delta: 1 | -1) {
+		const next = stepIndex(
+			items.length,
+			items.findIndex((entry) => entry.id === selectedId),
+			delta
+		);
+		if (next === null) return;
+		void openItem(items[next].id);
+	}
+
+	function onKeydown(event: KeyboardEvent) {
+		const action = resolveKey(
+			{ key: event.key, ctrlKey: event.ctrlKey, metaKey: event.metaKey, altKey: event.altKey },
+			{ typing: isTyping(event.target), awaitingG, activable: isActivable(event.target) }
+		);
+
+		if (chordTimer) clearTimeout(chordTimer);
+		awaitingG = false;
+
+		switch (action) {
+			case null:
+				return;
+			case 'g':
+				awaitingG = true;
+				chordTimer = setTimeout(() => (awaitingG = false), 1000);
+				break;
+			case 'search':
+				event.preventDefault();
+				focusSearch();
+				break;
+			case 'next':
+				event.preventDefault();
+				step(1);
+				break;
+			case 'prev':
+				event.preventDefault();
+				step(-1);
+				break;
+			case 'open':
+				if (selectedId) {
+					event.preventDefault();
+					void openItem(selectedId);
+				}
+				break;
+			case 'escape':
+				if (helpOpen) helpOpen = false;
+				else if (settingsOpen) settingsOpen = false;
+				else if (panelOpen) panelOpen = false;
+				else if (isTyping(event.target)) (event.target as HTMLElement).blur();
+				else clearDetail();
+				break;
+			case 'refresh':
+				event.preventDefault();
+				void refresh();
+				break;
+			case 'preset-24h':
+				event.preventDefault();
+				choosePreset('24h');
+				break;
+			case 'preset-7d':
+				event.preventDefault();
+				choosePreset('7d');
+				break;
+			case 'preset-30d':
+				event.preventDefault();
+				choosePreset('30d');
+				break;
+			case 'settings':
+				event.preventDefault();
+				settingsOpen = true;
+				break;
+			case 'help':
+				event.preventDefault();
+				helpOpen = true;
+				break;
+		}
+	}
+
+	$effect(() => {
+		// Reading `selectedId` here is what re-runs this after `j`/`k`.
+		if (!selectedId) return;
+		document
+			.querySelector('.feed-pane [aria-current="true"]')
+			?.scrollIntoView({ block: 'nearest' });
 	});
 
 	async function loadFeed(mode: 'reset' | 'more' | 'silent') {
@@ -329,14 +454,18 @@
 			{query}
 			onquery={chooseQuery}
 			onsettings={() => (settingsOpen = true)}
+			onhelp={() => (helpOpen = true)}
 		/>
 		{#if mustChangePassword}
 			<p class="firstrun" role="status">
 				The first-run password is still in place.
 				<button class="link" type="button" onclick={() => (settingsOpen = true)}>
-					Change it now</button
-				>.
+					Change it now
+				</button>.
 			</p>
+		{/if}
+		{#if offline}
+			<p class="offline" role="status">Disconnected — showing cached items</p>
 		{/if}
 	</div>
 	<div class="fetchbar" class:on={refreshing} aria-hidden="true"><span></span></div>
@@ -415,15 +544,18 @@
 		/>
 	</div>
 
-	<StatusBar count={items.length} {preset} {refreshing} />
+	<StatusBar
+		count={items.length}
+		{preset}
+		{refreshing}
+		{offline}
+		error={feedState === 'error'}
+		onretry={retryFeed}
+	/>
 </div>
 
 {#if panelOpen}
-	<CategoryPanel
-		{categories}
-		onchange={applyCategories}
-		onclose={() => (panelOpen = false)}
-	/>
+	<CategoryPanel {categories} onchange={applyCategories} onclose={() => (panelOpen = false)} />
 {/if}
 
 {#if settingsOpen}
@@ -432,6 +564,10 @@
 		onpasswordchanged={() => (mustChangePassword = false)}
 		onclose={() => (settingsOpen = false)}
 	/>
+{/if}
+
+{#if helpOpen}
+	<HelpOverlay onclose={() => (helpOpen = false)} />
 {/if}
 
 <style>
@@ -538,6 +674,15 @@
 		margin: 0;
 		padding: 6px 12px;
 		background: color-mix(in srgb, var(--warn) 12%, var(--bg));
+		box-shadow: inset 0 -1px 0 var(--line);
+		color: var(--txt-2);
+		font-size: 12px;
+	}
+
+	.offline {
+		margin: 0;
+		padding: 6px 12px;
+		background: color-mix(in srgb, var(--warn) 20%, var(--bg));
 		box-shadow: inset 0 -1px 0 var(--line);
 		color: var(--txt-2);
 		font-size: 12px;

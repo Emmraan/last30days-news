@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { RefreshCw, Search, Settings, SunMoon } from 'lucide-svelte';
+	import { CircleHelp, RefreshCw, Search, Settings, SunMoon } from 'lucide-svelte';
 	import { THEME_COOKIE } from '#lib/theme';
 	import { PRESETS, type Preset } from '#lib/util/time';
 	import Logo from './Logo.svelte';
@@ -12,7 +12,8 @@
 		refreshing,
 		query,
 		onquery,
-		onsettings
+		onsettings,
+		onhelp
 	}: {
 		preset: Preset;
 		onpreset: (preset: Preset) => void;
@@ -21,6 +22,7 @@
 		query: string;
 		onquery: (value: string) => void;
 		onsettings: () => void;
+		onhelp: () => void;
 	} = $props();
 
 	function toggleTheme() {
@@ -60,11 +62,9 @@
 
 	<div class="seg" role="group" aria-label="Time range">
 		{#each PRESETS as option (option)}
-			<button
-				type="button"
-				aria-pressed={preset === option}
-				onclick={() => onpreset(option)}
-			>{option}</button>
+			<button type="button" aria-pressed={preset === option} onclick={() => onpreset(option)}>
+				{option}
+			</button>
 		{/each}
 	</div>
 
@@ -79,6 +79,15 @@
 			onclick={onrefresh}
 		>
 			<RefreshCw size={15} aria-hidden="true" />
+		</button>
+		<button
+			class="iconbtn"
+			type="button"
+			aria-label="Keyboard shortcuts"
+			title="Keyboard shortcuts (?)"
+			onclick={onhelp}
+		>
+			<CircleHelp size={15} aria-hidden="true" />
 		</button>
 		<button
 			class="iconbtn"
