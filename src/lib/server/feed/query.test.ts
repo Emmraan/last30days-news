@@ -5,12 +5,21 @@ import {
 	MAX_QUERY_CHARS,
 	MAX_QUERY_TOKENS,
 	decodeCursor,
+	decodeSearchCursor,
 	encodeCursor,
+	encodeSearchCursor,
 	parseFeedQuery,
-	type Cursor
+	type Cursor,
+	type SearchCursor
 } from './query';
 
 const ID = '0123456789abcdef0123456789abcdef01234567';
+
+const searchRoundTrip: SearchCursor[] = [
+	{ rank: 0, publishedAt: 0, id: ID },
+	{ rank: 0.0000015714285714285712, publishedAt: 1_700_000_000_000, id: ID },
+	{ rank: 12.5, publishedAt: 9_999_999_999_999, id: 'f'.repeat(40) }
+];
 
 const roundTrip: Cursor[] = [
 	{ sourceCount: 1, publishedAt: 0, id: ID },
@@ -50,6 +59,23 @@ describe('cursor encoding', () => {
 
 	test.each(bad)('rejects %s', (_label, value) => {
 		expect(decodeCursor(value)).toBeNull();
+	});
+});
+
+describe('search cursor encoding', () => {
+	test.each(searchRoundTrip)('round-trips $rank/$publishedAt', (cursor) => {
+		expect(decodeSearchCursor(encodeSearchCursor(cursor))).toEqual(cursor);
+	});
+
+	const bad: [string, string][] = [
+		['negative rank', Buffer.from(JSON.stringify([-1, 0, ID])).toString('base64url')],
+		['fractional time', Buffer.from(JSON.stringify([1, 1.5, ID])).toString('base64url')],
+		['short id', Buffer.from(JSON.stringify([1, 0, 'abc'])).toString('base64url')],
+		['null rank', Buffer.from(JSON.stringify([null, 0, ID])).toString('base64url')]
+	];
+
+	test.each(bad)('rejects %s', (_label, value) => {
+		expect(decodeSearchCursor(value)).toBeNull();
 	});
 });
 
@@ -102,6 +128,11 @@ describe('feed query parsing', () => {
 		expect(ok('q=%20%20').q).toBeUndefined();
 	});
 
+	test('a query of only NUL bytes is not an FTS syntax error', () => {
+		expect(ok('q=%00%00').q).toBeUndefined();
+		expect(ok('q=%00%00alpha').q).toBe('alpha');
+	});
+
 	test('enforces the two-character minimum and the input caps', () => {
 		expect(ok('q=ab').q).toBe('ab');
 		expect(ok('q=%20ab%20').q).toBe('ab');
@@ -119,6 +150,13 @@ describe('feed query parsing', () => {
 		const cursor = { sourceCount: 2, publishedAt: 1_700_000_000_000, id: ID };
 		expect(ok(`cursor=${encodeCursor(cursor)}`).cursor).toEqual(cursor);
 		expect(code('cursor=not-a-cursor')).toBe('invalid_cursor');
+	});
+
+	test('reads a fractional rank cursor only for a search', () => {
+		const cursor = { rank: 1.5, publishedAt: 1_700_000_000_000, id: ID };
+		const encoded = encodeSearchCursor(cursor);
+		expect(ok(`q=alpha&cursor=${encoded}`).cursor).toEqual(cursor);
+		expect(code(`cursor=${encoded}`)).toBe('invalid_cursor');
 	});
 
 	test('ignores unknown parameters', () => {

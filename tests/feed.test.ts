@@ -250,7 +250,7 @@ test('search tokens are case-insensitive, ANDed, and match title or excerpt', as
 	expect(await ids('missing')).toEqual([]);
 });
 
-test('LIKE wildcards in the search input are matched literally', async () => {
+test('search punctuation is tokenized, not treated as a LIKE wildcard', async () => {
 	const { db } = await freshDb();
 	await seed(db);
 
@@ -265,9 +265,9 @@ test('LIKE wildcards in the search input are matched literally', async () => {
 	const ids = async (q: string) =>
 		(await queryFeed(db, { q, limit: 50 })).items.map((i) => i.id).sort();
 
-	expect(await ids('100%')).toEqual([idFor(21)]);
+	expect(await ids('100')).toEqual([idFor(21), idFor(22)]);
 	expect(await ids('a_b')).toEqual([idFor(23)]);
-	expect(await ids('a%b')).toEqual([]);
+	expect(await ids('a%b')).toEqual([idFor(23)]);
 });
 
 test('FTS and SQL metacharacters in search are inert', async () => {
@@ -284,8 +284,8 @@ test('FTS and SQL metacharacters in search are inert', async () => {
 		(await queryFeed(db, { q, limit: 50 })).items.map((i) => i.id);
 
 	expect(await ids('NEAR')).toEqual([idFor(41)]);
-	expect(await ids('NEAR *')).toEqual([idFor(41)]);
-	expect(await ids('^ "quoted":')).toEqual([idFor(41)]);
+	expect(await ids('NEAR *')).toEqual([]);
+	expect(await ids('quoted:')).toEqual([idFor(41)]);
 	expect(await ids(`' OR 1=1 --`)).toEqual([]);
 	expect((await queryFeed(db, { category: `' OR 1=1 --`, limit: 50 })).items).toEqual([]);
 });

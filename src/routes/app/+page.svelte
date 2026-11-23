@@ -13,9 +13,15 @@
 	let { data }: { data: PageData } = $props();
 
 	const LIMIT = 50;
+	const MIN_SEARCH_CHARS = 2;
+	const SEARCH_DEBOUNCE_MS = 250;
 
 	let preset = $state<Preset>('24h');
 	let category = $state<string | null>(null);
+	let query = $state('');
+	// Only two or more characters are a search; one character means "no filter".
+	const activeQuery = $derived([...query.trim()].length >= MIN_SEARCH_CHARS ? query.trim() : '');
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	// The client owns the feed after hydration; page data is only the first page.
 	// svelte-ignore state_referenced_locally
 	let items = $state<Item[]>([...data.feed.items]);
@@ -54,14 +60,17 @@
 			: ''
 	);
 	const emptyText = $derived(
-		`No items${categoryName ? ` in ${displayText(categoryName)}` : ''} in the last ${PRESET_LABEL[preset]}. Refresh to fetch.`
+		`No items${activeQuery ? ` for "${activeQuery}"` : ''}${categoryName ? ` in ${displayText(categoryName)}` : ''} in the last ${PRESET_LABEL[preset]}. Refresh to fetch.`
 	);
 
 	onMount(() => {
 		const timer = setInterval(() => {
 			now = Date.now();
 		}, 60_000);
-		return () => clearInterval(timer);
+		return () => {
+			clearInterval(timer);
+			if (searchTimer) clearTimeout(searchTimer);
+		};
 	});
 
 	async function loadFeed(mode: 'reset' | 'more' | 'silent') {
@@ -75,6 +84,7 @@
 			limit: String(LIMIT)
 		});
 		if (category) params.set('category', category);
+		if (activeQuery) params.set('q', activeQuery);
 		if (mode === 'more' && nextCursor) params.set('cursor', nextCursor);
 
 		if (mode === 'reset') {
@@ -131,8 +141,19 @@
 		generateError = '';
 	}
 
+	function chooseQuery(value: string) {
+		query = value;
+		if (searchTimer) clearTimeout(searchTimer);
+		searchTimer = setTimeout(() => {
+			searchTimer = undefined;
+			clearDetail();
+			void loadFeed('reset');
+		}, SEARCH_DEBOUNCE_MS);
+	}
+
 	function choosePreset(value: Preset) {
 		if (value === preset) return;
+		if (searchTimer) clearTimeout(searchTimer);
 		preset = value;
 		clearDetail();
 		void loadFeed('reset');
@@ -140,6 +161,7 @@
 
 	function chooseCategory(value: string | null) {
 		if (value === category) return;
+		if (searchTimer) clearTimeout(searchTimer);
 		category = value;
 		clearDetail();
 		void loadFeed('reset');
@@ -278,7 +300,14 @@
 </svelte:head>
 
 <div class="shell">
-	<TopBar {preset} onpreset={choosePreset} onrefresh={refresh} {refreshing} />
+	<TopBar
+		{preset}
+		onpreset={choosePreset}
+		onrefresh={refresh}
+		{refreshing}
+		{query}
+		onquery={chooseQuery}
+	/>
 	<div class="fetchbar" class:on={refreshing} aria-hidden="true"><span></span></div>
 
 	<div class="body">

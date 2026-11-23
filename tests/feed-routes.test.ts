@@ -101,6 +101,35 @@ test.each([
 	expect(res.body).toEqual({ error: { code, message: expect.any(String) } });
 });
 
+test('GET /api/feed paginates a search with the returned cursor', async () => {
+	const { db } = await freshDb();
+	await seed(db);
+	await db.insert(item).values([
+		{ ...row(0), title: 'Alpha one' },
+		{ ...row(1), title: 'Alpha two' },
+		{ ...row(2), title: 'Alpha three' }
+	]);
+
+	const first = await read(
+		await getFeed(makeEvent({ db, url: feedUrl({ q: 'alpha', limit: '2' }) }).event)
+	);
+	expect((first.body!.items as { id: string }[]).map((entry) => entry.id)).toEqual([
+		idFor(0),
+		idFor(1)
+	]);
+
+	const second = await read(
+		await getFeed(
+			makeEvent({
+				db,
+				url: feedUrl({ q: 'alpha', limit: '2', cursor: String(first.body!.nextCursor) })
+			}).event
+		)
+	);
+	expect((second.body!.items as { id: string }[]).map((entry) => entry.id)).toEqual([idFor(2)]);
+	expect(second.body!.nextCursor).toBeNull();
+});
+
 test('GET /api/feed accepts filters and returns an empty page honestly', async () => {
 	const { db } = await freshDb();
 	await seed(db);
