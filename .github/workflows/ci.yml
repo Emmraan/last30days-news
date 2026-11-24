@@ -111,7 +111,7 @@ jobs:
             -H 'origin: http://127.0.0.1:4477' \
             -d '{"password":"ci-password-123"}')
           test "$status" = "200"
-          node -e 'const b = require("/tmp/login.json"); if (b.authenticated !== true || b.mustChangePassword !== false) process.exit(1)'
+          jq -e '.authenticated == true and .mustChangePassword == false' /tmp/login.json >/dev/null
           grep -q 'l30_session' /tmp/cookies.txt
 
           status=$(curl -sS -o /tmp/app.html -b /tmp/cookies.txt -w '%{http_code}' http://127.0.0.1:4477/app)

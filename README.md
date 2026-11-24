@@ -43,7 +43,7 @@ The database is one file, `<data-dir>/db.sqlite`, with WAL mode and foreign keys
 
 A local `npx` install keeps the local escape hatch: `/reset` works from the machine running the reader. It clears the password, saved API keys and sessions; items, sources and categories stay. A remote client cannot use it.
 
-Docker, VPS and Vercel are deployments. They run with `L30_DEPLOYED=1` (Vercel also sets `VERCEL=1`), so they never accept the local default password and reset is disabled. To recover a deployment, stop the process and use an SQLite client or the Turso console to delete the setting rows `auth.password`, `crypto.salt`, and every row whose key starts with `secret.`. Set a fresh `L30_INITIAL_PASSWORD` (8+ characters) in the environment, then start again. Items, sources and categories stay; saved API keys must be entered again.
+Docker, VPS and Vercel are deployments. Docker and the systemd unit set `L30_DEPLOYED=1`; Vercel sets `VERCEL=1`. Either way they never accept the local default password and reset is disabled. To recover a deployment, stop the process and use an SQLite client or the Turso console to delete the setting rows `auth.password`, `crypto.salt`, and every row whose key starts with `secret.`. Set a fresh `L30_INITIAL_PASSWORD` (8+ characters) in the environment, then start again. Items, sources and categories stay; saved API keys must be entered again.
 
 For Vercel, make the same setting-row changes in Turso, update `L30_INITIAL_PASSWORD` in the project environment, and redeploy.
 
@@ -65,7 +65,7 @@ docker run -d --name last30days-news \
 docker logs last30days-news
 ```
 
-The image runs as UID 1000 and keeps the database in `/data`. Mount a volume there; the entrypoint warns when `/data` is not a mount. `L30_INITIAL_PASSWORD` is required for the first boot and is stored as a hash; the local default `last30` is never accepted, and reset is disabled. The health check calls `/api/health`.
+The image runs as UID 1000 and keeps the database in `/data`. Mount a volume there; the entrypoint warns when `/data` is not a mount. `L30_INITIAL_PASSWORD` is used on the first boot and stored as a hash; the local default `last30` is never accepted, and reset is disabled. The health check calls `/api/health`.
 
 If `L30_INITIAL_PASSWORD` is missing, the container still starts but login fails closed with a setup message. Set the variable and restart.
 
@@ -98,18 +98,18 @@ Vercel sets `VERCEL=1`, so the local default password and reset are disabled. If
 
 ## Environment variables
 
-| Name | Purpose |
-| --- | --- |
-| `PORT` | Listen port. Defaults to the first free port from 4477 to 4487. |
-| `HOST` | Bind address. Defaults to `127.0.0.1`. |
-| `L30_DATA_DIR` | Data directory. Defaults to the platform app data directory. |
-| `L30_DEPLOYED` | Set to `1` on Docker, VPS and other public targets. Disables the local default password and reset. |
+| Name                   | Purpose                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
+| `PORT`                 | Listen port. Defaults to the first free port from 4477 to 4487.                                     |
+| `HOST`                 | Bind address. Defaults to `127.0.0.1`.                                                              |
+| `L30_DATA_DIR`         | Data directory. Defaults to the platform app data directory.                                        |
+| `L30_DEPLOYED`         | Set to `1` on Docker, VPS and other public targets. Disables the local default password and reset.  |
 | `L30_INITIAL_PASSWORD` | First password for a deployed install, 8+ characters. Read once while the database has no password. |
-| `L30_DEBUG` | Set to `1` for debug logs. |
-| `L30_TRUST_PROXY` | Set to `1` only behind a proxy that sets `X-Forwarded-*`. |
-| `CI` | Set to skip opening the browser. |
-| `TURSO_DATABASE_URL` | Turso database URL. Required on Vercel. |
-| `TURSO_AUTH_TOKEN` | Turso auth token. Required on Vercel. |
+| `L30_DEBUG`            | Set to `1` for debug logs.                                                                          |
+| `L30_TRUST_PROXY`      | Set to `1` only behind a proxy that sets `X-Forwarded-*`.                                           |
+| `CI`                   | Set to skip opening the browser.                                                                    |
+| `TURSO_DATABASE_URL`   | Turso database URL. Required on Vercel.                                                             |
+| `TURSO_AUTH_TOKEN`     | Turso auth token. Required on Vercel.                                                               |
 
 `.env.example` lists the names without values.
 

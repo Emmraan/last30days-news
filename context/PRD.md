@@ -315,7 +315,8 @@ the full custom source manager with a hand-editable definition (§6.9).
 ### 6.7 Authentication and access control
 
 - The web UI requires a login before any data is shown.
-- Default password is `last30` on first run.
+- A local install uses the default password `last30` on first run. Deployed
+  installs require `L30_INITIAL_PASSWORD` (§S9).
 - After first login, the user is prompted to change the password in
   Settings.
 - The password is stored hashed, never in plain text.
@@ -890,9 +891,11 @@ use `line-clamp`. Long unbroken URLs and tokens get
 `overflow-wrap:anywhere` in detail. Summary bodies scroll inside the
 detail pane, never the page.
 
-**First run.** No password set yet → login screen with the default
-password hint. Logged in with the default password → a single inline
-banner in Settings, not a modal, asking to change it. No database →
+**First run.** On a local install, no password set yet → login screen
+with the default password hint. Logged in with the default password → a
+single inline banner in Settings, not a modal, asking to change it. A
+deployed install without `L30_INITIAL_PASSWORD` says setup is incomplete
+and fails login closed (§S9). No database →
 fetch pass starts immediately and the feed shows the loading state.
 
 **Scoring (AI categories only).** While `category_item` scores are being

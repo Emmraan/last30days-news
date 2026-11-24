@@ -23,7 +23,7 @@ export const DUMMY_HASH = `scrypt$${N}$${R}$${P}$AAAAAAAAAAAAAAAAAAAAAA==$${'A'.
 /** §S9 first-run password. It only ever matches while no password is stored. */
 export const FIRST_RUN_PASSWORD = 'last30';
 
-/** §S19: Docker and VPS installs must show the default password without a UI. */
+/** §S19: a local install has no UI at boot, so print the default password. */
 export function firstRunNotice() {
 	return `\nlast30days-news: first run.\n  Sign in with the default password "${FIRST_RUN_PASSWORD}" and change it in Settings.\n\n`;
 }

@@ -490,7 +490,8 @@ and exit. Never prompts. Refuses to boot without a writable data dir.
 
 Docker: single image, Node LTS slim, `/data` volume (mandatory, warn if
 missing), non-root UID 1000, 220 MB budget, `HEALTHCHECK` on
-`/api/health`, prints the default password loudly on first boot. VPS:
+`/api/health`, `L30_DEPLOYED=1`, `L30_INITIAL_PASSWORD` on first boot
+(never the local default, no reset). VPS:
 systemd, `Restart=on-failure`, proxy for TLS, `Secure` cookies need
 `X-Forwarded-Proto` which is trusted only when `L30_TRUST_PROXY=1`.
 
