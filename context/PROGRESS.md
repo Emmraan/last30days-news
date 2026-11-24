@@ -29,7 +29,7 @@ a new one; the plan and code hold the full rationale.
 | Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
 | Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
 | P14 Dashboard + landing showcase | done | `phase-14-landing` | `e9aae09` | `0ac90e1` |
-| P15 Install, budgets, CI | committed | `phase-15-install` | `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` + `ca1965f` | - |
+| P15 Install, budgets, CI | committed | `phase-15-install` | `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` + `ca1965f` + `f6ff2cd` | - |
 
 ## P0 — Bootstrap
 
@@ -306,7 +306,7 @@ scripts are allowed.
 ## P15 — Install, budgets, CI
 
 Work `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` +
-`ca1965f`, on `phase-15-install`, not merged.
+`ca1965f` + `f6ff2cd`, on `phase-15-install`, not merged.
 `bin/last30days.js` adds
 `--no-open`, exact `PORT` or 4477–4487, platform data dirs and browser open.
 Docker and systemd units, `vercel.json` and `VERCEL=1` adapter switch. Local
@@ -317,18 +317,24 @@ and disable reset. The tarball ships only
 `bin/`, built output and README/docs assets. `.env.development.example` and
 `.env.production.example` hold dummy values; real files stay ignored.
 `vite.config.ts` loads the matching file for dev/build but never for tests.
-README is beginner-first, with animated SVGs for the dashboard and run modes,
-and separate local/Vercel/VPS paths. CONTRIBUTING, SECURITY and the
-Contributor Covenant cover development and reporting. Release
+README is a minimal quick start that links to the landing docs:
+`landing/` is a separate static app with mdsvex pages at `/docs`, an
+`install.sh`/`install.ps1` pair that installs the latest GitHub release
+tarball, and install commands built from a required `APP_URL`. The release
+workflow attaches `last30days-news.tgz` to each GitHub Release. CONTRIBUTING,
+SECURITY and the Contributor Covenant cover development and reporting. Release
 is semantic-release from `main` after CI: GitHub Release always, npm only
 when `NPM_TOKEN` exists in the `release` environment. The added CI
 `VERCEL=1` build was removed after adapter-vercel hung in file tracing
 (`ENXIO` on a `/tmp/dotnet-diagnostic-*` socket); the real deployment checks
-that adapter. The Docker CI job was removed on the owner's call after its
-one-off pass; the Dockerfile and VPS guide stay.
+that adapter. CI builds the Docker image on green `main` and pushes
+`ghcr.io/emmraan/last30days-news:latest` plus `sha-<short>` to GHCR; the VPS
+guide pulls it instead of building.
 Local gate: lint/typecheck clean, 53 files / 619 tests, both builds, budget
-pass (cold boot 677 ms, /app JS 56.4 KB, feed p95 60 ms), smoke and package
-smoke pass, audit 0 critical/high (2 moderate). A dummy `.env.production`
+pass (cold boot 667 ms, /app JS 56.4 KB, landing 15.5 KB, feed p95 75 ms),
+smoke and package smoke pass, audit 0 critical/high (2 moderate). The landing
+build fails closed on Vercel without `APP_URL`, and an injected test URL
+reached both install commands and every docs link resolved. A dummy `.env.production`
 verified `start:local`: deployed login works, `last30` 401, reset 403, feed
 200, and the password never reached the log. Dependabot groups weekly
 npm, actions and Docker minor/patch updates; a policy labels them
@@ -340,7 +346,8 @@ password change, `/app`, feed and refresh (5 events); one transient connect
 timeout cleared on rerun. The branch now holds the test password
 `local-test-password-123` and 5 items; delete `auth.password`, `crypto.salt`
 and every `secret.*` row to return to first-run. Not yet verified: actual
-Vercel login/fetch/feed, npm publish (account suspended 72 h). The first
+Vercel login/fetch/feed, the landing deployment and its `APP_URL`, npm publish
+(account suspended 72 h). The first
 Turso check hit a `turso://` URL, which `@libsql/client` cannot open; the
 owner switched to the libSQL `libsql://` URL. Accepted: DNS
 rebinding and the `Host` header (P3); the local default window (now
