@@ -6,10 +6,10 @@ export default tseslint.config(
 	{
 		ignores: [
 			'.svelte-kit/',
+			'landing/.svelte-kit/',
 			'build/',
+			'landing/build/',
 			'node_modules/',
-			'test-results/',
-			'playwright-report/',
 			'static/shots/'
 		]
 	},

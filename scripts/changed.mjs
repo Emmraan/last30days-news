@@ -2,6 +2,7 @@
 // Dev-loop speed: only re-check files touched since main. Full gates still run
 // in CI; this exists so a phase in progress does not pay for the whole repo.
 import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const mode = process.argv[2];
 const base = process.env.L30_BASE_BRANCH ?? 'main';
@@ -28,7 +29,8 @@ function changed() {
 	add(git('diff', '--name-only', 'HEAD'));
 	add(git('diff', '--name-only', '--cached'));
 	add(git('ls-files', '--others', '--exclude-standard'));
-	return [...files].filter((f) => CODE.test(f));
+	// Deleted files are in the diff but cannot be linted or typechecked.
+	return [...files].filter((f) => CODE.test(f) && existsSync(f));
 }
 
 const files = changed();

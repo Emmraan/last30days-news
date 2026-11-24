@@ -5,8 +5,6 @@ build
 *.sqlite-shm
 *.sqlite-wal
 fixtures/cache
-test-results
-playwright-report
 .env
 .env.*
 !.env.example
