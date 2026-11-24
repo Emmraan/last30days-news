@@ -1,0 +1,58 @@
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+	import Diagram from '#lib/components/Diagram.svelte';
+	import { INSTALL_PS1_URL, INSTALL_SH_URL } from '#lib/site';
+</script>
+
+# Documentation
+
+Last30days-news is a desktop-style reader for the last 30 days of technology news. It collects RSS feeds and other sources into one database, merges duplicate stories, and can add cited AI summaries.
+
+The same code runs in three places:
+
+| Target | Database | First password | Reset |
+| --- | --- | --- | --- |
+| Local | SQLite file | `last30` | `/reset` from this machine |
+| Vercel | Turso libSQL | `L30_INITIAL_PASSWORD` | Disabled |
+| VPS or Docker | SQLite file | `L30_INITIAL_PASSWORD` | Disabled |
+
+<Diagram
+	name="run-modes"
+	alt="Local, VPS and Vercel run modes, showing the browser, app process and database for each"
+	caption="The database and password policy change with the target. The reader stays the same."
+/>
+
+## Install
+
+Pick the command for your system. Each one installs the latest release and starts with the default settings. You can change the port, data directory and password later.
+
+### Windows
+
+<CopyCommand command={`irm ${INSTALL_PS1_URL} | iex`} label="PowerShell" />
+
+### macOS and Linux
+
+<CopyCommand command={`curl -fsSL ${INSTALL_SH_URL} | sh`} label="Terminal" />
+
+### Run without installing
+
+<CopyCommand command="npx last30days-news" label="Node.js" />
+
+The first local run starts at `http://127.0.0.1:4477` and uses the password `last30`. Change it in Settings after you sign in.
+
+## Where to go next
+
+- [Install and first run](/docs/install) covers Node, ports, data locations and the command line.
+- [Run locally](/docs/local) covers the desktop workflow.
+- [Deploy to Vercel](/docs/vercel) covers Turso and the one-click button.
+- [Run on a VPS](/docs/vps) covers Docker, systemd and a TLS proxy.
+- [Configuration](/docs/configuration) lists every environment variable.
+- [Passwords and recovery](/docs/passwords) explains the local and deployed rules.
+- [Troubleshooting](/docs/troubleshooting) lists the errors you are most likely to hit.
+- [Development](/docs/development) covers the checkout, tests, docs site and releases.
+
+## What stays private
+
+The local install keeps its database in one SQLite file on your machine. API keys are encrypted at rest and never reach the browser. There is no account, no analytics service and no hosted service for the local install.
+
+On Vercel, the database is your own Turso database. The app has no shared backend.

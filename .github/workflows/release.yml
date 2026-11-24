@@ -53,3 +53,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Attach the package tarball
+        run: |
+          tag=$(git tag --points-at HEAD | grep '^v' | head -n1)
+          if [ -z "$tag" ]; then
+            echo "No release tag on HEAD; nothing to attach."
+            exit 0
+          fi
+          pnpm pack
+          mv last30days-news-*.tgz last30days-news.tgz
+          gh release upload "$tag" last30days-news.tgz --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

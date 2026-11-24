@@ -69,6 +69,16 @@ function assetFile(url) {
 	return file;
 }
 
+/** @param {string} url @returns {string} */
+function landingAssetFile(url) {
+	const pathname = decodeURIComponent(url.split(/[?#]/, 1)[0]);
+	const root = join(ROOT, 'landing', 'build');
+	const file = resolve(root, `.${pathname}`);
+	if (!file.startsWith(root + sep)) fail(`asset escapes the landing build: ${url}`);
+	if (!existsSync(file)) fail(`asset missing from the landing build: ${url}`);
+	return file;
+}
+
 /** A long insert can outlive the server's keep-alive window; retry the safe GET once. */
 /**
  * @param {string} url
@@ -170,7 +180,13 @@ try {
 	const landingFiles = walk(join(ROOT, 'landing', 'build')).filter(
 		(file) => !/\.(?:gz|br|map)$/i.test(file)
 	);
-	const landingBytes = landingFiles.reduce((sum, file) => sum + gzBytes(file), 0);
+	// Docs are separate routes. Budget the landing home the way the app routes
+	// are budgeted: its own HTML plus the assets that page asks for.
+	const landingHome = readFileSync(join(ROOT, 'landing', 'build', 'index.html'), 'utf8');
+	const landingAssets = parseAssetUrls(landingHome);
+	const landingBytes =
+		landingAssets.reduce((sum, url) => sum + gzBytes(landingAssetFile(url)), 0) +
+		gzipSync(Buffer.from(landingHome)).length;
 	add('landing total', landingBytes, LIMITS.landing);
 
 	const cssFiles = [...clientFiles, ...landingFiles].filter((file) => file.endsWith('.css'));

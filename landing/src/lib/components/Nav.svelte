@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { REPO_URL } from '#lib/site';
 	import Logo from './Logo.svelte';
 
@@ -21,6 +22,7 @@
 			{#each LINKS as link (link.id)}
 				<button class="nav-link" type="button" data-scroll={link.id}>{link.label}</button>
 			{/each}
+			<a class="nav-link" href={resolve('/docs')}>Docs</a>
 		</nav>
 
 		<div class="right">
@@ -107,6 +109,7 @@
 					{#each LINKS as link (link.id)}
 						<button class="menu-link" type="button" data-scroll={link.id}>{link.label}</button>
 					{/each}
+					<a class="menu-link" href={resolve('/docs')}>Docs</a>
 				</nav>
 			</details>
 		</div>

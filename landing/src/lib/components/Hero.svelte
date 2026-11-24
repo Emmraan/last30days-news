@@ -1,16 +1,16 @@
 <script lang="ts">
+	import { INSTALL_PS1_URL, INSTALL_SH_URL } from '#lib/site';
 	import AppPreview from './AppPreview.svelte';
 
-	// npx runs it once; the rest install globally, the way each manager spells it.
-	const MANAGERS = [
-		{ name: 'npx', cmd: 'npx last30days-news' },
-		{ name: 'npm', cmd: 'npm i -g last30days-news' },
-		{ name: 'pnpm', cmd: 'pnpm add -g last30days-news' },
-		{ name: 'yarn', cmd: 'yarn global add last30days-news' },
-		{ name: 'bun', cmd: 'bun add -g last30days-news' }
+	// These are served by this landing app, so APP_URL decides where the
+	// commands point before the user has installed anything.
+	const TARGETS = [
+		{ name: 'Windows', cmd: `irm ${INSTALL_PS1_URL} | iex` },
+		{ name: 'macOS / Linux', cmd: `curl -fsSL ${INSTALL_SH_URL} | sh` },
+		{ name: 'npx', cmd: 'npx last30days-news' }
 	];
 
-	const FIRST = MANAGERS[0].cmd;
+	const FIRST = TARGETS[0].cmd;
 </script>
 
 <section class="hero" aria-labelledby="hero-title">
@@ -24,8 +24,8 @@
 
 		<div class="actions">
 			<div class="runner">
-				<div class="tabs" role="group" aria-label="Package manager">
-					{#each MANAGERS as item, i (item.name)}
+				<div class="tabs" role="group" aria-label="Install target">
+					{#each TARGETS as item, i (item.name)}
 						<button
 							class="tab"
 							type="button"
@@ -99,7 +99,7 @@
 			</button>
 		</div>
 
-		<p class="note">One command starts it. Your data stays in a local SQLite file.</p>
+		<p class="note">One command installs it. The first run uses password <code>last30</code>.</p>
 	</div>
 
 	<div class="bleed">
@@ -270,6 +270,11 @@
 		margin-top: 15px;
 		color: var(--txt-3);
 		font-size: 12.5px;
+	}
+
+	.note code {
+		font-family: var(--font-mono);
+		font-size: 11.5px;
 	}
 
 	.sr-only {

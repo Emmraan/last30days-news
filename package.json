@@ -43,6 +43,7 @@
   },
   "scripts": {
     "dev": "vite dev",
+    "dev:landing": "pnpm --filter last30days-news-landing dev",
     "start": "node bin/last30days.js",
     "start:local": "node --env-file=.env.production bin/last30days.js",
     "build": "vite build",

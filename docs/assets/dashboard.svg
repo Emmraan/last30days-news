@@ -23,7 +23,7 @@
 			0%, 8% { transform: rotate(0deg); }
 			18%, 100% { transform: rotate(360deg); }
 		}
-		.spin { transform-origin: 1046px 32px; animation: spin 7s linear infinite; }
+		.spin { transform-origin: 1041px 32px; animation: spin 7s linear infinite; }
 		@keyframes pulse {
 			0%, 100% { opacity: 1; }
 			50% { opacity: 0.35; }

@@ -4,11 +4,10 @@ const plugins = [
 	'@semantic-release/github'
 ];
 
-// npm is optional until the account is available. Adding NPM_TOKEN to the
-// release environment enables publishing without another code change.
-if (process.env.NPM_TOKEN) {
-	plugins.push(['@semantic-release/npm', { npmPublish: true, provenance: true }]);
-}
+// The plugin always prepares the version so the GitHub release tarball matches
+// the tag. NPM_TOKEN only decides whether that tarball is also published.
+const npmPublish = Boolean(process.env.NPM_TOKEN);
+plugins.push(['@semantic-release/npm', { npmPublish, provenance: npmPublish }]);
 
 module.exports = {
 	branches: ['main'],

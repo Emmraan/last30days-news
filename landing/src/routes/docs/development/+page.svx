@@ -1,0 +1,83 @@
+<svelte:head>
+	<title>Development · last30days-news</title>
+	<meta
+		name="description"
+		content="Set up the last30days-news repository, run the app and landing docs, and use the project gates."
+	/>
+</svelte:head>
+
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+</script>
+
+# Development
+
+The app and the landing site are two packages in one pnpm workspace. The app is SvelteKit with a Node or Vercel adapter. The landing site is a static SvelteKit build.
+
+## Setup
+
+Node.js 26.13.0 and pnpm 12.16.1 are pinned in `package.json`. Use pnpm only; do not create a second lockfile.
+
+<CopyCommand command="pnpm install --frozen-lockfile" />
+
+Copy the development environment example:
+
+<CopyCommand command="cp .env.development.example .env.development" />
+
+Leave the Turso values blank for a local SQLite file. `pnpm dev` loads `.env.development`.
+
+## App
+
+<CopyCommand command="pnpm dev" />
+
+The app runs on the Vite port. The packaged app uses `pnpm start` or `pnpm start:local`.
+
+## Landing and docs
+
+The landing site lives in `landing/`. Its docs are `.svx` pages under `landing/src/routes/docs/`.
+
+<CopyCommand command="pnpm dev:landing" />
+
+Open `http://localhost:5174/docs`. `APP_URL` falls back to `http://localhost:5174`; set it when you need the public install URLs:
+
+<CopyCommand command="APP_URL=https://your-landing.vercel.app pnpm build:landing" />
+
+On Windows PowerShell:
+
+<CopyCommand command="$env:APP_URL = 'https://your-landing.vercel.app'; pnpm build:landing" />
+
+The landing Vercel project uses the `landing` directory as its root, runs `pnpm install` from the repository root and builds with `pnpm build:landing`. Set `APP_URL` in its project environment or the build fails.
+
+## Gates
+
+The inner loop checks only changed files:
+
+<CopyCommand command="pnpm lint:changed && pnpm typecheck:changed && pnpm test:changed" />
+
+Run the full gate before a merge:
+
+<CopyCommand
+	command="pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm build:landing && pnpm budget && pnpm test:smoke && pnpm test:package && pnpm audit:gate"
+/>
+
+Run `pnpm budget` alone, not in parallel with other heavy commands. `pnpm test:package` packs the npm tarball, installs it in a temporary directory and checks local and deployed login.
+
+## Docker image
+
+CI builds the image after the gates pass on `main` and publishes it to GitHub Container Registry. A local build is still useful when changing the Dockerfile:
+
+<CopyCommand command="docker build -t last30days-news ." />
+
+## Branches and releases
+
+- Branch per phase, feature or fix; small docs edits can go directly to `main`.
+- Merge with `--no-ff` and keep the branch.
+- Commits follow Conventional Commits.
+- Semantic release runs on green `main` CI. GitHub releases always; npm publishes only when `NPM_TOKEN` is in the `release` environment.
+
+Read [CONTRIBUTING.md](https://github.com/Emmraan/last30days-news/blob/main/CONTRIBUTING.md) before a pull request.
+
+## Next
+
+- [Configuration](/docs/configuration)
+- [Troubleshooting](/docs/troubleshooting)

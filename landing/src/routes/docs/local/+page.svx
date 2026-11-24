@@ -1,0 +1,84 @@
+<svelte:head>
+	<title>Run locally · last30days-news</title>
+	<meta
+		name="description"
+		content="Install last30days-news on Windows, macOS or Linux, start the local reader and keep the database on your machine."
+	/>
+</svelte:head>
+
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+</script>
+
+# Run locally
+
+The local install keeps everything on one machine: the app, the SQLite database and the API keys. It is the quickest way to try the reader.
+
+## Install
+
+Use the [installer](/docs/install) for your platform, or run it once without installing:
+
+<CopyCommand command="npx last30days-news" />
+
+## Start it
+
+<CopyCommand command="last30days" />
+
+The command starts at `http://127.0.0.1:4477`, opens your browser and prints the data directory. The first run uses the password `last30`. Change it in Settings after you sign in.
+
+Use `--no-open` when you do not want a browser window:
+
+<CopyCommand command="last30days --no-open" />
+
+If port 4477 is busy, the command tries 4477 through 4487. Pin one when you need a stable address:
+
+<CopyCommand command="PORT=4480 last30days" />
+
+On Windows PowerShell:
+
+<CopyCommand command="$env:PORT = 4480; last30days" />
+
+`HOST` defaults to `127.0.0.1`. Keep it there unless a reverse proxy is in front of the app.
+
+## Where the data lives
+
+| Platform | Default data directory |
+| --- | --- |
+| Windows | `%APPDATA%\last30days-news` |
+| macOS | `~/Library/Application Support/last30days-news` |
+| Linux | `$XDG_DATA_HOME/last30days-news`, or `~/.local/share/last30days-news` |
+
+Set `L30_DATA_DIR` to use another folder. The database is `<data-dir>/db.sqlite`, with WAL mode and foreign keys enabled.
+
+To back it up, stop the app and copy the whole data directory. Copying only `db.sqlite` while the app is running can miss the WAL file.
+
+## Environment variables
+
+The packaged app reads variables from the shell. It does not load `.env.development` or `.env.production` by itself.
+
+- `PORT` and `HOST` control the listen address.
+- `L30_DATA_DIR` moves the SQLite file.
+- `L30_DEBUG=1` adds verbose logs.
+- `L30_TRUST_PROXY=1` only when a reverse proxy overwrites `X-Forwarded-For` and `X-Forwarded-Proto`.
+
+See [configuration](/docs/configuration) for the full list.
+
+## Reset the local password
+
+Open `http://127.0.0.1:4477/reset` from the same machine. Reset clears the password, saved API keys and sessions. Items, sources and categories stay.
+
+The route is loopback only. A remote client gets `403 reset_local_only`. See [passwords and recovery](/docs/passwords).
+
+## Update
+
+Run the installer again, or update the global package:
+
+<CopyCommand command="npm install --global https://github.com/Emmraan/last30days-news/releases/latest/download/last30days-news.tgz" />
+
+Your database stays in the data directory and is migrated on the next start.
+
+## Next
+
+- [Configuration](/docs/configuration)
+- [Passwords and recovery](/docs/passwords)
+- [Troubleshooting](/docs/troubleshooting)

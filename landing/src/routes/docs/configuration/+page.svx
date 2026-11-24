@@ -1,0 +1,87 @@
+<svelte:head>
+	<title>Configuration · last30days-news</title>
+	<meta
+		name="description"
+		content="Environment variables for local, Vercel and VPS installs of last30days-news, including the landing APP_URL."
+	/>
+</svelte:head>
+
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+</script>
+
+# Configuration
+
+The app reads environment variables. The local packaged app and the Vercel function use the same code, but the database and password policy change with the target.
+
+## App variables
+
+| Variable | Local | Vercel | VPS / Docker | What it does |
+| --- | --- | --- | --- | --- |
+| `PORT` | packaged app | ignored | image or unit | Listen port. Default 4477; the packaged app tries 4477–4487. |
+| `HOST` | packaged app | ignored | image or unit | Bind address. Default 127.0.0.1. |
+| `L30_DATA_DIR` | optional | ignored | `/data` or `/var/lib/last30days-news` | SQLite folder. Ignored when Turso is set. |
+| `TURSO_DATABASE_URL` | optional | required | optional | Turso libSQL URL, starting with `libsql://`. |
+| `TURSO_AUTH_TOKEN` | optional | required | optional | Token for that Turso database. |
+| `L30_DEPLOYED` | only to test deployed mode | not needed; `VERCEL=1` covers it | set by Docker and the unit | Disables the local default password and reset. |
+| `L30_INITIAL_PASSWORD` | optional test value | required on first boot | required on first boot | 8+ character first password. Read only while no password is stored. |
+| `L30_DEBUG` | optional | optional | optional | Verbose logs. |
+| `L30_TRUST_PROXY` | only behind a proxy | not needed | only behind a proxy | Trust `X-Forwarded-*` headers. The proxy must overwrite them. |
+| `CI` | optional | ignored | optional | Skip opening the browser in the packaged app. |
+| `VERCEL` | only for a local adapter check | set by the platform | ignored | Selects the Vercel adapter. Do not set it on a server. |
+
+## Where to put the values
+
+### Local development
+
+Copy `.env.development.example` to `.env.development`:
+
+<CopyCommand command="cp .env.development.example .env.development" />
+
+`pnpm dev` loads it. Leave the Turso values blank to use a local SQLite file. Real values stay out of git.
+
+### Local production-like run
+
+Copy `.env.production.example` to `.env.production`:
+
+<CopyCommand command="cp .env.production.example .env.production" />
+
+`pnpm build` loads it, and `pnpm start:local` runs the built app with it. This is the closest local check before a Docker or VPS deployment.
+
+### Vercel
+
+Add the values in the Vercel project settings. Vercel sets `VERCEL=1`; do not set `L30_DEPLOYED` there.
+
+Required: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `L30_INITIAL_PASSWORD`.
+
+### Docker
+
+Pass values with `-e` or `--env-file`. The image already sets `L30_DEPLOYED=1`, `L30_DATA_DIR=/data`, `PORT=4477` and `HOST=0.0.0.0`.
+
+### systemd
+
+Put values in `/etc/last30days-news.env` and keep the file mode `600`. The unit loads it with `EnvironmentFile=-/etc/last30days-news.env`.
+
+The example files contain dummy values only. `.env.development` and `.env.production` are ignored by git.
+
+## Landing `APP_URL`
+
+The landing site is a separate static build. It shows the one-command installers, and those commands need the public landing URL. Set `APP_URL` in the landing Vercel project:
+
+```text
+APP_URL=https://your-landing.vercel.app
+```
+
+The landing build requires it on Vercel. Locally it falls back to `http://localhost:5174`. After changing `APP_URL`, redeploy the landing so the commands and docs links update.
+
+This variable belongs to the landing project only. The app does not read it.
+
+## Install command URLs
+
+The landing build turns `APP_URL` into:
+
+- `APP_URL/install.ps1` for Windows PowerShell.
+- `APP_URL/install.sh` for macOS and Linux.
+- `APP_URL/docs` for this documentation.
+
+If the commands show `localhost` in production, `APP_URL` was missing or the landing was not rebuilt.
