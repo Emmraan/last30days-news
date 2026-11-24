@@ -29,7 +29,7 @@ a new one; the plan and code hold the full rationale.
 | Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
 | Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
 | P14 Dashboard + landing showcase | done | `phase-14-landing` | `e9aae09` | `0ac90e1` |
-| P15 Install, budgets, CI | committed | `phase-15-install` | `1e16a63` + `f2446fb` | - |
+| P15 Install, budgets, CI | committed | `phase-15-install` | `1e16a63` + `f2446fb` + `e9ac5e2` | - |
 
 ## P0 — Bootstrap
 
@@ -305,7 +305,8 @@ scripts are allowed.
 
 ## P15 — Install, budgets, CI
 
-Work `1e16a63` + `f2446fb`, on `phase-15-install`, not merged. `bin/last30days.js` adds
+Work `1e16a63` + `f2446fb` + `e9ac5e2`, on `phase-15-install`, not merged.
+`bin/last30days.js` adds
 `--no-open`, exact `PORT` or 4477–4487, platform data dirs and browser open.
 Docker and systemd units, `vercel.json` and `VERCEL=1` adapter switch. Local
 npm keeps `last30` and loopback `/reset`; deployments (`L30_DEPLOYED=1` or
@@ -316,9 +317,13 @@ and disable reset. The tarball ships only
 boot, login, `/app`, feed, reset 403 and an unset-password container 503.
 Local gate: lint/typecheck clean, 51 files / 615 tests, both builds, budget
 pass (cold boot 688 ms, /app JS 56.4 KB, feed p95 62 ms), smoke and package
-smoke pass, audit 0 critical/high (2 moderate). Not yet verified: Docker
-image size and boot, Vercel login/fetch/feed, CI on a clean clone. Accepted:
-DNS rebinding and the `Host` header (P3); the local default window (now
+smoke pass, audit 0 critical/high (2 moderate). Dependabot groups weekly
+npm, actions and Docker minor/patch updates; a policy labels them
+`automerge` and closes majors, and a `workflow_run` job merges after green
+CI and closes on failure. CI was green on `a057ff7` (owner report), Docker
+job included; `e9ac5e2` needs the same run. Not yet verified: Vercel
+login/fetch/feed, npm publish (account suspended 72 h). Accepted: DNS
+rebinding and the `Host` header (P3); the local default window (now
 closed on deployments). A local install exposed through a proxy must set
 `L30_TRUST_PROXY=1`, or reset still sees the proxy as loopback.
 
