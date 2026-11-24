@@ -29,7 +29,8 @@ export async function POST({ request, cookies, url, locals }: RequestEvent) {
 	}
 
 	const stored = await getSetting<string>(db, 'auth.password');
-	if (!stored && isDeployed()) {
+	const deployed = isDeployed();
+	if (!stored && deployed) {
 		// A public deployment has no owner at the keyboard, so it fails closed
 		// instead of accepting the repository's public default password.
 		log('warn', 'auth.fail', { ip, reason: 'setup' });
@@ -47,7 +48,10 @@ export async function POST({ request, cookies, url, locals }: RequestEvent) {
 	// The first run compares against the fixed default, so the timing is the
 	// same shape as a real verify rather than a free pass.
 	const firstRunMatch = !stored && parsed.data.password === FIRST_RUN_PASSWORD;
-	const granted = stored ? ok : firstRunMatch;
+	// A database copied from a local install may already hold the public
+	// default as a hash. A deployment must not honour it even then.
+	const defaultOnDeployment = deployed && parsed.data.password === FIRST_RUN_PASSWORD;
+	const granted = stored ? ok && !defaultOnDeployment : firstRunMatch;
 
 	if (!granted) {
 		await recordFailure(db, ip);

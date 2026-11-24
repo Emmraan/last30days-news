@@ -116,6 +116,25 @@ test('a deployment seeds L30_INITIAL_PASSWORD and never accepts last30', async (
 	}
 });
 
+test('a deployment rejects last30 even when an old database stored its hash', async () => {
+	vi.stubEnv('L30_DEPLOYED', '1');
+	try {
+		const { db } = await seededPassword('last30');
+		// The hash is valid, so only the deployment rule can reject it.
+		expect(await verifyPassword('last30', await getSetting<string>(db, 'auth.password'))).toBe(
+			true
+		);
+
+		const { event, jar } = loginEvent(db as never, 'last30');
+		const res = await read(await login(event));
+		expect(res.status).toBe(401);
+		expect(res.body?.error).toMatchObject({ code: 'invalid_password' });
+		expect(jar.jar.has(SESSION_COOKIE)).toBe(false);
+	} finally {
+		vi.unstubAllEnvs();
+	}
+});
+
 test('a stored password logs in and does not demand a change', async () => {
 	const { db } = await seededPassword('correct horse');
 	const { event, jar } = loginEvent(db as never, 'correct horse');
