@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { CircleHelp, RefreshCw, Search, Settings, SunMoon } from 'lucide-svelte';
-	import { THEME_COOKIE } from '#lib/theme';
+	import { CircleHelp, LogOut, RefreshCw, Search, Settings, SunMoon } from 'lucide-svelte';
+	import { THEME_COOKIE, THEME_STORAGE_KEY } from '#lib/theme';
 	import { PRESETS, type Preset } from '#lib/util/time';
 	import Logo from './Logo.svelte';
 
@@ -29,9 +29,23 @@
 	// The hint follows the platform without making SSR guess; Windows is the
 	// default and the value settles after hydration.
 	let mac = $state(false);
+	let signingOut = $state(false);
 	onMount(() => {
 		mac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
 	});
+
+	async function signOut() {
+		if (signingOut) return;
+		signingOut = true;
+		try {
+			const response = await fetch('/api/auth/logout', { method: 'POST' });
+			if (!response.ok) throw new Error('logout failed');
+			location.assign(resolve('/login'));
+		} catch {
+			// Keep the reader in the app when the session could not be ended.
+			signingOut = false;
+		}
+	}
 
 	function toggleTheme() {
 		const root = document.documentElement;
@@ -46,6 +60,11 @@
 
 		root.classList.remove('dark', 'light');
 		root.classList.add(next);
+		try {
+			localStorage.setItem(THEME_STORAGE_KEY, next);
+		} catch {
+			// Private modes can refuse storage; the cookie below still carries it.
+		}
 		const secure = location.protocol === 'https:' ? '; secure' : '';
 		document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax${secure}`;
 	}
@@ -116,6 +135,17 @@
 			onclick={toggleTheme}
 		>
 			<SunMoon size={17} aria-hidden="true" />
+		</button>
+		<span class="divider" aria-hidden="true"></span>
+		<button
+			class="iconbtn signout"
+			type="button"
+			aria-label="Log out"
+			title="Log out"
+			disabled={signingOut}
+			onclick={signOut}
+		>
+			<LogOut size={17} aria-hidden="true" />
 		</button>
 	</div>
 </header>
@@ -248,6 +278,17 @@
 		border-radius: 10px;
 	}
 
+	.divider {
+		width: 1px;
+		height: 20px;
+		margin: 0 3px;
+		background: var(--line);
+	}
+
+	.signout:hover {
+		color: var(--warn);
+	}
+
 	.spin {
 		display: inline-grid;
 		place-items: center;
@@ -274,9 +315,65 @@
 		}
 	}
 
-	@media (max-width: 720px) {
-		.keyhint,
+	@media (max-width: 760px) {
+		.topbar {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-areas:
+				'brand actions'
+				'search search'
+				'seg seg';
+			gap: 10px 12px;
+			height: auto;
+			padding: 10px 12px;
+		}
+
+		.brand {
+			grid-area: brand;
+		}
+
+		.search {
+			grid-area: search;
+			flex: none;
+			width: 100%;
+			margin: 0;
+		}
+
 		.seg {
+			display: flex;
+			grid-area: seg;
+			width: 100%;
+		}
+
+		.seg > button {
+			flex: 1;
+			min-width: 0;
+			padding: 0 6px;
+		}
+
+		.actions {
+			grid-area: actions;
+			gap: 2px;
+			margin-left: 0;
+		}
+
+		.iconbtn {
+			width: 34px;
+			height: 34px;
+		}
+
+		.search input {
+			/* iOS zooms the page when a focused field is under 16px. */
+			font-size: 16px;
+		}
+
+		.divider {
+			display: none;
+		}
+	}
+
+	@media (max-width: 720px) {
+		.keyhint {
 			display: none;
 		}
 	}

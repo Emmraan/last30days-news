@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ArrowLeft } from 'lucide-svelte';
 	import { displayParagraphs, displayText, formatWhen, safeHref } from '#lib/format';
 	import type { ItemDetail, ItemSource } from '#lib/types';
 	import Empty from './Empty.svelte';
@@ -13,7 +14,8 @@
 		generating,
 		generateError,
 		onretry,
-		ongenerate
+		ongenerate,
+		onback
 	}: {
 		state: 'idle' | 'loading' | 'error' | 'ready';
 		detail: ItemDetail | null;
@@ -24,6 +26,7 @@
 		generateError: string;
 		onretry: () => void;
 		ongenerate: () => void;
+		onback?: () => void;
 	} = $props();
 
 	function citationSource(id: string, sources: ItemSource[]): string {
@@ -34,7 +37,20 @@
 
 <section class="pane detail-pane" aria-label="Item detail">
 	<div class="pane-head">
-		<h2>Detail</h2>
+		<div class="head-start">
+			{#if onback}
+				<button
+					class="iconbtn back"
+					type="button"
+					aria-label="Back to feed"
+					title="Back to feed"
+					onclick={onback}
+				>
+					<ArrowLeft size={17} aria-hidden="true" />
+				</button>
+			{/if}
+			<h2>Detail</h2>
+		</div>
 	</div>
 
 	{#if state === 'idle'}
@@ -172,6 +188,18 @@
 		height: 52px;
 		padding: 0 18px;
 		box-shadow: none;
+	}
+
+	.head-start {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+	}
+
+	.back {
+		display: none;
+		margin-left: -8px;
 	}
 
 	.pane-head h2 {
@@ -425,6 +453,35 @@
 		to {
 			opacity: 1;
 			transform: none;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.pane-head {
+			padding: 0 12px;
+		}
+
+		.back {
+			display: inline-grid;
+		}
+
+		.scroll {
+			padding: 8px 16px 24px;
+			scrollbar-gutter: auto;
+		}
+
+		.title {
+			font-size: 21px;
+		}
+
+		.summary {
+			margin-top: 20px;
+			padding-top: 16px;
+		}
+
+		.excerpt-block {
+			margin-top: 20px;
+			padding-top: 16px;
 		}
 	}
 </style>

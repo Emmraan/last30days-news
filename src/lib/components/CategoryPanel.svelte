@@ -779,4 +779,15 @@
 			opacity: 1;
 		}
 	}
+
+	@media (max-width: 760px) {
+		.scroll {
+			padding: 12px 14px 24px;
+		}
+
+		.text {
+			/* iOS zooms the page when a focused field is under 16px. */
+			font-size: 16px;
+		}
+	}
 </style>

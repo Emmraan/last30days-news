@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { X } from 'lucide-svelte';
-	import { THEME_COOKIE, type Theme } from '#lib/theme';
+	import { THEME_COOKIE, THEME_STORAGE_KEY, type Theme } from '#lib/theme';
 	import Dropdown from './Dropdown.svelte';
 	import PasswordForm from './PasswordForm.svelte';
 
@@ -169,6 +169,11 @@
 		if (typeof document === 'undefined') return;
 		document.documentElement.classList.remove('dark', 'light');
 		document.documentElement.classList.add(next);
+		try {
+			localStorage.setItem(THEME_STORAGE_KEY, next);
+		} catch {
+			// Private modes can refuse storage; the cookie below still carries it.
+		}
 		const secure = location.protocol === 'https:' ? '; secure' : '';
 		document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax${secure}`;
 	}
@@ -568,6 +573,17 @@
 		to {
 			transform: none;
 			opacity: 1;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.scroll {
+			padding: 12px 14px 24px;
+		}
+
+		.text {
+			/* iOS zooms the page when a focused field is under 16px. */
+			font-size: 16px;
 		}
 	}
 </style>

@@ -157,4 +157,11 @@
 		display: flex;
 		justify-content: flex-end;
 	}
+
+	@media (max-width: 760px) {
+		.text {
+			/* iOS zooms the page when a focused field is under 16px. */
+			font-size: 16px;
+		}
+	}
 </style>

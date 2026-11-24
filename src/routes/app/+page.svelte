@@ -485,7 +485,41 @@
 	</div>
 	<div class="fetchbar" class:on={refreshing} aria-hidden="true"><span></span></div>
 
-	<div class="body">
+	<div class="body" class:reading={selectedId !== null}>
+		<nav class="mobile-nav" aria-label="Feed categories">
+			<button
+				class="mobile-chip"
+				class:on={category === null}
+				type="button"
+				aria-pressed={category === null}
+				onclick={() => chooseCategory(null)}
+			>
+				All items
+			</button>
+			{#each categories as entry (entry.id)}
+				<button
+					class="mobile-chip"
+					class:on={category === entry.id}
+					type="button"
+					aria-pressed={category === entry.id}
+					title={displayText(entry.name) || entry.id}
+					onclick={() => chooseCategory(entry.id)}
+				>
+					{displayText(entry.name) || entry.id}
+					<span class="mobile-count mono">{entry.itemCount}</span>
+				</button>
+			{/each}
+			<button
+				class="mobile-manage"
+				type="button"
+				aria-label="Manage categories"
+				title="Manage categories"
+				onclick={() => (panelOpen = true)}
+			>
+				<Plus size={16} aria-hidden="true" />
+			</button>
+		</nav>
+
 		<aside class="pane sidebar" aria-label="Categories">
 			<div class="pane-head">
 				<h2>Categories</h2>
@@ -559,6 +593,7 @@
 			{generateError}
 			onretry={retryDetail}
 			ongenerate={generateSummary}
+			onback={clearDetail}
 		/>
 	</div>
 
@@ -593,6 +628,7 @@
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr) auto;
 		height: 100vh;
+		height: 100dvh;
 		overflow: hidden;
 		background: var(--bg);
 	}
@@ -608,6 +644,52 @@
 
 	.sidebar {
 		background: var(--side);
+	}
+
+	.mobile-nav {
+		display: none;
+	}
+
+	.mobile-chip,
+	.mobile-manage {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		height: 34px;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--card);
+		color: var(--txt-2);
+		font: inherit;
+		font-size: 12.5px;
+		cursor: pointer;
+		transition:
+			background-color 110ms var(--ease),
+			border-color 110ms var(--ease),
+			color 110ms var(--ease);
+	}
+
+	.mobile-chip {
+		gap: 7px;
+		max-width: 190px;
+		padding: 0 11px;
+		white-space: nowrap;
+	}
+
+	.mobile-chip.on {
+		border-color: var(--line-2);
+		background: var(--raise);
+		color: var(--txt);
+	}
+
+	.mobile-count {
+		color: var(--txt-3);
+		font-size: 10.5px;
+	}
+
+	.mobile-manage {
+		width: 34px;
 	}
 
 	.pane-head {
@@ -792,9 +874,24 @@
 	@media (max-width: 1020px) {
 		.body {
 			grid-template-columns: minmax(0, 1fr) 400px;
+			grid-template-rows: auto minmax(0, 1fr);
 		}
 
 		.sidebar {
+			display: none;
+		}
+
+		.mobile-nav {
+			display: flex;
+			grid-column: 1 / -1;
+			gap: 6px;
+			min-width: 0;
+			overflow-x: auto;
+			padding-bottom: 1px;
+			scrollbar-width: none;
+		}
+
+		.mobile-nav::-webkit-scrollbar {
 			display: none;
 		}
 	}
@@ -802,9 +899,32 @@
 	@media (max-width: 760px) {
 		.body {
 			grid-template-columns: minmax(0, 1fr);
+			gap: 8px;
+			padding: 0 8px 8px;
 		}
 
-		:global(.detail-pane) {
+		.body :global(.feed-pane) {
+			display: flex;
+		}
+
+		.body :global(.detail-pane) {
+			display: none;
+		}
+
+		.body.reading {
+			grid-template-rows: minmax(0, 1fr);
+		}
+
+		.body.reading :global(.feed-pane),
+		.body.reading .mobile-nav {
+			display: none;
+		}
+
+		.body.reading :global(.detail-pane) {
+			display: flex;
+		}
+
+		.fetchbar {
 			display: none;
 		}
 	}

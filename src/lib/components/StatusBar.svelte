@@ -124,4 +124,16 @@
 		font-family: var(--font-mono);
 		font-variant-numeric: tabular-nums;
 	}
+
+	@media (max-width: 480px) {
+		.statusbar {
+			gap: 8px;
+			padding: 0 12px;
+			font-size: 11.5px;
+		}
+
+		.meta {
+			gap: 5px;
+		}
+	}
 </style>
