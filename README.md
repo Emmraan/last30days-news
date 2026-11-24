@@ -86,10 +86,10 @@ To run from a checkout instead, use the [development setup](#development).
 
 Vercel runs the app as a serverless function. The function filesystem is ephemeral, so the database must be a Turso libSQL database.
 
-1. Create a Turso libSQL database and a development branch.
+1. Create a Turso libSQL database. Keep its main branch for the deployment; the local preflight below uses a separate development branch.
 2. Click the button above.
 3. Set the environment variables Vercel asks for:
-   - `TURSO_DATABASE_URL`: the branch URL, starting with `libsql://`
+   - `TURSO_DATABASE_URL`: the main branch URL, starting with `libsql://`
    - `TURSO_AUTH_TOKEN`: the token for that database
    - `L30_INITIAL_PASSWORD`: an 8+ character first password
 4. Deploy.
