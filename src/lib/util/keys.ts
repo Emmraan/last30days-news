@@ -2,6 +2,7 @@
 
 export type KeyAction =
 	| 'search'
+	| 'quick-search'
 	| 'next'
 	| 'prev'
 	| 'open'
@@ -46,7 +47,12 @@ const PLAIN: Record<string, KeyAction> = {
 };
 
 export function resolveKey(event: KeyEvent, context: Context): KeyAction {
-	// A modifying key belongs to the browser or the OS, never to the feed.
+	// Ctrl/Cmd+K is the one browser shortcut the app claims: quick search.
+	if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k') {
+		return 'quick-search';
+	}
+
+	// Every other modifying key belongs to the browser or the OS, never to the feed.
 	if (event.ctrlKey || event.metaKey || event.altKey) return null;
 
 	if (context.typing) return event.key === 'Escape' ? 'escape' : null;

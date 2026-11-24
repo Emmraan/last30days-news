@@ -21,12 +21,10 @@
     "typecheck:changed": "node scripts/changed.mjs --typecheck",
     "test": "vitest run",
     "test:changed": "node scripts/changed.mjs --test",
-    "test:e2e": "playwright test",
     "audit:gate": "node scripts/audit.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "devDependencies": {
-    "@playwright/test": "1.65.1",
     "@sveltejs/adapter-node": "6.0.5",
     "@sveltejs/adapter-vercel": "7.0.5",
     "@sveltejs/kit": "3.4.0",

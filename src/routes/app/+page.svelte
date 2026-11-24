@@ -118,8 +118,10 @@
 		);
 	}
 
-	function focusSearch() {
-		document.querySelector<HTMLInputElement>('.topbar input[type="search"]')?.focus();
+	function focusSearch(select = false) {
+		const input = document.querySelector<HTMLInputElement>('.topbar input[type="search"]');
+		input?.focus();
+		if (select) input?.select();
 	}
 
 	/** `j`/`k` move the selection; the list keeps the row in view, never the page. */
@@ -152,6 +154,10 @@
 			case 'search':
 				event.preventDefault();
 				focusSearch();
+				break;
+			case 'quick-search':
+				event.preventDefault();
+				focusSearch(true);
 				break;
 			case 'next':
 				event.preventDefault();
@@ -312,6 +318,14 @@
 		}
 	}
 
+	/** Counts are server-side per category, so a refresh has to re-read them. */
+	async function loadCategories() {
+		const res = await fetch('/api/categories');
+		if (!res.ok) return;
+		const body = (await res.json()) as { categories: CategoryView[] };
+		applyCategories(body.categories);
+	}
+
 	async function openItem(id: string) {
 		if (selectedId === id && detailState === 'ready') return;
 
@@ -432,6 +446,7 @@
 				if (!done || done.type !== 'done' || done.sources === 0) break;
 			}
 			await loadFeed('silent');
+			await loadCategories();
 		} catch {
 			feedError = 'Refresh failed.';
 		} finally {
@@ -470,7 +485,41 @@
 	</div>
 	<div class="fetchbar" class:on={refreshing} aria-hidden="true"><span></span></div>
 
-	<div class="body">
+	<div class="body" class:reading={selectedId !== null}>
+		<nav class="mobile-nav" aria-label="Feed categories">
+			<button
+				class="mobile-chip"
+				class:on={category === null}
+				type="button"
+				aria-pressed={category === null}
+				onclick={() => chooseCategory(null)}
+			>
+				All items
+			</button>
+			{#each categories as entry (entry.id)}
+				<button
+					class="mobile-chip"
+					class:on={category === entry.id}
+					type="button"
+					aria-pressed={category === entry.id}
+					title={displayText(entry.name) || entry.id}
+					onclick={() => chooseCategory(entry.id)}
+				>
+					{displayText(entry.name) || entry.id}
+					<span class="mobile-count mono">{entry.itemCount}</span>
+				</button>
+			{/each}
+			<button
+				class="mobile-manage"
+				type="button"
+				aria-label="Manage categories"
+				title="Manage categories"
+				onclick={() => (panelOpen = true)}
+			>
+				<Plus size={16} aria-hidden="true" />
+			</button>
+		</nav>
+
 		<aside class="pane sidebar" aria-label="Categories">
 			<div class="pane-head">
 				<h2>Categories</h2>
@@ -478,9 +527,10 @@
 					class="iconbtn"
 					type="button"
 					aria-label="Add category"
+					title="Add category"
 					onclick={() => (panelOpen = true)}
 				>
-					<Plus size={14} aria-hidden="true" />
+					<Plus size={16} aria-hidden="true" />
 				</button>
 			</div>
 
@@ -504,13 +554,15 @@
 						onclick={() => chooseCategory(entry.id)}
 					>
 						<span class="side-label">{displayText(entry.name) || entry.id}</span>
+						<span class="side-count mono">{entry.itemCount}</span>
 					</button>
 				{/each}
 			</div>
 
 			<div class="side-foot">
 				<button class="side-item" type="button" onclick={() => (panelOpen = true)}>
-					Manage categories
+					<Plus size={16} aria-hidden="true" />
+					<span class="side-label">Manage categories</span>
 				</button>
 			</div>
 		</aside>
@@ -541,6 +593,7 @@
 			{generateError}
 			onretry={retryDetail}
 			ongenerate={generateSummary}
+			onback={clearDetail}
 		/>
 	</div>
 
@@ -575,21 +628,68 @@
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr) auto;
 		height: 100vh;
+		height: 100dvh;
 		overflow: hidden;
 		background: var(--bg);
 	}
 
 	.body {
 		display: grid;
-		grid-template-columns: 252px minmax(0, 1fr) 424px;
-		gap: 2px;
+		grid-template-columns: 260px minmax(0, 1fr) 460px;
+		gap: 12px;
 		min-height: 0;
-		padding: 0 0 2px;
+		padding: 0 16px 12px;
 		background: var(--bg);
 	}
 
 	.sidebar {
 		background: var(--side);
+	}
+
+	.mobile-nav {
+		display: none;
+	}
+
+	.mobile-chip,
+	.mobile-manage {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		height: 34px;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--card);
+		color: var(--txt-2);
+		font: inherit;
+		font-size: 12.5px;
+		cursor: pointer;
+		transition:
+			background-color 110ms var(--ease),
+			border-color 110ms var(--ease),
+			color 110ms var(--ease);
+	}
+
+	.mobile-chip {
+		gap: 7px;
+		max-width: 190px;
+		padding: 0 11px;
+		white-space: nowrap;
+	}
+
+	.mobile-chip.on {
+		border-color: var(--line-2);
+		background: var(--raise);
+		color: var(--txt);
+	}
+
+	.mobile-count {
+		color: var(--txt-3);
+		font-size: 10.5px;
+	}
+
+	.mobile-manage {
+		width: 34px;
 	}
 
 	.pane-head {
@@ -598,16 +698,16 @@
 		justify-content: space-between;
 		gap: 8px;
 		flex: none;
-		height: 38px;
-		padding: 0 10px 0 12px;
-		box-shadow: inset 0 -1px 0 var(--line);
+		height: 52px;
+		padding: 0 10px 0 18px;
+		box-shadow: none;
 	}
 
 	.pane-head h2 {
-		font-family: var(--font-sans);
+		font-family: var(--font-mono);
 		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -616,27 +716,32 @@
 		display: flex;
 		flex: 1;
 		flex-direction: column;
-		gap: 1px;
+		gap: 3px;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 6px;
+		padding: 0 10px 10px;
 	}
 
 	.side-item {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 10px;
 		width: 100%;
-		height: 30px;
-		padding: 0 8px;
+		height: 40px;
+		padding: 0 12px;
 		border: 0;
-		border-radius: 6px;
+		border-radius: 10px;
 		background: transparent;
 		color: var(--txt-2);
 		font: inherit;
-		font-size: 13px;
+		font-size: 13.5px;
 		text-align: left;
 		cursor: pointer;
+		transition:
+			background-color 110ms var(--ease),
+			color 110ms var(--ease),
+			box-shadow 110ms var(--ease),
+			transform 80ms var(--ease);
 	}
 
 	.side-item:hover {
@@ -644,9 +749,14 @@
 		color: var(--txt);
 	}
 
+	.side-item:active {
+		transform: scale(0.998);
+	}
+
 	.side-item.on {
-		background: var(--active);
+		background: var(--card);
 		color: var(--txt);
+		box-shadow: 0 0 0 1px var(--line);
 	}
 
 	.side-item:disabled {
@@ -661,10 +771,25 @@
 		white-space: nowrap;
 	}
 
+	.side-count {
+		margin-left: auto;
+		color: var(--txt-3);
+		font-size: 11.5px;
+	}
+
+	.side-item.on .side-count {
+		color: var(--txt-2);
+	}
+
 	.side-foot {
 		flex: none;
-		padding: 6px;
+		padding: 10px;
 		box-shadow: inset 0 1px 0 var(--line);
+	}
+
+	.mono {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.firstrun {
@@ -672,20 +797,20 @@
 		align-items: center;
 		gap: 4px;
 		margin: 0;
-		padding: 6px 12px;
+		padding: 8px 16px;
 		background: color-mix(in srgb, var(--warn) 12%, var(--bg));
 		box-shadow: inset 0 -1px 0 var(--line);
 		color: var(--txt-2);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.offline {
 		margin: 0;
-		padding: 6px 12px;
+		padding: 8px 16px;
 		background: color-mix(in srgb, var(--warn) 20%, var(--bg));
 		box-shadow: inset 0 -1px 0 var(--line);
 		color: var(--txt-2);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.link {
@@ -740,28 +865,66 @@
 		}
 	}
 
-	@media (max-width: 1280px) {
+	@media (max-width: 1360px) {
 		.body {
-			grid-template-columns: 200px minmax(0, 1fr) 360px;
+			grid-template-columns: 220px minmax(0, 1fr) 400px;
 		}
 	}
 
-	@media (max-width: 940px) {
+	@media (max-width: 1020px) {
 		.body {
-			grid-template-columns: minmax(0, 1fr) 360px;
+			grid-template-columns: minmax(0, 1fr) 400px;
+			grid-template-rows: auto minmax(0, 1fr);
 		}
 
 		.sidebar {
 			display: none;
 		}
-	}
 
-	@media (max-width: 720px) {
-		.body {
-			grid-template-columns: minmax(0, 1fr);
+		.mobile-nav {
+			display: flex;
+			grid-column: 1 / -1;
+			gap: 6px;
+			min-width: 0;
+			overflow-x: auto;
+			padding-bottom: 1px;
+			scrollbar-width: none;
 		}
 
-		:global(.detail-pane) {
+		.mobile-nav::-webkit-scrollbar {
+			display: none;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.body {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 8px;
+			padding: 0 8px 8px;
+		}
+
+		.body :global(.feed-pane) {
+			display: flex;
+		}
+
+		.body :global(.detail-pane) {
+			display: none;
+		}
+
+		.body.reading {
+			grid-template-rows: minmax(0, 1fr);
+		}
+
+		.body.reading :global(.feed-pane),
+		.body.reading .mobile-nav {
+			display: none;
+		}
+
+		.body.reading :global(.detail-pane) {
+			display: flex;
+		}
+
+		.fetchbar {
 			display: none;
 		}
 	}

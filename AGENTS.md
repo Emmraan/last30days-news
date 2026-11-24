@@ -134,4 +134,9 @@ known limitation with a written reason.
 - UI must read as a Windows desktop app, not a webpage: no gradients or
   aurora backgrounds, no card grids, no fake window chrome, no serif
   display fonts, no multi-colour status dots, no web fonts.
+- Dashboard changes land with their landing counterpart. A change to the app
+  shell, toolbar, sidebar, feed row, detail pane or dashboard copy is not
+  complete until the matching `landing/` real-markup preview and copy are
+  updated in the same change set; the showcase must never describe an older
+  dashboard.
 - Comments explain *why*, never *what*.

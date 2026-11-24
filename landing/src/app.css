@@ -1,0 +1,226 @@
+/*
+ * Tokens copied from the app (`src/app.css`) so the landing reads as the same
+ * product. Keep them in sync by hand: the two packages ship separately.
+ */
+:root {
+	color-scheme: light dark;
+
+	--bg: light-dark(#f3f3f3, #1b1b1b);
+	--side: light-dark(#e9e9e9, #171717);
+	--pane: light-dark(#f7f7f7, #202020);
+	--card: light-dark(#ffffff, #262626);
+	--raise: light-dark(#f2f2f2, #2c2c2c);
+	--line: light-dark(#e3e3e3, #2e2e2e);
+	--line-2: light-dark(#d2d2d2, #3d3d3d);
+	--txt: light-dark(#141414, #f2f2f2);
+	--txt-2: light-dark(#545454, #b9b9b9);
+	--txt-3: light-dark(#848484, #8a8a8a);
+	--accent: light-dark(#0f6cbd, #60cdff);
+	--accent-on: light-dark(#ffffff, #062a3a);
+	--ok: light-dark(#0f7b0f, #6ccb5f);
+	--hover: light-dark(rgb(0 0 0 / 0.04), rgb(255 255 255 / 0.055));
+	--pane-shadow: light-dark(0 1px 2px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.3));
+
+	--r: 12px;
+	--r-md: 16px;
+	--r-lg: 20px;
+	--pill: 99px;
+
+	--font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+	--font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+	--font-mono: 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+
+	--wrap: 1080px;
+	--section: 96px;
+	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* An explicit choice from the nav overrides the OS preference. */
+:root.light {
+	color-scheme: light;
+}
+
+:root.dark {
+	color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-2) transparent;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--txt);
+	font-family: var(--font-sans);
+	font-size: 15px;
+	line-height: 1.6;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+	margin: 0;
+	font-family: var(--font-display);
+	letter-spacing: -0.02em;
+}
+
+p {
+	margin: 0;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+/* One motion language for every pressable surface, kept deliberately short. */
+a,
+button,
+summary {
+	transition:
+		color 0.16s var(--ease),
+		background-color 0.16s var(--ease),
+		border-color 0.16s var(--ease),
+		box-shadow 0.16s var(--ease),
+		opacity 0.16s var(--ease),
+		filter 0.16s var(--ease),
+		transform 0.16s var(--ease);
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.wrap {
+	width: 100%;
+	max-width: var(--wrap);
+	margin: 0 auto;
+	padding: 0 24px;
+}
+
+/* Keep a scrolled-to section clear of the sticky nav. */
+[id] {
+	scroll-margin-top: 76px;
+}
+
+.mono {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+.pill {
+	display: inline-flex;
+	align-items: center;
+	height: 40px;
+	padding: 0 20px;
+	border: 1px solid transparent;
+	border-radius: var(--pill);
+	font-size: 14px;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.pill.accent {
+	background: var(--accent);
+	color: var(--accent-on);
+}
+
+.pill.accent:hover {
+	filter: brightness(1.06);
+}
+
+.pill.line {
+	border-color: var(--line-2);
+	color: var(--txt-2);
+}
+
+.pill.line:hover {
+	border-color: var(--txt-3);
+	color: var(--txt);
+}
+
+/*
+ * Copy feedback is toggled at runtime, so these selectors must stay global:
+ * Svelte prunes scoped rules whose classes never appear in the markup.
+ */
+.copy.done .copy-icon {
+	display: none;
+}
+
+.copy.done .check-icon {
+	display: block;
+	color: var(--ok);
+	animation: check-in 0.18s var(--ease) both;
+}
+
+@keyframes check-in {
+	from {
+		opacity: 0;
+		transform: scale(0.7);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.copy.done::after {
+	content: 'Copied';
+	position: absolute;
+	bottom: calc(100% + 9px);
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 3px 8px;
+	border: 1px solid var(--line-2);
+	border-radius: 6px;
+	background: var(--card);
+	color: var(--txt);
+	font-family: var(--font-sans);
+	font-size: 11px;
+	font-weight: 500;
+	white-space: nowrap;
+	pointer-events: none;
+	animation: copy-in 0.16s var(--ease) both;
+}
+
+@keyframes copy-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, 3px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translate(-50%, 0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+@media (max-width: 760px) {
+	:root {
+		--section: 56px;
+	}
+
+	.wrap {
+		padding: 0 18px;
+	}
+}

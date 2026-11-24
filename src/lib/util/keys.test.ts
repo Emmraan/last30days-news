@@ -39,6 +39,11 @@ const cases: Case[] = [
 	// Enter on a focused control activates it; the page must not steal it.
 	{ name: 'Enter on a button is the button', key: 'Enter', activable: true, want: null },
 	{ name: 'j still moves while a button has focus', key: 'j', activable: true, want: 'next' },
+	// Quick search is the one shortcut the app takes from the browser.
+	{ name: 'ctrl+k is quick search', key: 'k', ctrl: true, want: 'quick-search' },
+	{ name: 'cmd+k is quick search', key: 'k', meta: true, want: 'quick-search' },
+	{ name: 'ctrl+K still matches', key: 'K', ctrl: true, want: 'quick-search' },
+	{ name: 'ctrl+k works while typing', key: 'k', ctrl: true, typing: true, want: 'quick-search' },
 	// Browser and OS shortcuts stay theirs, except Esc.
 	{ name: 'ctrl+j is the browser', key: 'j', ctrl: true, want: null },
 	{ name: 'meta+r is a reload', key: 'r', meta: true, want: null },

@@ -4,6 +4,7 @@
 	import { moveCategory, parseKeywords, takeScoreEvents } from '#lib/category-panel';
 	import { displayText } from '#lib/format';
 	import type { CategoryView } from '#lib/server/categories/store';
+	import Dropdown from './Dropdown.svelte';
 
 	let {
 		categories,
@@ -32,6 +33,16 @@
 	let feedState = $state<'idle' | 'checking' | 'ok' | 'error'>('idle');
 	let feedMessage = $state('');
 	let feedRequest = 0;
+
+	const MATCH_OPTIONS = [
+		{ value: 'keywords', label: 'Keywords' },
+		{ value: 'ai', label: 'AI score' },
+		{ value: 'both', label: 'Keywords or AI' }
+	];
+
+	function chooseMatch(next: string) {
+		if (next === 'keywords' || next === 'ai' || next === 'both') matchMode = next;
+	}
 
 	let editingId = $state<string | null>(null);
 	let editName = $state('');
@@ -289,8 +300,7 @@
 					else if (event.type === 'degraded') scoringError = 'The AI provider is not available.';
 					else {
 						scoringText = '';
-						if (event.degraded && !scoringError)
-							scoringError = 'Some items could not be scored.';
+						if (event.degraded && !scoringError) scoringError = 'Some items could not be scored.';
 						await load();
 					}
 				}
@@ -467,14 +477,10 @@
 				<p class="meta inline">Checking…</p>
 			{/if}
 
-			<label class="field">
+			<div class="field">
 				<span>Match</span>
-				<select class="text" bind:value={matchMode}>
-					<option value="keywords">Keywords</option>
-					<option value="ai">AI score</option>
-					<option value="both">Keywords or AI</option>
-				</select>
-			</label>
+				<Dropdown label="Match" value={matchMode} options={MATCH_OPTIONS} onchange={chooseMatch} />
+			</div>
 
 			<label class="field">
 				<span>Keywords</span>
@@ -482,8 +488,7 @@
 					class="text"
 					rows="2"
 					bind:value={keywordText}
-					placeholder="gpt-5, silicon, neuron"
-				></textarea>
+					placeholder="gpt-5, silicon, neuron"></textarea>
 			</label>
 
 			{#if needsPrompt}
@@ -493,8 +498,7 @@
 						class="text"
 						rows="3"
 						bind:value={prompt}
-						placeholder="Items about chip design and fabrication."
-					></textarea>
+						placeholder="Items about chip design and fabrication."></textarea>
 				</label>
 
 				<label class="field">
@@ -539,6 +543,7 @@
 		inset: 0;
 		z-index: 20;
 		background: rgb(0 0 0 / 0.28);
+		animation: scrim-in 140ms var(--ease) both;
 	}
 
 	.panel {
@@ -549,10 +554,11 @@
 		bottom: 0;
 		display: flex;
 		flex-direction: column;
-		width: min(460px, 100vw);
+		width: min(500px, 100vw);
 		border-left: 1px solid var(--line);
 		background: var(--pane);
-		box-shadow: -8px 0 24px rgb(0 0 0 / 0.18);
+		box-shadow: -12px 0 36px rgb(0 0 0 / 0.22);
+		animation: panel-in 180ms var(--ease) both;
 	}
 
 	.head {
@@ -561,16 +567,16 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 8px;
-		height: 44px;
-		padding: 0 8px 0 14px;
+		height: 52px;
+		padding: 0 10px 0 18px;
 		box-shadow: inset 0 -1px 0 var(--line);
 	}
 
 	.head h2 {
 		font-family: var(--font-sans);
-		font-size: 11px;
+		font-size: 11.5px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -579,13 +585,13 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 10px 14px 24px;
+		padding: 14px 18px 28px;
 	}
 
 	.list {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: 3px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -594,16 +600,16 @@
 	.row {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
-		padding: 6px 0;
+		gap: 6px;
+		padding: 10px 0;
 		box-shadow: inset 0 -1px 0 var(--line);
 	}
 
 	.row-main {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		min-height: 28px;
+		gap: 10px;
+		min-height: 32px;
 	}
 
 	.label {
@@ -613,20 +619,20 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		color: var(--txt);
-		font-size: 13px;
+		font-size: 13.5px;
 	}
 
 	.tag,
 	.count {
 		flex: none;
 		color: var(--txt-3);
-		font-size: 11px;
+		font-size: 11.5px;
 	}
 
 	.row-actions {
 		display: flex;
 		align-items: center;
-		gap: 4px;
+		gap: 6px;
 	}
 
 	.rename {
@@ -636,9 +642,9 @@
 	}
 
 	.btn.small {
-		height: 26px;
-		padding: 0 8px;
-		font-size: 12px;
+		height: 30px;
+		padding: 0 10px;
+		font-size: 12.5px;
 	}
 
 	.btn.danger {
@@ -655,39 +661,43 @@
 	.text {
 		width: 100%;
 		min-width: 0;
-		height: 28px;
-		padding: 0 8px;
+		height: 34px;
+		padding: 0 10px;
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: 8px;
 		background: var(--card);
 		color: var(--txt);
 		font: inherit;
-		font-size: 13px;
+		font-size: 13.5px;
+		transition:
+			border-color 110ms var(--ease),
+			box-shadow 110ms var(--ease);
 	}
 
 	textarea.text {
 		height: auto;
-		padding: 6px 8px;
+		padding: 9px 10px;
 		resize: vertical;
 	}
 
 	.text:focus {
 		outline: none;
 		border-color: var(--accent);
+		box-shadow: 0 0 0 3px var(--accent-soft);
 	}
 
 	.create {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
-		margin-top: 18px;
+		gap: 12px;
+		margin-top: 22px;
 	}
 
 	.create h3 {
 		font-family: var(--font-sans);
-		font-size: 11px;
+		font-size: 11.5px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -695,7 +705,7 @@
 	.field {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
 		margin: 0;
 		padding: 0;
 		border: 0;
@@ -704,20 +714,20 @@
 	.field > span,
 	.field > legend {
 		color: var(--txt-2);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.sources {
-		gap: 2px;
-		max-height: 180px;
+		gap: 4px;
+		max-height: 200px;
 		overflow-y: auto;
 	}
 
 	.check {
 		display: flex;
 		align-items: center;
-		gap: 6px;
-		font-size: 13px;
+		gap: 8px;
+		font-size: 13.5px;
 		color: var(--txt);
 	}
 
@@ -730,7 +740,8 @@
 	.ok,
 	.meta {
 		margin: 0;
-		font-size: 12px;
+		font-size: 12.5px;
+		line-height: 1.5;
 	}
 
 	.err {
@@ -747,5 +758,36 @@
 
 	.inline {
 		margin-top: -4px;
+	}
+
+	@keyframes scrim-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes panel-in {
+		from {
+			transform: translateX(12px);
+			opacity: 0;
+		}
+		to {
+			transform: none;
+			opacity: 1;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.scroll {
+			padding: 12px 14px 24px;
+		}
+
+		.text {
+			/* iOS zooms the page when a focused field is under 16px. */
+			font-size: 16px;
+		}
 	}
 </style>

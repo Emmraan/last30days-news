@@ -26,7 +26,9 @@ a new one; the plan and code hold the full rationale.
 | P11 Category manager | done | `phase-11-categories` | `6695835` | `27dfa41` |
 | P12 Settings | done | `phase-12-settings` | `f2e74d5` | `675a551` |
 | P13 Keyboard and offline | done | `phase-13-keyboard-states` | `7e8176f` | `d6191b4` |
-| P14 Dashboard + landing showcase | committed | `phase-14-landing` | `e9aae09` | — (not merged; owner decision) |
+| Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
+| Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
+| P14 Dashboard + landing showcase | committed | `phase-14-landing` | `e9aae09` | — (not merged) |
 | P15 Install, budgets, CI | not started | — | — | — |
 
 ## P0 — Bootstrap
@@ -279,17 +281,27 @@ just fails again; `navigator.onLine` can be wrong behind a dead proxy.
 
 Deviations: none.
 
+## Bugfixes landed straight on `main`
+
+- `4ac1b3c` — `POST /api/auth/password` rejected the first-run default because
+  it verified against a stored hash that does not exist yet, so the banner link
+  was dead; `seed()` was never called outside tests, so a fresh install had zero
+  sources. Both carry a reproducing test.
+- `58998e8` — the CSP header had no `style-src`, so `default-src 'self'` blocked
+  the inline `<style>` a prerendered page ships and the page rendered unstyled.
+  `style-src 'self' 'unsafe-inline'` added; scripts stay nonce-gated.
+
 ## P14 — Dashboard and landing showcase
 
-Committed in `e9aae09` on `phase-14-landing`; not merged by owner decision.
-Dashboard: 260/1fr/460 shell, 64px toolbar, 52px pane heads, paragraph-preserving
-detail copy, custom dropdowns, Ctrl/Cmd K, icon status states, logout, and a
-mobile feed/detail swap. Landing: separate static `landing/` app, `csr = false`,
-nine sections, real-markup previews, inline scripts for theme/install/menu/copy.
-Root `/` redirects to `/app` or `/login`. Full gate: lint/typecheck clean, 538
-tests, app and landing builds pass, audit 0 critical/high (2 moderate). Accepted
-deviations: no screenshots or Playwright; the landing is a separate build; inline
-enhancement scripts are allowed; the branch stays unmerged.
+Committed in `e9aae09` on `phase-14-landing`. Dashboard: 260/1fr/460 shell, 64px
+toolbar, 52px pane heads, paragraph-preserving detail copy, custom dropdowns,
+Ctrl/Cmd K, icon status states, logout, and a mobile feed/detail swap. Landing:
+separate static `landing/` app, `csr = false`, nine sections, real-markup
+previews, inline scripts for theme/install/menu/copy. Root `/` redirects to
+`/app` or `/login`. Full gate: lint/typecheck clean, 538 tests, app and landing
+builds pass, audit 0 critical/high (2 moderate). Accepted deviations: no
+screenshots or Playwright; the landing is a separate build; inline enhancement
+scripts are allowed.
 
 ## Working rules adopted mid-project
 

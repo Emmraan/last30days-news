@@ -48,17 +48,66 @@ const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g;
 const BIDI = /[\u200b\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
 const LINE_BREAK = /[\t\n\r\u2028\u2029]+/g;
 
+/** The entities feeds actually emit; anything else stays literal. */
+const NAMED: Record<string, string> = {
+	amp: '&',
+	lt: '<',
+	gt: '>',
+	quot: '"',
+	apos: "'",
+	nbsp: ' ',
+	hellip: '…',
+	mdash: '—',
+	ndash: '–',
+	lsquo: '‘',
+	rsquo: '’',
+	ldquo: '“',
+	rdquo: '”',
+	middot: '·',
+	bull: '•'
+};
+
+const ENTITY = /&(#\d+|#x[0-9a-f]+|[a-z]+);/gi;
+
+function decodeEntities(value: string): string {
+	return value.replace(ENTITY, (whole, body: string) => {
+		if (body.startsWith('#')) {
+			const code =
+				body[1] === 'x' || body[1] === 'X'
+					? Number.parseInt(body.slice(2), 16)
+					: Number.parseInt(body.slice(1), 10);
+			return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
+		}
+		return NAMED[body.toLowerCase()] ?? whole;
+	});
+}
+
 /**
  * Feed content is stored raw. Bidi controls and zero-width characters can
- * disguise the text a person reads, so drop them before rendering.
+ * disguise the text a person reads, so drop them before rendering. Entities are
+ * decoded first: feeds ship `[&#8230;]` where they mean `[…]`.
  */
 export function displayText(value: string): string {
-	return value
+	return decodeEntities(value)
 		.normalize('NFC')
 		.replace(LINE_BREAK, ' ')
 		.replace(CONTROL, '')
 		.replace(BIDI, '')
 		.trim();
+}
+
+/**
+ * Prose keeps its paragraph breaks. A feed or model can hand over multi-line
+ * copy, and flattening every newline into one block makes the detail pane read
+ * as a wall of text. Single newlines stay spaces so hard-wrapped text survives.
+ */
+export function displayParagraphs(value: string | null | undefined): string[] {
+	if (!value) return [];
+	return value
+		.replace(/\r\n?/g, '\n')
+		.split(/\n\s*\n+/)
+		.map(displayText)
+		.filter((paragraph) => paragraph.length > 0);
 }
 
 /** Only absolute http(s) links may reach an `href` in the dashboard. */

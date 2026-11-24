@@ -11,8 +11,8 @@ export const LOGO_GLYPH = [
 
 const FAVICON_SVG = [
 	'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28">',
-	'<rect width="28" height="28" rx="9" fill="#60cdff"/>',
-	'<g transform="translate(4.5 4.5) scale(0.7916667)" color="#062a3a">',
+	'<rect width="28" height="28" rx="9" fill="#0f6cbd"/>',
+	'<g transform="translate(4.5 4.5) scale(0.7916667)" color="#ffffff">',
 	LOGO_GLYPH,
 	'</g></svg>'
 ].join('');

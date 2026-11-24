@@ -7,9 +7,7 @@
 	let error = $state('');
 	let busy = $state(false);
 
-	const canSubmit = $derived(
-		current.length > 0 && next.length >= 8 && next === confirm && !busy
-	);
+	const canSubmit = $derived(current.length > 0 && next.length >= 8 && next === confirm && !busy);
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
@@ -48,11 +46,7 @@
 	}
 </script>
 
-<form
-	onsubmit={submit}
-	aria-label="Change password"
-	class="pw"
->
+<form onsubmit={submit} aria-label="Change password" class="pw">
 	<label class="field">
 		<span>Current password</span>
 		<input
@@ -107,43 +101,48 @@
 	.pw {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 12px;
 	}
 
 	.field {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
 		margin: 0;
 	}
 
 	.field > span {
 		color: var(--txt-2);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.text {
 		width: 100%;
 		min-width: 0;
-		height: 28px;
-		padding: 0 8px;
+		height: 34px;
+		padding: 0 10px;
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: 8px;
 		background: var(--card);
 		color: var(--txt);
 		font: inherit;
-		font-size: 13px;
+		font-size: 13.5px;
+		transition:
+			border-color 110ms var(--ease),
+			box-shadow 110ms var(--ease);
 	}
 
 	.text:focus {
 		outline: none;
 		border-color: var(--accent);
+		box-shadow: 0 0 0 3px var(--accent-soft);
 	}
 
 	.err,
 	.meta {
 		margin: 0;
-		font-size: 12px;
+		font-size: 12.5px;
+		line-height: 1.5;
 	}
 
 	.err {
@@ -157,5 +156,12 @@
 	.actions {
 		display: flex;
 		justify-content: flex-end;
+	}
+
+	@media (max-width: 760px) {
+		.text {
+			/* iOS zooms the page when a focused field is under 16px. */
+			font-size: 16px;
+		}
 	}
 </style>
