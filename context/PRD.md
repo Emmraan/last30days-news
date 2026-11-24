@@ -1044,12 +1044,12 @@ Enforced by a check that fails the build, not by good intentions.
    similarity, ranking, keyword matching) plus integration tests on a real
    libSQL file database in a temp dir. No network.
 5. `pnpm build` and `pnpm build:landing` — production builds must pass.
+   The Vercel adapter is checked by the real deployment.
 6. `pnpm budget` — §6.24.
 7. `pnpm test:smoke` and `pnpm test:package` — HTTP and tarball install
    checks.
 8. `pnpm audit:gate` — no critical or high advisories.
-9. Docker image build, size and boot checks.
-10. Security review (§S24).
+9. Security review (§S24).
 
 **Release.** Automatic from `main` after CI passes.
 
@@ -1088,8 +1088,9 @@ with `--no-ff` and are kept. No long-lived develop branch.
 Four supported targets. Nothing else is promised.
 
 **1. Vercel + Turso.** The public deployment. `@sveltejs/adapter-vercel`
-selected when `VERCEL=1`. The database is a Turso instance reached with
-`TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`; there is no local file and no
+selected when `VERCEL=1`. The database is a Turso libSQL database reached
+with a `libsql://` `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`; there is no
+local file and no
 WAL, because the function filesystem is ephemeral. All state lives in
 Turso, including login attempts and sessions — no module-scope state, no
 in-memory cache across requests. `/api/refresh` takes `{batch:true}` and

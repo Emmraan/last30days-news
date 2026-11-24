@@ -82,13 +82,13 @@ The unit sets `L30_DEPLOYED=1`, so the local default password and reset are disa
 
 ## Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FEmmraan%2Flast30days-news&env=TURSO_DATABASE_URL,TURSO_AUTH_TOKEN,L30_INITIAL_PASSWORD&envDescription=Turso%20database%20URL%2C%20auth%20token%2C%20and%20an%208%2B%20character%20first%20password&envLink=https%3A%2F%2Fgithub.com%2FEmmraan%2Flast30days-news%23environment-variables&project-name=last30days-news&repository-name=last30days-news)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FEmmraan%2Flast30days-news&env=TURSO_DATABASE_URL,TURSO_AUTH_TOKEN,L30_INITIAL_PASSWORD&envDescription=Turso%20libSQL%20URL%20%28libsql%3A%2F%2F...%29%2C%20auth%20token%2C%20and%20an%208%2B%20character%20first%20password&envLink=https%3A%2F%2Fgithub.com%2FEmmraan%2Flast30days-news%23environment-variables&project-name=last30days-news&repository-name=last30days-news)
 
 Vercel uses the same codebase with `adapter-vercel`; `VERCEL=1` is set by the platform and selects the adapter in `vite.config.ts`. A local SQLite file cannot persist there, so a Turso database is required.
 
 Before deploying, test the same Turso connection locally:
 
-1. Create a Turso database and a fresh development branch.
+1. Create a Turso **libSQL** database and a fresh development branch. Use its `libsql://` URL; a `turso://` URL belongs to the newer Turso Database engine and does not work with this app's libSQL driver.
 2. Copy `.env.development.example` to `.env.development` and fill `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from that branch.
 3. Run `pnpm dev`, sign in with the local default `last30`, and check that the feed and refresh work.
 4. To test deployed-mode auth locally, put `L30_DEPLOYED=1` and `L30_INITIAL_PASSWORD` in `.env.development.local` (or the shell), then sign in with that password instead.
@@ -117,8 +117,8 @@ Vercel sets `VERCEL=1`, so the local default password and reset are disabled. If
 | `L30_DEBUG`            | Set to `1` for debug logs.                                                                          |
 | `L30_TRUST_PROXY`      | Set to `1` only behind a proxy that sets `X-Forwarded-*`.                                           |
 | `CI`                   | Set to skip opening the browser.                                                                    |
-| `TURSO_DATABASE_URL`   | Turso database URL. Required on Vercel.                                                             |
-| `TURSO_AUTH_TOKEN`     | Turso auth token. Required on Vercel.                                                               |
+| `TURSO_DATABASE_URL`   | Turso libSQL URL (`libsql://...`). Required on Vercel; optional locally for a development branch.   |
+| `TURSO_AUTH_TOKEN`     | Turso auth token for that database. Required on Vercel.                                             |
 
 `.env.development.example` and `.env.production.example` list the names with dummy values. Copy them to `.env.development` and `.env.production`; those real files are ignored by git.
 
@@ -129,7 +129,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-`pnpm dev` loads `.env.development`. `pnpm build` loads `.env.production`, and `pnpm start:local` runs the built app with that file. To check the Vercel adapter locally, run `VERCEL=1 pnpm build`. On Windows that needs Developer Mode or an elevated shell because the adapter creates symlinks; CI runs the same build on Linux.
+`pnpm dev` loads `.env.development`. `pnpm build` loads `.env.production`, and `pnpm start:local` runs the built app with that file. To check the Vercel adapter locally, run `VERCEL=1 pnpm build`. On Windows that needs Developer Mode or an elevated shell because the adapter creates symlinks. The real Vercel deployment is the adapter check; CI builds only the Node target.
 
 The full gate:
 
@@ -149,7 +149,7 @@ pnpm audit:gate
 
 `pnpm test:package` packs the tarball, checks that it contains only the built app and no tests or source maps, installs it in a temporary directory, and checks both the local and deployed login paths.
 
-Dependabot opens grouped weekly updates for npm, GitHub Actions and the Docker base image. A pull request with only patch and minor bumps is labelled `automerge`, then merged after both CI jobs pass; a major bump is closed with a comment and needs a manual branch. The policy lives in `.github/workflows/dependabot-policy.yml` and `.github/workflows/dependabot-merge.yml`.
+Dependabot opens grouped weekly updates for npm, GitHub Actions and the Docker base image. A pull request with only patch and minor bumps is labelled `automerge`, then merged after CI passes; a major bump is closed with a comment and needs a manual branch. The policy lives in `.github/workflows/dependabot-policy.yml` and `.github/workflows/dependabot-merge.yml`.
 
 ## Releases
 

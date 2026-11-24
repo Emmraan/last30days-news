@@ -466,9 +466,11 @@ utilities, not a bigger budget.
 ### S18 CI and release
 
 PR gates, all blocking: `pnpm install --frozen-lockfile` → `lint` →
-`typecheck` (zero warnings) → `test` (unit + integration) → `build` →
-`build:landing` → `budget` → `test:smoke` → `test:package` →
-`audit:gate` → Docker build/boot → security review (§S24). After a push to
+`typecheck` (zero warnings) → `test` (unit + integration) →
+`build` → `build:landing` → `budget` → `test:smoke` →
+`test:package` → `audit:gate` → security review (§S24). Docker build/boot
+is a one-off P15 check, not a per-PR gate. The Vercel adapter is checked by
+the real deployment, not a CI build. After a push to
 `main` passes CI, semantic-release runs on the tested commit. Conventional
 Commits decide the version; the first release is `1.0.0`. A GitHub Release
 and tag are always created. npm publishing runs only when `NPM_TOKEN` exists
@@ -881,8 +883,9 @@ frames; landing total is under 40 KB gz; no pattern from §S21 is present.
 
 **Done:** `pnpm pack` → install in a temp dir → `last30days` serves the
 login screen; `pnpm budget` passes; the CI workflow is green on a clean
-clone; `docker build` is under 220 MB; the Vercel deploy logs in, fetches,
-and shows a feed against Turso.
+clone; the one-off `docker build` was under 220 MB and booted (not a
+per-PR CI job); the Vercel deploy logs in, fetches, and shows a feed
+against Turso.
 
 ## 4. Definition of done (v0.1)
 
