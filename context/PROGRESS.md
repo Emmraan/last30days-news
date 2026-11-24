@@ -28,14 +28,14 @@ a new one; the plan and code hold the full rationale.
 | P13 Keyboard and offline | done | `phase-13-keyboard-states` | `7e8176f` | `d6191b4` |
 | Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
 | Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
-| P14 Dashboard + landing showcase | committed | `phase-14-landing` | `e9aae09` | — (not merged) |
+| P14 Dashboard + landing showcase | done | `phase-14-landing` | `e9aae09` | `0ac90e1` |
 | P15 Install, budgets, CI | not started | — | — | — |
 
 ## P0 — Bootstrap
 
 Node 26.13.0 / pnpm 12.16.1 pinned exact. TypeScript 6.0.3 because SvelteKit
 3.4.0 rejects 7; adapter chosen in `vite.config.ts`; `#lib/*` replaces `$lib`;
-`allowBuilds` lives in `pnpm-workspace.yaml`; `bin/` is P14. Gates green;
+`allowBuilds` lives in `pnpm-workspace.yaml`; `bin/` is P15. Gates green;
 audit 0.
 
 ## P1 — Database
@@ -43,7 +43,7 @@ audit 0.
 `createDb()` is async, runs embedded `import.meta.glob` migrations tracked in
 `__migration`, one transaction per file in byte order. 7 tests; audit 0/0/1/0.
 Accepted: 5 s busy timeout; `0700` is a no-op on Windows; migration race
-possible (desktop lock P14); no pre-migration backup; no index on
+possible (desktop lock P15); no pre-migration backup; no index on
 `session.expires_at`/`item_source.source_id`; a Turso URL without a token fails
 at the first query; no `item_fts` rebuild.
 
@@ -293,7 +293,7 @@ Deviations: none.
 
 ## P14 — Dashboard and landing showcase
 
-Committed in `e9aae09` on `phase-14-landing`. Dashboard: 260/1fr/460 shell, 64px
+Merged in `0ac90e1` (work `e9aae09`, branch kept). Dashboard: 260/1fr/460 shell, 64px
 toolbar, 52px pane heads, paragraph-preserving detail copy, custom dropdowns,
 Ctrl/Cmd K, icon status states, logout, and a mobile feed/detail swap. Landing:
 separate static `landing/` app, `csr = false`, nine sections, real-markup
