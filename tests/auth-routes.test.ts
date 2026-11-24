@@ -79,6 +79,43 @@ test('first run rejects anything but last30', async () => {
 	expect(jar.jar.has(SESSION_COOKIE)).toBe(false);
 });
 
+test('a deployment without L30_INITIAL_PASSWORD fails closed', async () => {
+	const { db } = await freshDb();
+	vi.stubEnv('L30_DEPLOYED', '1');
+	try {
+		const { event, jar } = loginEvent(db as never, 'last30');
+		const res = await read(await login(event));
+		expect(res.status).toBe(503);
+		expect(res.body?.error).toMatchObject({ code: 'setup_required' });
+		expect(jar.jar.has(SESSION_COOKIE)).toBe(false);
+	} finally {
+		vi.unstubAllEnvs();
+	}
+});
+
+test('a deployment seeds L30_INITIAL_PASSWORD and never accepts last30', async () => {
+	vi.stubEnv('L30_DEPLOYED', '1');
+	vi.stubEnv('L30_INITIAL_PASSWORD', 'deploy-password-1');
+	try {
+		const { db } = await freshDb();
+		const stored = await getSetting<string>(db, 'auth.password');
+		expect(await verifyPassword('deploy-password-1', stored)).toBe(true);
+		expect(await verifyPassword('last30', stored)).toBe(false);
+
+		const good = loginEvent(db as never, 'deploy-password-1');
+		const goodRes = await read(await login(good.event));
+		expect(goodRes.status).toBe(200);
+		expect(goodRes.body).toEqual({ authenticated: true, mustChangePassword: false });
+
+		const bad = loginEvent(db as never, 'last30');
+		const badRes = await read(await login(bad.event));
+		expect(badRes.status).toBe(401);
+		expect(bad.jar.jar.has(SESSION_COOKIE)).toBe(false);
+	} finally {
+		vi.unstubAllEnvs();
+	}
+});
+
 test('a stored password logs in and does not demand a change', async () => {
 	const { db } = await seededPassword('correct horse');
 	const { event, jar } = loginEvent(db as never, 'correct horse');
@@ -265,6 +302,37 @@ test('POST /api/auth/reset needs no session but the exact word reset', async () 
 	const res = await read(await reset(event));
 	expect(res.status).toBe(400);
 	expect(await getSetting<string>(db, 'auth.password')).not.toBeNull();
+});
+
+test('reset is refused for a remote client', async () => {
+	const { db } = await seededPassword('old password');
+	const { event } = makeEvent({
+		db,
+		ip: '203.0.113.9',
+		body: { confirm: 'reset', next: 'new password 1' }
+	});
+	const res = await read(await reset(event));
+	expect(res.status).toBe(403);
+	expect(res.body?.error).toMatchObject({ code: 'reset_local_only' });
+	expect(
+		await verifyPassword('old password', (await getSetting<string>(db, 'auth.password'))!)
+	).toBe(true);
+});
+
+test('reset is refused on Vercel even from a loopback address', async () => {
+	vi.stubEnv('VERCEL', '1');
+	try {
+		const { db } = await seededPassword('old password');
+		const { event } = makeEvent({ db, body: { confirm: 'reset', next: 'new password 1' } });
+		const res = await read(await reset(event));
+		expect(res.status).toBe(403);
+		expect(res.body?.error).toMatchObject({ code: 'reset_local_only' });
+		expect(
+			await verifyPassword('old password', (await getSetting<string>(db, 'auth.password'))!)
+		).toBe(true);
+	} finally {
+		vi.unstubAllEnvs();
+	}
 });
 
 test('reset wipes password, sessions and secrets, rewrites the salt, keeps data', async () => {

@@ -731,9 +731,24 @@ Never cached in a global after logout.
 **Password loss.** Changing the password re-derives the data key and
 re-encrypts every stored secret in one transaction.
 
-Forgetting the password must not brick the app. The login screen has a
-**Forgot password** link that opens `/reset`, reachable without a
-session, which:
+A deployed install (Docker, VPS, Vercel) never accepts the local default
+password. On first boot it stores `L30_INITIAL_PASSWORD` (8+ characters)
+as the password hash. If the variable is absent or too short, no password
+is stored, login fails closed with `503 setup_required`, and the login
+page says setup is incomplete. The variable is read only while
+`auth.password` is missing; later changes in Settings are the only source
+of truth. Deployments are marked by `L30_DEPLOYED=1` or `VERCEL=1`.
+
+Forgetting the password must not brick a local install. The login screen
+has a **Forgot password** link that opens `/reset`, reachable without a
+session. Reset is available only when the request arrives from loopback
+(`127.0.0.1`, `::1`) and only on a local install: `L30_DEPLOYED=1` or
+`VERCEL=1` disables it entirely. A public deployment has no owner at the
+keyboard, so an unauthenticated reset there would be a takeover. Remote
+callers and deployments get `403 reset_local_only` before the body is
+read.
+
+On a local install `/reset`:
 
 1. Does not ask for the old password and does not reveal whether one
    exists. It requires typing `reset` to confirm.
@@ -750,7 +765,11 @@ session, which:
 The reset is a local file already owned by whoever ran it, so this is not
 a privilege boundary — it is an escape hatch. `/reset` is rate-limited by
 the same 5-per-15-minutes counter as login. The Settings screen states
-plainly that a reset wipes AI keys and must be re-entered.
+plainly that a reset wipes AI keys and must be re-entered. On a deployed
+target, recovery is through the database: stop the process, delete the
+`auth.password`, `crypto.salt`, and every `secret.*` setting row, set a
+fresh `L30_INITIAL_PASSWORD`, and start again. On Vercel, make the same
+changes in Turso, update the project environment variable, and redeploy.
 
 **Session cookie.** Name `l30_session`. `HttpOnly`, `SameSite=Lax`,
 `Path=/`, `Secure` when the request arrived over HTTPS, `Max-Age` 30 days.
@@ -778,15 +797,15 @@ script, no remote font or image host. `X-Content-Type-Options: nosniff`,
 ### 6.16 HTTP API surface (LOCKED)
 
 SvelteKit server routes. JSON in, JSON out. Every route except
-`/api/auth/login` and `/api/health` requires a valid session and returns
-`401` without one.
+`/api/auth/login`, `/api/auth/reset` (loopback on a local install only)
+and `/api/health` requires a valid session and returns `401` without one.
 
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/api/auth/login` | `{password}` → sets cookie, `{ok:true}` |
 | `POST` | `/api/auth/logout` | clears session row and cookie |
 | `POST` | `/api/auth/password` | `{current, next}` → re-encrypts secrets |
-| `POST` | `/api/auth/reset` | `{confirm:"reset", next}` → wipes creds + keys, no session needed |
+| `POST` | `/api/auth/reset` | `{confirm:"reset", next}` → wipes creds + keys; local loopback only, no session |
 | `GET` | `/api/auth/session` | `{authenticated, mustChangePassword}` |
 | `GET` | `/api/feed` | `?from&to&category&q&cursor&limit` → items page |
 | `GET` | `/api/items/[id]` | item, its sources, cached summary |
@@ -1070,8 +1089,9 @@ WAL, because the function filesystem is ephemeral. All state lives in
 Turso, including login attempts and sessions — no module-scope state, no
 in-memory cache across requests. `/api/refresh` takes `{batch:true}` and
 processes one batch per call; the client polls until done, so no request
-outlives the function timeout. Nothing is stored in Vercel env vars except
-the Turso credentials; AI keys stay encrypted in the database.
+outlives the function timeout. Vercel env vars hold the Turso credentials
+and `L30_INITIAL_PASSWORD`; AI keys stay encrypted in the database. The
+initial password is read only while no `auth.password` row exists.
 
 **2. Local — `npx last30days-news`.** SQLite on disk,
 `127.0.0.1`, no config. This is what §6.17 describes and what every
@@ -1079,20 +1099,24 @@ other target must not degrade.
 
 **3. Docker.** Single image, Node LTS slim base.
 
-- `docker run -d -p 4477:4477 -v l30:/data -e HOST=0.0.0.0 last30days-news`
+- `docker run -d -p 4477:4477 -v l30:/data -e HOST=0.0.0.0 -e L30_INITIAL_PASSWORD=... last30days-news`
 - Data dir defaults to `/data` in the image. Volume is mandatory;
   without one a warning is printed at boot.
 - Runs as a non-root user, UID 1000.
 - Image size budget: 220 MB. No build toolchain in the final layer.
 - `HEALTHCHECK` hits `/api/health`.
-- The default password `last30` is printed loudly on first boot in the
-  container log, with a one-line warning to change it.
+- The image sets `L30_DEPLOYED=1`. It never accepts the local `last30`
+  default and never exposes password reset. On first boot it stores
+  `L30_INITIAL_PASSWORD`; without one, login fails closed with
+  `503 setup_required`.
 
 **4. VPS — systemd.** Install globally with any package manager —
 `npm i -g`, `pnpm add -g`, `yarn global add`, or `bun add -g` — then a
 unit file.
 
 - `Restart=on-failure`, `Environment=HOST=127.0.0.1 PORT=4477`.
+- `L30_DEPLOYED=1`; `L30_INITIAL_PASSWORD` lives in
+  `/etc/last30days-news.env`, read by the unit. Password reset is off.
 - Caddy or nginx in front for TLS. The app never terminates TLS itself
   and never manages certificates.
 - `Secure` cookies require the proxy to set `X-Forwarded-Proto`; the app

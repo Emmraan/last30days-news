@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from './$types';
 import { z } from 'zod';
-import { locked, readJson } from '#lib/server/api';
+import { apiError, locked, readJson } from '#lib/server/api';
+import { resetAllowed } from '#lib/server/auth/deployment';
 import { hashPassword } from '#lib/server/auth/password';
 import { clearFailures, lockState, recordFailure } from '#lib/server/auth/rate';
 import { destroyAllSessions } from '#lib/server/auth/session';
@@ -23,6 +24,11 @@ const body = z.object({
 
 export async function POST({ request, cookies, locals }: RequestEvent) {
 	const { db, ip } = locals;
+
+	// A reset needs no session, so the network location is the only proof that
+	// the caller owns the machine. Check it before parsing the body, so a
+	// remote caller cannot even use this route as a retry oracle.
+	if (!resetAllowed(ip)) return apiError(403, 'reset_local_only', 'Reset is only available from this machine.');
 
 	const lock = await lockState(db, ip);
 	if (lock.locked) return locked(lock.retryAfterMs);

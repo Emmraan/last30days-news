@@ -35,8 +35,19 @@ export default defineConfig({
 			}
 		})
 	],
+	// A cold install pays module resolution for ~450 drizzle files on every
+	// boot. Bundling it once turns that into a single parse and keeps §S17's
+	// 800 ms cold boot reachable on Windows, where resolution is slowest.
+	ssr: {
+		noExternal: ['drizzle-orm']
+	},
 	test: {
-		include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+		include: [
+			'src/**/*.test.ts',
+			'tests/**/*.test.ts',
+			'bin/**/*.test.mjs',
+			'scripts/**/*.test.mjs'
+		],
 		environment: 'node'
 	}
 });

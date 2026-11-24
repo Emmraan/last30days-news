@@ -2,8 +2,13 @@ import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { createClient, type Client } from '@libsql/client';
+import { eq } from 'drizzle-orm';
 import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
+import { deploySetupNotice, firstRunNotice, hashPassword } from '../auth/password';
+import { initialPassword, isDeployed } from '../auth/deployment';
+import { setSetting } from '../settings';
 import * as schema from './schema';
+import { setting } from './schema';
 import { seed } from './seed';
 
 export const RETENTION_DAYS = 30;
@@ -103,6 +108,29 @@ export async function createDb(opts: { dataDir?: string } = {}) {
 	// builtin categories and sources no matter which entry point opened the DB.
 	const db = drizzle(client, { schema }) as LibSQLDatabase<typeof schema>;
 	await seed(db);
+
+	// §S19: a container or VPS install has no UI yet, so the first boot must
+	// state how to sign in on the console. Tests stay quiet.
+	const stored = await db
+		.select({ key: setting.key })
+		.from(setting)
+		.where(eq(setting.key, 'auth.password'))
+		.limit(1);
+	if (stored.length === 0) {
+		const quiet = process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST);
+		if (isDeployed()) {
+			const initial = initialPassword();
+			if (initial) {
+				// The operator supplied the first password. Store it once; later
+				// changes in Settings are the only source of truth after this.
+				await setSetting(db, 'auth.password', await hashPassword(initial));
+			} else if (!quiet) {
+				process.stderr.write(deploySetupNotice());
+			}
+		} else if (!quiet) {
+			process.stderr.write(firstRunNotice());
+		}
+	}
 
 	return {
 		db,

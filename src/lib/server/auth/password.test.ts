@@ -1,5 +1,12 @@
 import { expect, test } from 'vitest';
-import { DUMMY_HASH, hashPassword, verifyPassword } from './password';
+import {
+	DUMMY_HASH,
+	FIRST_RUN_PASSWORD,
+	deploySetupNotice,
+	firstRunNotice,
+	hashPassword,
+	verifyPassword
+} from './password';
 
 const FORMAT = /^scrypt\$32768\$8\$1\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$/;
 
@@ -53,6 +60,21 @@ test('unparsable cost parameters do not throw', async () => {
 test('the dummy hash uses the same cost parameters so timing matches', async () => {
 	expect(DUMMY_HASH).toMatch(FORMAT);
 	expect(await verifyPassword('last30', DUMMY_HASH)).toBe(false);
+});
+
+test('the first-run notice names the default password', () => {
+	const notice = firstRunNotice();
+	expect(notice).toContain(FIRST_RUN_PASSWORD);
+	expect(notice).toContain('first run');
+});
+
+test('the deployment notice asks for an initial password and never names the default', () => {
+	const notice = deploySetupNotice();
+	expect(notice).toContain('L30_INITIAL_PASSWORD');
+	expect(notice).toContain('reset is disabled');
+	// The product name contains the same letters; only the bare word would be
+	// a leak of the local default.
+	expect(notice).not.toMatch(new RegExp(`\\b${FIRST_RUN_PASSWORD}\\b`));
 });
 
 test('verification accepts a hash produced with different cost parameters', async () => {

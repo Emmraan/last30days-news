@@ -3,6 +3,7 @@ import type { RequestEvent } from './$types';
 import { z } from 'zod';
 import { locked, readJson } from '#lib/server/api';
 import { DUMMY_HASH, FIRST_RUN_PASSWORD, verifyPassword } from '#lib/server/auth/password';
+import { isDeployed } from '#lib/server/auth/deployment';
 import { lockState, clearFailures, recordFailure } from '#lib/server/auth/rate';
 import { createSession } from '#lib/server/auth/session';
 import { setSessionCookie } from '#lib/server/auth/cookie';
@@ -28,6 +29,20 @@ export async function POST({ request, cookies, url, locals }: RequestEvent) {
 	}
 
 	const stored = await getSetting<string>(db, 'auth.password');
+	if (!stored && isDeployed()) {
+		// A public deployment has no owner at the keyboard, so it fails closed
+		// instead of accepting the repository's public default password.
+		log('warn', 'auth.fail', { ip, reason: 'setup' });
+		return json(
+			{
+				error: {
+					code: 'setup_required',
+					message: 'This deployment has no password yet. Set L30_INITIAL_PASSWORD and restart.'
+				}
+			},
+			{ status: 503 }
+		);
+	}
 	const ok = await verifyPassword(parsed.data.password, stored ?? DUMMY_HASH);
 	// The first run compares against the fixed default, so the timing is the
 	// same shape as a real verify rather than a free pass.

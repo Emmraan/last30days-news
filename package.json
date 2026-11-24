@@ -1,8 +1,34 @@
 {
   "name": "last30days-news",
   "version": "0.1.0",
-  "private": true,
+  "description": "A local reader for the last 30 days of technology news.",
+  "license": "MIT",
   "type": "module",
+  "keywords": [
+    "news",
+    "rss",
+    "reader",
+    "ai",
+    "sveltekit"
+  ],
+  "bin": {
+    "last30days": "bin/last30days.js"
+  },
+  "files": [
+    "bin/last30days.js",
+    "bin/options.mjs",
+    "build/**/*.js",
+    "build/**/*.css",
+    "build/**/*.json",
+    "build/**/*.br",
+    "build/**/*.gz",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "imports": {
     "#lib/*": "./src/lib/*"
   },
@@ -12,7 +38,9 @@
   },
   "scripts": {
     "dev": "vite dev",
+    "start": "node bin/last30days.js",
     "build": "vite build",
+    "build:landing": "pnpm --filter last30days-news-landing build",
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:changed": "node scripts/changed.mjs --lint",
@@ -21,7 +49,11 @@
     "typecheck:changed": "node scripts/changed.mjs --typecheck",
     "test": "vitest run",
     "test:changed": "node scripts/changed.mjs --test",
+    "test:smoke": "node scripts/smoke.mjs",
+    "test:package": "node scripts/package-smoke.mjs",
+    "budget": "node scripts/budget.mjs",
     "audit:gate": "node scripts/audit.mjs",
+    "prepack": "pnpm build",
     "db:generate": "drizzle-kit generate"
   },
   "devDependencies": {

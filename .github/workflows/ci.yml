@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.13.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm build:landing
+      - run: pnpm budget
+      - run: pnpm test:smoke
+      - run: pnpm test:package
+      - run: pnpm audit:gate
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build --progress=plain -t last30days-news:ci .
+
+      - name: Check image size
+        shell: bash
+        run: |
+          set -euo pipefail
+          size=$(docker image inspect last30days-news:ci --format '{{.Size}}')
+          echo "image size: $size bytes"
+          test "$size" -lt 220000000
+
+      - name: Start deployed container
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name last30days-ci \
+            -p 4477:4477 \
+            -e L30_INITIAL_PASSWORD=ci-password-123 \
+            last30days-news:ci
+          docker run -d --name last30days-ci-unset \
+            -p 4478:4477 \
+            last30days-news:ci
+
+      - name: Smoke test the deployed container
+        shell: bash
+        run: |
+          set -euo pipefail
+          trap 'docker logs last30days-ci || true; docker logs last30days-ci-unset || true; docker rm -f last30days-ci last30days-ci-unset || true' EXIT
+
+          wait_for() {
+            local url=$1
+            for _ in $(seq 1 60); do
+              if curl -fsS "$url/api/health" >/dev/null 2>&1; then
+                return 0
+              fi
+              sleep 1
+            done
+            echo "container at $url did not become healthy" >&2
+            return 1
+          }
+
+          wait_for http://127.0.0.1:4477
+          wait_for http://127.0.0.1:4478
+
+          curl -fsS http://127.0.0.1:4477/login -o /tmp/login.html
+          grep -q 'Sign in' /tmp/login.html
+          if grep -q 'First run:' /tmp/login.html; then
+            echo 'deployed login page advertises the default password' >&2
+            exit 1
+          fi
+
+          status=$(curl -sS -o /tmp/default.json -w '%{http_code}' \
+            -X POST http://127.0.0.1:4477/api/auth/login \
+            -H 'content-type: application/json' \
+            -H 'origin: http://127.0.0.1:4477' \
+            -d '{"password":"last30"}')
+          test "$status" = "401"
+
+          status=$(curl -sS -o /tmp/login.json -c /tmp/cookies.txt -w '%{http_code}' \
+            -X POST http://127.0.0.1:4477/api/auth/login \
+            -H 'content-type: application/json' \
+            -H 'origin: http://127.0.0.1:4477' \
+            -d '{"password":"ci-password-123"}')
+          test "$status" = "200"
+          node -e 'const b = require("/tmp/login.json"); if (b.authenticated !== true || b.mustChangePassword !== false) process.exit(1)'
+          grep -q 'l30_session' /tmp/cookies.txt
+
+          status=$(curl -sS -o /tmp/app.html -b /tmp/cookies.txt -w '%{http_code}' http://127.0.0.1:4477/app)
+          test "$status" = "200"
+          grep -q 'Dashboard' /tmp/app.html
+
+          status=$(curl -sS -o /tmp/feed.json -b /tmp/cookies.txt -w '%{http_code}' \
+            'http://127.0.0.1:4477/api/feed?from=0&to=4102444800000&limit=1')
+          test "$status" = "200"
+
+          status=$(curl -sS -o /tmp/reset.json -w '%{http_code}' \
+            -X POST http://127.0.0.1:4477/api/auth/reset \
+            -H 'content-type: application/json' \
+            -H 'origin: http://127.0.0.1:4477' \
+            -d '{"confirm":"reset","next":"hacked-password"}')
+          test "$status" = "403"
+          grep -q 'reset_local_only' /tmp/reset.json
+
+          status=$(curl -sS -o /tmp/unset.json -w '%{http_code}' \
+            -X POST http://127.0.0.1:4478/api/auth/login \
+            -H 'content-type: application/json' \
+            -H 'origin: http://127.0.0.1:4478' \
+            -d '{"password":"last30"}')
+          test "$status" = "503"
+          grep -q 'setup_required' /tmp/unset.json
+          curl -fsS http://127.0.0.1:4478/login -o /tmp/unset.html
+          grep -q 'Setup is incomplete' /tmp/unset.html
+
+          if docker logs last30days-ci 2>&1 | grep -q 'ci-password-123'; then
+            echo 'the container logged its initial password' >&2
+            exit 1
+          fi

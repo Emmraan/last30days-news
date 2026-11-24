@@ -3,6 +3,9 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Logo from '#lib/components/Logo.svelte';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let password = $state('');
 	let error = $state('');
@@ -58,6 +61,16 @@
 		<h1>Sign in</h1>
 		<p class="lede">This reader is protected by one password. Enter it to open the feed.</p>
 
+		{#if data.setupRequired}
+			<p class="first-run">
+				Setup is incomplete. The operator must set <code>L30_INITIAL_PASSWORD</code> and restart.
+			</p>
+		{:else if data.firstRun && data.canReset}
+			<p class="first-run">
+				First run: sign in with <code>last30</code>, then set your own password in Settings.
+			</p>
+		{/if}
+
 		<label for="password">Password</label>
 		<input
 			id="password"
@@ -74,9 +87,14 @@
 
 		<button type="submit" disabled={busy}>{busy ? 'Signing in...' : 'Sign in'}</button>
 
-		<p class="foot">
-			Forgot it? <a href={resolve('/reset')}>Reset the app</a>. This deletes the stored data.
-		</p>
+		{#if data.canReset}
+			<p class="foot">
+				Forgot it? <a href={resolve('/reset')}>Reset the app</a>. This clears the password, saved API
+				keys and sessions; items and sources stay.
+			</p>
+		{:else}
+			<p class="foot">Password reset is not available here.</p>
+		{/if}
 	</form>
 </main>
 
@@ -122,6 +140,23 @@
 		color: var(--txt-2);
 		font-size: 13px;
 		line-height: 1.5;
+	}
+
+	.first-run {
+		margin: -8px 0 18px;
+		padding: 9px 11px;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--raise);
+		color: var(--txt-2);
+		font-size: 12px;
+		line-height: 1.5;
+	}
+
+	.first-run code {
+		color: var(--txt);
+		font-family: var(--font-mono);
+		font-size: 11.5px;
 	}
 
 	label {

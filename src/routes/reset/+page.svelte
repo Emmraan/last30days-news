@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let confirm = $state('');
 	let next = $state('');
@@ -39,7 +42,8 @@
 </svelte:head>
 
 <main class="grid h-full place-items-center px-6">
-	<form class="w-[360px]" onsubmit={submit}>
+	{#if data.canReset}
+		<form class="w-[360px]" onsubmit={submit}>
 		<h1 class="text-xl">Reset the app</h1>
 		<p class="mt-1 text-txt-2">
 			This deletes the password, the saved API keys and every signed-in session. Items, sources and
@@ -85,5 +89,14 @@
 		</button>
 
 		<p class="mt-4 text-txt-3"><a class="text-accent" href={resolve('/login')}>Back to sign in</a></p>
-	</form>
+		</form>
+	{:else}
+		<div class="w-[360px]">
+			<h1 class="text-xl">Reset the app</h1>
+			<p class="mt-2 text-txt-2">Password reset is not available here.</p>
+			<p class="mt-4 text-txt-3">
+				<a class="text-accent" href={resolve('/login')}>Back to sign in</a>
+			</p>
+		</div>
+	{/if}
 </main>
