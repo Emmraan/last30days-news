@@ -275,11 +275,11 @@ test('reset wipes password, sessions and secrets, rewrites the salt, keeps data'
 	await setSetting(db, 'secret.openai.apiKey', 'encrypted-blob');
 	await client.execute({
 		sql: 'insert into category (id,name,builtin,match_mode,keywords,ai_threshold,sort_order,created_at) values (?,?,?,?,?,?,?,?)',
-		args: ['ai', 'AI', 1, 'keywords', '[]', 0.6, 1, 1]
+		args: ['custom', 'Custom', 1, 'keywords', '[]', 0.6, 1, 1]
 	});
 	await client.execute({
 		sql: 'insert into item (id,title,url,published_at,fetched_at,category) values (?,?,?,?,?,?)',
-		args: ['i1', 'Title', 'https://example.com/a', 1, 1, 'ai']
+		args: ['i1', 'Title', 'https://example.com/a', 1, 1, 'custom']
 	});
 
 	const spy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
