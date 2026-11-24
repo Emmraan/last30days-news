@@ -62,19 +62,20 @@ src/
       ai/score.ts            §S8 category scoring call
   routes/
     +layout.svelte           theme class on <html>
-    +page.svelte             landing (prerender)
+    +page.server.ts          `/` redirects to `/login` or `/app`
     login/+page.svelte
     reset/+page.svelte
     app/+page.svelte         dashboard shell
     api/…                    §S10, one +server.ts per row
+landing/                     separate static showcase app
 fixtures/                    recorded feed responses (json)
 tests/                       vitest units + integration
-e2e/                         playwright
 ```
 
-Routes: `/` landing · `/login` · `/reset` · `/app` dashboard · `/api/*`.
-Landing is prerendered and public; `/app` and every `/api/*` except
-`/api/auth/login` + `/api/health` require a session.
+Routes: `/` → `/login` or `/app` · `/login` · `/reset` · `/app` dashboard ·
+`/api/*`. The landing showcase lives in `landing/` as its own static build;
+`/app` and every `/api/*` except `/api/auth/login` + `/api/health` require a
+session.
 
 ## 2. Locked specs
 
@@ -97,7 +98,6 @@ Versions are the ones on this machine, pinned exact. Nothing floats.
 | RSS | `rss-parser` | `3.13.0` |
 | Validation | `zod` | `4.6.7` |
 | Unit tests | Vitest | `5.1.1` |
-| E2E | Playwright | `1.65.1` |
 | Lint/format | ESLint + Prettier | `10.15.0` / `3.10.1` |
 
 Adapters: `@sveltejs/adapter-vercel 7.0.5` for Vercel,
@@ -456,8 +456,8 @@ Client JS 60 KB gz/route · CSS 28 KB gz · first load 90 KB gz · web fonts
 0 · landing 40 KB gz · feed response 50 items 120 KB · cold boot 800 ms ·
 `/api/feed` p95 300 ms @20k rows (remote DB adds a hop) · fetch pass 25 s
 · DB <200 MB @30 days. Measured from `vite build` output plus `curl
---compressed -w '%{size_download}'`. Screenshots: WebP, <180 KB each, lazy
-below fold.
+--compressed -w '%{size_download}'`. The landing ships no image assets; its
+previews are real UI markup.
 
 CSS budget is 28 KB, not 18 KB, because Tailwind v4 emits the utilities
 actually used — measured, not assumed. If it overshoots, the fix is fewer
@@ -523,16 +523,19 @@ as the default page structure; floating panes with wide gutters or drop
 shadows inside the shell; more than one accent hue; arbitrarily coloured
 status dots.
 
-### S22 Landing page (`/`, prerendered, zero client JS)
+### S22 Landing showcase (separate static build)
 
 Same tokens, type, radii, and logo as the app — a document-shaped
 container, not a second design. Inspired by openship.io: stacked two-line
-headline, left-aligned hero, real screenshots as the only imagery,
+headline, left-aligned hero, real UI markup previews as the only imagery,
 numbered walkthrough, spec table, FAQ, columned footer. Not a copy: no
 blue-gradient palette, no feature-card grid, no competitor matrix.
 
-Every image is a screenshot of this running app, captured at 2x, exported
-WebP, in a plain 1px `--line` frame with `--r-lg`, no shadow.
+The showcase is its own static app in `landing/`, not a route in the app
+bundle. It ships no hydration bundle and no image assets; the hero preview
+and step crops are plain markup. Small inline scripts may handle theme,
+install tabs/copy, section scroll and the mobile menu, but the page must
+still render its content with JS disabled.
 
 1. **Nav** — logo + wordmark; anchors `How it works`, `What you get`,
    `Sources`, `FAQ`; `Open the app` pill; mono `v0.1.0`. Sticky, `--side`,
@@ -540,12 +543,12 @@ WebP, in a plain 1px `--line` frame with `--r-lg`, no shadow.
 2. **Hero** — two-line headline (clamp 40–64px, tracking -0.03em, second
    line `--txt-3`), one sentence at 16px/1.6 `--txt-2` max 56ch, primary
    accent pill + bordered secondary pill, then the full-width dashboard
-   screenshot in a frame.
+   markup preview in a frame.
 3. **Proof strip** — hairline-separated plain facts: `Local-first`,
    `Works without an AI key`, `Bring your own model`, `Cited summaries`.
    **No source count anywhere.**
 4. **How it works** — three stacked rows: mono step number + label left;
-   heading, paragraph, cropped screenshot right; hairline between. Carries
+   heading, paragraph, cropped UI preview right; hairline between. Carries
    the page.
 5. **What you get** — eight label/description rows, hairline separated.
    Spec list, not cards.
@@ -563,7 +566,7 @@ WebP, in a plain 1px `--line` frame with `--r-lg`, no shadow.
 
 No pricing, testimonials, newsletter, cookie banner, fake logos, or
 "trusted by". Section rhythm 96px desktop / 56px mobile, content column
-1080px centred, hero screenshot may bleed wider.
+1080px centred, hero preview may bleed wider.
 
 ### S23 Agent rules — `AGENTS.md` (LOCKED)
 
@@ -666,12 +669,12 @@ with a written reason in that phase.
   `@tailwindcss/vite`, `lucide-svelte`, `src/app.css` with
   `@import "tailwindcss"` and `@theme` tokens from §S11, `src/app.html`.
 - Scripts: `dev`, `build`, `preview`, `lint`, `format`, `check`, `test`,
-  `test:e2e`, `db:generate`, `budget`.
+  `db:generate`, `budget`.
 - `.gitignore` (`node_modules`, `.svelte-kit`, `build`, `*.sqlite*`,
   `fixtures/cache`), `.editorconfig`, `tsconfig` strict,
   `AGENTS.md` from §S23.
-- `/api/health` → `{ok:true,version}`. First Vitest + Playwright tests
-  exist and run (they may assert only the health route).
+- `/api/health` → `{ok:true,version}`. First Vitest tests exist and run
+  (they may assert only the health route).
 
 **Done:** `pnpm build` passes, `pnpm test` passes, dev server boots,
 `/api/health` returns 200, `package.json` has no `^` or `~`, and
@@ -842,17 +845,20 @@ the banner disappears after a change.
 **Done:** every key in §S14 works, `Esc` closes the overlay, no action is
 keyboard-only, the offline bar appears and clears itself.
 
-### P14 Landing page
+### P14 Dashboard and landing showcase
 
-- `/` prerendered, nine sections per §S22, zero client JS, reusing the
-  shell's tokens and `Logo`.
-- Capture real screenshots with Playwright against the running app at 2x,
-  export WebP <180 KB, store in `static/shots/`.
+- Dashboard polish: paragraph-preserving detail copy, custom dropdowns,
+  larger desktop shell, minimal motion, a visible search border with
+  Ctrl/Cmd K, icon-only status states, logout, and a mobile layout.
+- `landing/` static app with nine sections per §S22, `prerender = true`,
+  `csr = false`, no hydration bundle, reusing the shell's tokens and `Logo`.
+- Real UI markup previews, no screenshot capture and no Playwright.
+- Root `/` redirects to `/app` when signed in, otherwise `/login`.
 - FAQ as native `<details>`.
 
-**Done:** the page renders with JS disabled; no source count appears; every
-image is a real screenshot in a 1px frame; landing total is under 40 KB gz;
-no pattern from §S21 is present.
+**Done:** the showcase builds static and renders its content with JS
+disabled; no source count appears; previews are real UI markup in 1px
+frames; landing total is under 40 KB gz; no pattern from §S21 is present.
 
 ### P15 Install, budgets, CI
 
@@ -881,7 +887,8 @@ and shows a feed against Turso.
 - No test hits the network. Every gate in §S18 is green.
 - Every phase shipped with its tests written first, and a §S24 pass
   recorded with findings closed or deferred in writing.
-- No §S21 pattern ships. Landing page is screenshots only.
+- No §S21 pattern ships. Landing page is a separate static showcase built
+  from real UI markup, not stock imagery.
 - Nothing in §S17 is over budget.
 - Deployed on Vercel against Turso and running locally on a SQLite file
   from the same commit.
