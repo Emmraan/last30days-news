@@ -5,7 +5,8 @@ landing/.svelte-kit
 landing/build
 .env
 .env.*
-!.env.example
+!.env.development.example
+!.env.production.example
 review
 .git
 .gitignore

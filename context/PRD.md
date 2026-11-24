@@ -1038,33 +1038,35 @@ Enforced by a check that fails the build, not by good intentions.
 **Pull request gates**, in order, all blocking:
 
 1. `pnpm install --frozen-lockfile` — lockfile must be in sync.
-2. `pnpm lint` — ESLint plus Prettier check.
-3. `pnpm check` — `svelte-check`, zero errors, zero warnings.
+2. `pnpm lint` — ESLint.
+3. `pnpm typecheck` — `svelte-check`, zero errors, zero warnings.
 4. `pnpm test` — unit tests on pure functions (URL canonicalization, dedup
    similarity, ranking, keyword matching) plus integration tests on a real
    libSQL file database in a temp dir. No network.
-5. `pnpm build` — production build must pass.
-6. Budget check (§6.24).
-7. `pnpm test:e2e` — Playwright on the built app: login, feed
-   renders, filter switch, detail pane, search, category create, refresh
-   with mocked sources.
+5. `pnpm build` and `pnpm build:landing` — production builds must pass.
+6. `pnpm budget` — §6.24.
+7. `pnpm test:smoke` and `pnpm test:package` — HTTP and tarball install
+   checks.
+8. `pnpm audit:gate` — no critical or high advisories.
+9. Docker image build, size and boot checks.
+10. Security review (§S24).
 
-**Release.** Manual, never automatic on merge.
+**Release.** Automatic from `main` after CI passes.
 
-1. Bump version in `package.json`. Semver. `0.x` until the MVP is
-   feature-complete.
-2. Update `CHANGELOG.md` with one line per change under the version.
-3. Tag `v<version>`, push the tag.
-4. GitHub Actions publishes to npm on tag push, then creates a GitHub
-   Release from the changelog entry.
-5. A release fails if `pnpm test:e2e` fails on the tagged commit.
-6. No `--force` publish, no pre-release on `latest`, no manual `pnpm
-   publish` from a laptop.
-7. After publish, `npx last30days-news@<version>` is smoke-tested on
-   Windows, macOS, and Linux runners.
+1. Commits follow Conventional Commits. Semantic-release derives the
+   version; the first release is `1.0.0`.
+2. Every release creates a Git tag and a GitHub Release with generated
+   notes.
+3. npm publishing runs only when `NPM_TOKEN` is configured in the
+   `release` environment. Without it the release is GitHub-only; adding
+   the secret enables npm with no code change.
+4. No manual tag, no manual `pnpm publish`, no `--force`.
+5. A release fails if CI fails on the commit.
+6. The package smoke test in CI installs the tarball and checks the local
+   and deployed login paths.
 
-**Branch policy.** `main` is always releasable. Feature branches squash
-merge. No long-lived develop branch.
+**Branch policy.** `main` is always releasable. Feature branches merge
+with `--no-ff` and are kept. No long-lived develop branch.
 
 ### 6.26 Language policy (LOCKED)
 

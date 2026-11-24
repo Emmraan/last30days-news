@@ -82,15 +82,24 @@ The unit sets `L30_DEPLOYED=1`, so the local default password and reset are disa
 
 ## Vercel
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FEmmraan%2Flast30days-news&env=TURSO_DATABASE_URL,TURSO_AUTH_TOKEN,L30_INITIAL_PASSWORD&envDescription=Turso%20database%20URL%2C%20auth%20token%2C%20and%20an%208%2B%20character%20first%20password&envLink=https%3A%2F%2Fgithub.com%2FEmmraan%2Flast30days-news%23environment-variables&project-name=last30days-news&repository-name=last30days-news)
+
 Vercel uses the same codebase with `adapter-vercel`; `VERCEL=1` is set by the platform and selects the adapter in `vite.config.ts`. A local SQLite file cannot persist there, so a Turso database is required.
 
-Set these environment variables in the Vercel project:
+Before deploying, test the same Turso connection locally:
+
+1. Create a Turso database and a fresh development branch.
+2. Copy `.env.development.example` to `.env.development` and fill `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from that branch.
+3. Run `pnpm dev`, sign in with the local default `last30`, and check that the feed and refresh work.
+4. To test deployed-mode auth locally, put `L30_DEPLOYED=1` and `L30_INITIAL_PASSWORD` in `.env.development.local` (or the shell), then sign in with that password instead.
+
+Click the button and set these environment variables in the Vercel project:
 
 - `TURSO_DATABASE_URL`
 - `TURSO_AUTH_TOKEN`
 - `L30_INITIAL_PASSWORD` (8+ characters; read once on the first boot)
 
-Vercel sets `VERCEL=1`, so the local default password and reset are disabled. If `L30_INITIAL_PASSWORD` is missing, login fails closed with a setup message.
+Vercel sets `VERCEL=1`, so the local default password and reset are disabled. If `L30_INITIAL_PASSWORD` is missing, login fails closed with a setup message. After the deployment is live, sign in and change the password in Settings.
 
 `/api/refresh` processes one batch per call on Vercel; the client polls it. Sessions and login lockouts are stored in the database, so they survive across function instances.
 
@@ -111,7 +120,7 @@ Vercel sets `VERCEL=1`, so the local default password and reset are disabled. If
 | `TURSO_DATABASE_URL`   | Turso database URL. Required on Vercel.                                                             |
 | `TURSO_AUTH_TOKEN`     | Turso auth token. Required on Vercel.                                                               |
 
-`.env.example` lists the names without values.
+`.env.development.example` and `.env.production.example` list the names with dummy values. Copy them to `.env.development` and `.env.production`; those real files are ignored by git.
 
 ## Development
 
@@ -119,6 +128,8 @@ Vercel sets `VERCEL=1`, so the local default password and reset are disabled. If
 pnpm install --frozen-lockfile
 pnpm dev
 ```
+
+`pnpm dev` loads `.env.development`. `pnpm build` loads `.env.production`, and `pnpm start:local` runs the built app with that file. To check the Vercel adapter locally, run `VERCEL=1 pnpm build`. On Windows that needs Developer Mode or an elevated shell because the adapter creates symlinks; CI runs the same build on Linux.
 
 The full gate:
 
@@ -139,6 +150,10 @@ pnpm audit:gate
 `pnpm test:package` packs the tarball, checks that it contains only the built app and no tests or source maps, installs it in a temporary directory, and checks both the local and deployed login paths.
 
 Dependabot opens grouped weekly updates for npm, GitHub Actions and the Docker base image. A pull request with only patch and minor bumps is labelled `automerge`, then merged after both CI jobs pass; a major bump is closed with a comment and needs a manual branch. The policy lives in `.github/workflows/dependabot-policy.yml` and `.github/workflows/dependabot-merge.yml`.
+
+## Releases
+
+`main` is released by semantic-release after the CI workflow passes. Commit messages follow Conventional Commits, and the version is derived from them; the first release is `1.0.0`. Every release creates a Git tag and a GitHub Release. npm publishing is skipped when `NPM_TOKEN` is absent; add it to the `release` environment to publish the same release to npm. No manual tag or laptop publish.
 
 ## License
 

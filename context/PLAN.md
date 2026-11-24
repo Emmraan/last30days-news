@@ -15,9 +15,9 @@ Do not start a phase until the previous one's **Done** line is true.
   second lockfile.
 - **Test-driven.** Write the failing test first, then the code that makes
   it pass, then stop. A phase with no test is not done.
-- Mid-phase gate: `pnpm lint && pnpm check`. Phase gate: `pnpm test &&
-  pnpm build` plus that phase's **Done** line plus a security review
-  (§S24).
+- Mid-phase gate: `pnpm lint:changed && pnpm typecheck:changed`. Phase
+  gate: the full suite in §S18 plus that phase's **Done** line plus a
+  security review (§S24).
 - Tests never touch the network. Recorded fixtures only.
 - No file exists before the phase that needs it. No `utils/` dumping
   ground, no barrel `index.ts` re-exports, no interface with one impl.
@@ -466,12 +466,15 @@ utilities, not a bigger budget.
 ### S18 CI and release
 
 PR gates, all blocking: `pnpm install --frozen-lockfile` → `lint` →
-`check` (zero warnings) → `test` (unit + integration) → `build` → budget
-check → `test:e2e` → security review (§S24). Release is manual: bump
-semver, update `CHANGELOG.md`, tag, GH Actions publishes on tag and cuts
-the Release. No `--force`, no laptop `pnpm publish`. After publish,
-`npx last30days-news@<version>` is smoke-tested on Windows, macOS, Linux.
-`main` is always releasable; squash merges.
+`typecheck` (zero warnings) → `test` (unit + integration) → `build` →
+`build:landing` → `budget` → `test:smoke` → `test:package` →
+`audit:gate` → Docker build/boot → security review (§S24). After a push to
+`main` passes CI, semantic-release runs on the tested commit. Conventional
+Commits decide the version; the first release is `1.0.0`. A GitHub Release
+and tag are always created. npm publishing runs only when `NPM_TOKEN` exists
+in the `release` environment; without it the release is GitHub-only. No
+`--force`, no laptop `pnpm publish`. `main` is always releasable; merge
+with `--no-ff` and keep the branch.
 
 ### S19 Install and deploy
 
@@ -867,9 +870,12 @@ frames; landing total is under 40 KB gz; no pattern from §S21 is present.
   `--help`, `CI`, `L30_DATA_DIR`, `L30_DEBUG`, `L30_TRUST_PROXY`.
 - `Dockerfile` (multi-stage, non-root, `/data`, healthcheck), systemd unit
   in `deploy/`, `README` install section.
-- `vercel.json` + `VERCEL=1` adapter switch + `TURSO_*` env docs.
+- `vercel.json` + `VERCEL=1` adapter switch + `TURSO_*` env docs, a
+  Vercel deploy button, and separate `.env.development.example` /
+  `.env.production.example` files.
 - `scripts/budget.mjs` — reads the build manifest, fails over §S17.
-- GitHub Actions: PR gates per §S18, tag release to npm.
+- GitHub Actions: PR gates per §S18, semantic release from `main`; npm
+  publish only when `NPM_TOKEN` is set.
 - `CHANGELOG.md`, `LICENSE` (MIT).
 - Full §S24 pass on the deployed Vercel URL, not just localhost.
 

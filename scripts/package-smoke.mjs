@@ -63,7 +63,7 @@ try {
 		/(^|\/)tests\//,
 		/(^|\/)node_modules\//,
 		/(^|\/)fixtures\//,
-		/(^|\/)\.env$/
+		/(^|\/)\.env(?:\.|$)/
 	];
 	const leaked = listing.filter((entry) => forbidden.some((pattern) => pattern.test(entry)));
 	if (leaked.length) throw new Error(`tarball contains files it should not:\n${leaked.join('\n')}`);
