@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { displayText, formatWhen, safeHref } from '#lib/format';
+	import { displayParagraphs, displayText, formatWhen, safeHref } from '#lib/format';
 	import type { ItemDetail, ItemSource } from '#lib/types';
 	import Empty from './Empty.svelte';
 	import Skeleton from './Skeleton.svelte';
@@ -60,6 +60,9 @@
 					{#if detail.item.publishedEstimated}
 						<span class="tag">estimated</span>
 					{/if}
+					{#if detail.item.author}
+						<span class="author">{displayText(detail.item.author)}</span>
+					{/if}
 					<span class="tag">{displayText(categoryName) || detail.item.category}</span>
 				</p>
 
@@ -74,7 +77,9 @@
 							{#each detail.sources as source, index (source.id)}
 								{#if index > 0}<span aria-hidden="true">, </span>{/if}
 								<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external source URL, not an app route -->
-								<a href={safeHref(source.url)} target="_blank" rel="noopener noreferrer">{displayText(source.name) || 'Source'}</a>
+								<a href={safeHref(source.url)} target="_blank" rel="noopener noreferrer">
+									{displayText(source.name) || 'Source'}
+								</a>
 							{/each}
 						</span>
 					{/if}
@@ -87,7 +92,11 @@
 				{#if detail.summary}
 					<section class="summary" aria-label="Summary">
 						<h2>Summary</h2>
-						<p class="body">{displayText(detail.summary.body)}</p>
+						<div class="body prose">
+							{#each displayParagraphs(detail.summary.body) as paragraph, index (index)}
+								<p>{paragraph}</p>
+							{/each}
+						</div>
 
 						{#if detail.summary.keyPoints.length}
 							<h2>Key points</h2>
@@ -121,8 +130,12 @@
 				{:else}
 					<div class="excerpt-block">
 						<h2 class="label">Excerpt</h2>
-						{#if detail.item.excerpt}
-							<p class="excerpt">{displayText(detail.item.excerpt)}</p>
+						{#if displayParagraphs(detail.item.excerpt).length}
+							<div class="excerpt prose">
+								{#each displayParagraphs(detail.item.excerpt) as paragraph, index (index)}
+									<p>{paragraph}</p>
+								{/each}
+							</div>
 						{:else}
 							<p class="excerpt muted">No excerpt saved for this item.</p>
 						{/if}
@@ -156,16 +169,16 @@
 		justify-content: space-between;
 		gap: 8px;
 		flex: none;
-		height: 44px;
-		padding: 0 14px;
+		height: 52px;
+		padding: 0 18px;
 		box-shadow: none;
 	}
 
 	.pane-head h2 {
 		font-family: var(--font-mono);
-		font-size: 10.5px;
+		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.11em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -173,45 +186,61 @@
 	.scroll {
 		flex: 1;
 		min-height: 0;
+		overflow-x: hidden;
 		overflow-y: auto;
-		padding: 4px 18px 20px;
+		scrollbar-gutter: stable;
+		padding: 8px 24px 32px;
+	}
+
+	.article {
+		max-width: 70ch;
+		animation: detail-in 180ms var(--ease) both;
 	}
 
 	.title {
-		overflow-wrap: anywhere;
-		font-size: 20px;
+		overflow-wrap: break-word;
+		text-wrap: pretty;
+		font-size: 23px;
 		font-weight: 600;
-		line-height: 1.28;
-		letter-spacing: -0.012em;
+		line-height: 1.32;
+		letter-spacing: -0.015em;
 	}
 
 	.byline {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 6px;
-		margin: 8px 0 0;
+		gap: 7px;
+		margin: 10px 0 0;
 		color: var(--txt-3);
+		font-size: 12px;
 	}
 
 	.byline time {
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 11.5px;
 		font-variant-numeric: tabular-nums;
+	}
+
+	.author {
+		min-width: 0;
+		max-width: 100%;
+		color: var(--txt-2);
+		overflow-wrap: break-word;
 	}
 
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 4px 10px;
-		margin-top: 12px;
+		gap: 6px 12px;
+		margin-top: 16px;
 	}
 
 	.via {
 		min-width: 0;
 		color: var(--txt-3);
-		font-size: 12px;
+		font-size: 12.5px;
 		line-height: 1.5;
 		overflow-wrap: anywhere;
 	}
@@ -228,23 +257,23 @@
 	}
 
 	.item-reason {
-		margin-top: 12px;
-		overflow-wrap: anywhere;
+		margin-top: 16px;
+		overflow-wrap: break-word;
 	}
 
 	.summary {
-		margin-top: 20px;
-		padding-top: 16px;
+		margin-top: 24px;
+		padding-top: 20px;
 		box-shadow: inset 0 1px 0 var(--line);
 	}
 
 	.summary h2 {
-		margin-top: 16px;
+		margin-top: 20px;
 		color: var(--txt-3);
 		font-family: var(--font-mono);
-		font-size: 10.5px;
+		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.11em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 	}
 
@@ -252,38 +281,52 @@
 		margin-top: 0;
 	}
 
+	.prose {
+		overflow-wrap: break-word;
+		text-wrap: pretty;
+	}
+
+	.prose p {
+		margin: 0;
+	}
+
+	.prose p + p {
+		margin-top: 10px;
+	}
+
 	.body {
-		margin: 8px 0 0;
+		margin-top: 9px;
 		color: var(--txt-2);
-		font-size: 14px;
-		line-height: 1.55;
-		overflow-wrap: anywhere;
+		font-size: 15px;
+		line-height: 1.68;
 	}
 
 	.points {
-		margin: 8px 0 0;
-		padding-left: 17px;
+		margin: 9px 0 0;
+		padding-left: 19px;
 		color: var(--txt-2);
 	}
 
 	.points li {
-		margin: 4px 0;
-		line-height: 1.5;
-		overflow-wrap: anywhere;
+		margin: 6px 0;
+		font-size: 14.5px;
+		line-height: 1.62;
+		overflow-wrap: break-word;
 	}
 
 	.summary .why {
-		margin-top: 8px;
-		overflow-wrap: anywhere;
+		margin-top: 9px;
+		font-size: 14.5px;
+		line-height: 1.65;
 	}
 
 	.cites {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
-		margin-top: 12px;
-		font-size: 12px;
-		line-height: 1.45;
+		gap: 6px;
+		margin-top: 16px;
+		font-size: 12.5px;
+		line-height: 1.5;
 	}
 
 	.cites a {
@@ -297,33 +340,32 @@
 	}
 
 	.provenance {
-		margin: 14px 0 0;
+		margin: 18px 0 0;
 		color: var(--txt-3);
-		font-size: 10px;
+		font-size: 10.5px;
 		line-height: 1.5;
 	}
 
 	.excerpt {
-		margin: 8px 0 0;
-		max-width: 62ch;
+		margin-top: 9px;
+		max-width: 66ch;
 		color: var(--txt-2);
-		font-size: 14px;
-		line-height: 1.65;
-		overflow-wrap: anywhere;
+		font-size: 15px;
+		line-height: 1.72;
 	}
 
 	.excerpt-block {
-		margin-top: 18px;
-		padding-top: 16px;
+		margin-top: 24px;
+		padding-top: 20px;
 		box-shadow: inset 0 1px 0 var(--line);
 	}
 
 	.label {
 		color: var(--txt-3);
 		font-family: var(--font-mono);
-		font-size: 10.5px;
+		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.11em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 	}
 
@@ -332,14 +374,14 @@
 	}
 
 	.generate {
-		margin-top: 14px;
+		margin-top: 16px;
 	}
 
 	.gen-error {
-		margin: 8px 0 0;
+		margin: 10px 0 0;
 		color: var(--warn);
-		font-size: 12px;
-		line-height: 1.45;
+		font-size: 12.5px;
+		line-height: 1.5;
 	}
 
 	.scorefoot {
@@ -347,11 +389,11 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 8px;
-		margin-top: 18px;
-		padding: 8px 0 10px;
+		margin-top: 20px;
+		padding: 10px 0 12px;
 		border-top: 1px solid var(--line);
 		color: var(--txt-3);
-		font-size: 12px;
+		font-size: 12.5px;
 		line-height: 1.4;
 	}
 
@@ -364,13 +406,25 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 10px;
-		padding: 16px;
+		gap: 12px;
+		padding: 20px;
 		color: var(--txt-2);
-		font-size: 13px;
+		font-size: 13.5px;
+		line-height: 1.5;
 	}
 
 	.detail-error p {
 		margin: 0;
+	}
+
+	@keyframes detail-in {
+		from {
+			opacity: 0;
+			transform: translateY(5px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 </style>

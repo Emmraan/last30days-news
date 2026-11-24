@@ -51,7 +51,7 @@
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr) auto;
 		align-items: start;
-		gap: 9px;
+		gap: 10px;
 	}
 
 	.head .fav {
@@ -67,16 +67,16 @@
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
 		color: var(--txt);
-		font-size: 13.5px;
+		font-size: 14.5px;
 		font-weight: 500;
-		line-height: 1.4;
+		line-height: 1.45;
 	}
 
 	.when {
 		margin-top: 1px;
 		color: var(--txt-3);
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 11.5px;
 		font-variant-numeric: tabular-nums;
 		line-height: 1.4;
 		white-space: nowrap;
@@ -85,12 +85,12 @@
 	.meta {
 		display: flex;
 		align-items: center;
-		gap: 6px;
+		gap: 7px;
 		min-width: 0;
-		margin-top: 3px;
-		padding-left: 27px;
+		margin-top: 4px;
+		padding-left: 30px;
 		color: var(--txt-3);
-		font-size: 11.5px;
+		font-size: 12px;
 		line-height: 1.4;
 	}
 
@@ -102,17 +102,17 @@
 
 	.meta .tag {
 		flex: none;
-		height: 16px;
-		padding: 0 5px;
-		font-size: 9px;
+		height: 18px;
+		padding: 0 6px;
+		font-size: 9.5px;
 	}
 
 	.reason {
 		display: block;
-		margin-top: 7px;
-		padding: 6px 8px;
-		font-size: 12px;
-		line-height: 1.45;
-		overflow-wrap: anywhere;
+		margin-top: 8px;
+		padding: 7px 9px;
+		font-size: 12.5px;
+		line-height: 1.5;
+		overflow-wrap: break-word;
 	}
 </style>

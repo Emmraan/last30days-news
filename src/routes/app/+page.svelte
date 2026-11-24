@@ -118,8 +118,10 @@
 		);
 	}
 
-	function focusSearch() {
-		document.querySelector<HTMLInputElement>('.topbar input[type="search"]')?.focus();
+	function focusSearch(select = false) {
+		const input = document.querySelector<HTMLInputElement>('.topbar input[type="search"]');
+		input?.focus();
+		if (select) input?.select();
 	}
 
 	/** `j`/`k` move the selection; the list keeps the row in view, never the page. */
@@ -152,6 +154,10 @@
 			case 'search':
 				event.preventDefault();
 				focusSearch();
+				break;
+			case 'quick-search':
+				event.preventDefault();
+				focusSearch(true);
 				break;
 			case 'next':
 				event.preventDefault();
@@ -490,7 +496,7 @@
 					title="Add category"
 					onclick={() => (panelOpen = true)}
 				>
-					<Plus size={14} aria-hidden="true" />
+					<Plus size={16} aria-hidden="true" />
 				</button>
 			</div>
 
@@ -521,7 +527,7 @@
 
 			<div class="side-foot">
 				<button class="side-item" type="button" onclick={() => (panelOpen = true)}>
-					<Plus size={14} aria-hidden="true" />
+					<Plus size={16} aria-hidden="true" />
 					<span class="side-label">Manage categories</span>
 				</button>
 			</div>
@@ -593,10 +599,10 @@
 
 	.body {
 		display: grid;
-		grid-template-columns: 236px minmax(0, 1fr) 420px;
-		gap: 10px;
+		grid-template-columns: 260px minmax(0, 1fr) 460px;
+		gap: 12px;
 		min-height: 0;
-		padding: 0 12px 10px;
+		padding: 0 16px 12px;
 		background: var(--bg);
 	}
 
@@ -610,16 +616,16 @@
 		justify-content: space-between;
 		gap: 8px;
 		flex: none;
-		height: 44px;
-		padding: 0 8px 0 14px;
+		height: 52px;
+		padding: 0 10px 0 18px;
 		box-shadow: none;
 	}
 
 	.pane-head h2 {
 		font-family: var(--font-mono);
-		font-size: 10.5px;
+		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.11em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -628,35 +634,41 @@
 		display: flex;
 		flex: 1;
 		flex-direction: column;
-		gap: 2px;
+		gap: 3px;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 0 8px 8px;
+		padding: 0 10px 10px;
 	}
 
 	.side-item {
 		display: flex;
 		align-items: center;
-		gap: 9px;
+		gap: 10px;
 		width: 100%;
-		height: 34px;
-		padding: 0 10px;
+		height: 40px;
+		padding: 0 12px;
 		border: 0;
-		border-radius: 9px;
+		border-radius: 10px;
 		background: transparent;
 		color: var(--txt-2);
 		font: inherit;
-		font-size: 13px;
+		font-size: 13.5px;
 		text-align: left;
 		cursor: pointer;
 		transition:
 			background-color 110ms var(--ease),
-			color 110ms var(--ease);
+			color 110ms var(--ease),
+			box-shadow 110ms var(--ease),
+			transform 80ms var(--ease);
 	}
 
 	.side-item:hover {
 		background: var(--hover);
 		color: var(--txt);
+	}
+
+	.side-item:active {
+		transform: scale(0.998);
 	}
 
 	.side-item.on {
@@ -680,7 +692,7 @@
 	.side-count {
 		margin-left: auto;
 		color: var(--txt-3);
-		font-size: 11px;
+		font-size: 11.5px;
 	}
 
 	.side-item.on .side-count {
@@ -689,7 +701,7 @@
 
 	.side-foot {
 		flex: none;
-		padding: 8px;
+		padding: 10px;
 		box-shadow: inset 0 1px 0 var(--line);
 	}
 
@@ -703,20 +715,20 @@
 		align-items: center;
 		gap: 4px;
 		margin: 0;
-		padding: 6px 12px;
+		padding: 8px 16px;
 		background: color-mix(in srgb, var(--warn) 12%, var(--bg));
 		box-shadow: inset 0 -1px 0 var(--line);
 		color: var(--txt-2);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.offline {
 		margin: 0;
-		padding: 6px 12px;
+		padding: 8px 16px;
 		background: color-mix(in srgb, var(--warn) 20%, var(--bg));
 		box-shadow: inset 0 -1px 0 var(--line);
 		color: var(--txt-2);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.link {
@@ -771,15 +783,15 @@
 		}
 	}
 
-	@media (max-width: 1280px) {
+	@media (max-width: 1360px) {
 		.body {
-			grid-template-columns: 200px minmax(0, 1fr) 360px;
+			grid-template-columns: 220px minmax(0, 1fr) 400px;
 		}
 	}
 
-	@media (max-width: 940px) {
+	@media (max-width: 1020px) {
 		.body {
-			grid-template-columns: minmax(0, 1fr) 360px;
+			grid-template-columns: minmax(0, 1fr) 400px;
 		}
 
 		.sidebar {
@@ -787,7 +799,7 @@
 		}
 	}
 
-	@media (max-width: 720px) {
+	@media (max-width: 760px) {
 		.body {
 			grid-template-columns: minmax(0, 1fr);
 		}

@@ -72,8 +72,8 @@
 				<span class="plus">
 					<svg
 						viewBox="0 0 24 24"
-						width="14"
-						height="14"
+						width="16"
+						height="16"
 						fill="none"
 						stroke="currentColor"
 						stroke-width="1.8"
@@ -97,8 +97,8 @@
 				<span class="plus small">
 					<svg
 						viewBox="0 0 24 24"
-						width="13"
-						height="13"
+						width="15"
+						height="15"
 						fill="none"
 						stroke="currentColor"
 						stroke-width="1.8"
@@ -143,6 +143,7 @@
 
 				<p class="byline">
 					<time class="mono">34m ago</time>
+					<span class="author">Hugging Face</span>
 					<span class="tag">AI &amp; research</span>
 				</p>
 
@@ -155,8 +156,9 @@
 					<h4>Summary</h4>
 					<p>
 						RoboTrack follows points through video without per-frame labels, so a robot arm can
-						track objects it has never seen. Weights and code are public.
+						track objects it has never seen.
 					</p>
+					<p>Weights and code are public, including a stacking demo you can run on one GPU.</p>
 
 					<h4>Key points</h4>
 					<ul class="points">
@@ -187,9 +189,9 @@
 
 	.app {
 		display: grid;
-		grid-template-columns: 208px minmax(0, 1fr) 372px;
-		gap: 2px;
-		height: 480px;
+		grid-template-columns: 236px minmax(0, 1fr) 430px;
+		gap: 3px;
+		height: 540px;
 		background: var(--bg);
 	}
 
@@ -218,25 +220,25 @@
 		justify-content: space-between;
 		gap: 8px;
 		flex: none;
-		height: 44px;
-		padding: 0 12px 0 14px;
+		height: 52px;
+		padding: 0 12px 0 18px;
 	}
 
 	.pane-head h3 {
 		color: var(--txt-3);
 		font-family: var(--font-mono);
-		font-size: 10.5px;
+		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.11em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 	}
 
 	.plus {
 		display: grid;
 		place-items: center;
-		width: 24px;
-		height: 24px;
-		border-radius: 6px;
+		width: 28px;
+		height: 28px;
+		border-radius: 8px;
 		color: var(--txt-3);
 	}
 
@@ -249,22 +251,22 @@
 		display: flex;
 		flex: 1;
 		flex-direction: column;
-		gap: 2px;
+		gap: 3px;
 		min-height: 0;
 		overflow: hidden;
-		padding: 0 8px 8px;
+		padding: 0 10px 10px;
 	}
 
 	.side-item {
 		display: flex;
 		align-items: center;
-		gap: 9px;
+		gap: 10px;
 		flex: none;
-		height: 34px;
-		padding: 0 10px;
-		border-radius: 9px;
+		height: 40px;
+		padding: 0 12px;
+		border-radius: 10px;
 		color: var(--txt-2);
-		font-size: 13px;
+		font-size: 13.5px;
 	}
 
 	.side-item.on {
@@ -283,7 +285,7 @@
 	.side-count {
 		margin-left: auto;
 		color: var(--txt-3);
-		font-size: 11px;
+		font-size: 11.5px;
 	}
 
 	.side-item.on .side-count {
@@ -295,23 +297,23 @@
 		align-items: center;
 		gap: 7px;
 		flex: none;
-		height: 42px;
-		padding: 0 18px;
+		height: 48px;
+		padding: 0 20px;
 		box-shadow: inset 0 1px 0 var(--line);
 		color: var(--txt-2);
-		font-size: 12.5px;
+		font-size: 13px;
 	}
 
 	.hint {
 		color: var(--txt-3);
-		font-size: 11px;
+		font-size: 11.5px;
 	}
 
 	.list {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
-		padding: 0 8px 8px;
+		gap: 3px;
+		padding: 0 10px 10px;
 		overflow: hidden;
 	}
 
@@ -319,9 +321,9 @@
 		position: relative;
 		display: flex;
 		align-items: flex-start;
-		gap: 9px;
-		padding: 10px 11px;
-		border-radius: 10px;
+		gap: 10px;
+		padding: 12px 13px;
+		border-radius: 11px;
 	}
 
 	.item.on {
@@ -332,8 +334,8 @@
 	.item.on::before {
 		content: '';
 		position: absolute;
-		top: 9px;
-		bottom: 9px;
+		top: 10px;
+		bottom: 10px;
 		left: 0;
 		width: 3px;
 		border-radius: 0 2px 2px 0;
@@ -344,14 +346,14 @@
 		display: grid;
 		place-items: center;
 		flex: none;
-		width: 18px;
-		height: 18px;
+		width: 20px;
+		height: 20px;
 		margin-top: 1px;
 		border: 1px solid var(--line-2);
-		border-radius: 5px;
+		border-radius: 6px;
 		color: var(--txt-3);
 		font-family: var(--font-mono);
-		font-size: 8.5px;
+		font-size: 9.5px;
 		line-height: 1;
 	}
 
@@ -370,7 +372,7 @@
 	.title {
 		flex: 1;
 		min-width: 0;
-		font-size: 13.5px;
+		font-size: 14.5px;
 		font-weight: 500;
 		line-height: 1.45;
 	}
@@ -378,45 +380,51 @@
 	.when {
 		flex: none;
 		color: var(--txt-3);
-		font-size: 11px;
+		font-size: 11.5px;
 	}
 
 	.meta {
 		display: block;
-		margin-top: 3px;
+		margin-top: 4px;
+		padding-left: 30px;
 		color: var(--txt-3);
-		font-size: 11.5px;
+		font-size: 12px;
 		line-height: 1.4;
 	}
 
 	.detail .pane-head {
-		padding: 0 16px;
+		padding: 0 18px;
 	}
 
 	.detail article {
 		min-height: 0;
 		overflow: hidden;
-		padding: 4px 18px 22px;
+		padding: 8px 22px 28px;
 	}
 
 	.item-title {
-		font-size: 19px;
+		font-size: 22px;
 		font-weight: 600;
 		line-height: 1.3;
-		letter-spacing: -0.012em;
+		letter-spacing: -0.015em;
 	}
 
 	.byline {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 6px;
-		margin-top: 8px;
+		gap: 7px;
+		margin-top: 10px;
 		color: var(--txt-3);
+		font-size: 12px;
 	}
 
 	.byline time {
-		font-size: 11px;
+		font-size: 11.5px;
+	}
+
+	.author {
+		color: var(--txt-2);
 	}
 
 	.tag {
@@ -432,40 +440,40 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 4px 10px;
-		margin-top: 13px;
+		gap: 6px 12px;
+		margin-top: 16px;
 	}
 
 	.btn {
 		display: inline-flex;
 		align-items: center;
-		height: 30px;
-		padding: 0 11px;
+		height: 34px;
+		padding: 0 13px;
 		border: 1px solid var(--line);
-		border-radius: 7px;
+		border-radius: 8px;
 		background: var(--raise);
 		color: var(--txt);
-		font-size: 13px;
+		font-size: 13.5px;
 	}
 
 	.via {
 		color: var(--txt-3);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.summary {
-		margin-top: 18px;
-		padding-top: 16px;
+		margin-top: 22px;
+		padding-top: 18px;
 		box-shadow: inset 0 1px 0 var(--line);
 	}
 
 	.summary h4 {
-		margin: 14px 0 0;
+		margin: 18px 0 0;
 		color: var(--txt-3);
 		font-family: var(--font-mono);
-		font-size: 10.5px;
+		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.11em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 	}
 
@@ -474,38 +482,42 @@
 	}
 
 	.summary p {
-		margin: 7px 0 0;
+		margin: 8px 0 0;
 		color: var(--txt-2);
-		font-size: 13.5px;
-		line-height: 1.6;
+		font-size: 14.5px;
+		line-height: 1.65;
+	}
+
+	.summary p + p {
+		margin-top: 9px;
 	}
 
 	.points {
-		margin: 7px 0 0;
-		padding-left: 16px;
+		margin: 8px 0 0;
+		padding-left: 18px;
 		color: var(--txt-2);
-		font-size: 13px;
-		line-height: 1.55;
+		font-size: 14px;
+		line-height: 1.6;
 	}
 
 	.points li {
-		margin: 3px 0;
+		margin: 4px 0;
 	}
 
 	.cites {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 4px 12px;
-		margin-top: 12px;
+		gap: 6px 14px;
+		margin-top: 14px;
 		color: var(--accent);
-		font-size: 12px;
+		font-size: 12.5px;
 		line-height: 1.5;
 	}
 
 	.provenance {
-		margin-top: 12px;
+		margin-top: 14px;
 		color: var(--txt-3);
-		font-size: 10px;
+		font-size: 10.5px;
 		line-height: 1.5;
 	}
 
@@ -518,9 +530,9 @@
 		white-space: nowrap;
 	}
 
-	@media (max-width: 1080px) {
+	@media (max-width: 1120px) {
 		.app {
-			grid-template-columns: minmax(0, 1fr) 372px;
+			grid-template-columns: minmax(0, 1fr) 430px;
 		}
 
 		.side {
@@ -528,7 +540,7 @@
 		}
 	}
 
-	@media (max-width: 960px) {
+	@media (max-width: 980px) {
 		.app {
 			grid-template-columns: minmax(0, 1fr);
 			height: auto;

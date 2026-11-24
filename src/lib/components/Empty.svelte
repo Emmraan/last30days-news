@@ -9,11 +9,11 @@
 		display: grid;
 		place-items: center;
 		flex: 1;
-		padding: 24px;
+		padding: 28px;
 		color: var(--txt-3);
 		font-family: var(--font-mono);
-		font-size: 12px;
-		line-height: 1.5;
+		font-size: 12.5px;
+		line-height: 1.55;
 		text-align: center;
 	}
 </style>

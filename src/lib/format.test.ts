@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { displayText, formatWhen, safeHref, sourceInitials } from '#lib/format';
+import { displayParagraphs, displayText, formatWhen, safeHref, sourceInitials } from '#lib/format';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -96,6 +96,20 @@ test('displayText normalises Unicode without changing plain text', () => {
 	expect(displayText('cafe\u0301')).toBe('café');
 	expect(displayText('Plain text - unchanged')).toBe('Plain text - unchanged');
 	expect(displayText('你好')).toBe('你好');
+});
+
+test('displayParagraphs keeps blank-line breaks and joins hard wraps', () => {
+	expect(displayParagraphs('First\n\nSecond\nline')).toEqual(['First', 'Second line']);
+	expect(displayParagraphs('A\r\n\r\nB\r\n\r\n\r\nC')).toEqual(['A', 'B', 'C']);
+	expect(displayParagraphs('One\nTwo\tThree')).toEqual(['One Two Three']);
+});
+
+test('displayParagraphs drops empty blocks and cleans each paragraph', () => {
+	expect(displayParagraphs('  \n\n \n\n ')).toEqual([]);
+	expect(displayParagraphs('Safe\u202Etxet\u0000 here')).toEqual(['Safetxet here']);
+	expect(displayParagraphs('&amp; first\n\n&hellip; second')).toEqual(['& first', '… second']);
+	expect(displayParagraphs(null)).toEqual([]);
+	expect(displayParagraphs(undefined)).toEqual([]);
 });
 
 test.each([

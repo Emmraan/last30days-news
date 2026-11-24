@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { X } from 'lucide-svelte';
 	import { THEME_COOKIE, type Theme } from '#lib/theme';
+	import Dropdown from './Dropdown.svelte';
 	import PasswordForm from './PasswordForm.svelte';
 
 	let {
@@ -182,6 +183,7 @@
 	}
 
 	const available = $derived(ids.filter((id) => !rows.some((row) => row.id === id)));
+	const providerOptions = $derived(available.map((id) => ({ value: id, label: id })));
 </script>
 
 <div class="scrim" role="presentation" onclick={onclose} onkeydown={() => undefined}></div>
@@ -211,14 +213,18 @@
 					type="button"
 					aria-pressed={theme === 'dark'}
 					disabled={mustChangePassword}
-					onclick={() => void chooseTheme('dark')}>Dark</button
+					onclick={() => void chooseTheme('dark')}
 				>
+					Dark
+				</button>
 				<button
 					type="button"
 					aria-pressed={theme === 'light'}
 					disabled={mustChangePassword}
-					onclick={() => void chooseTheme('light')}>Light</button
+					onclick={() => void chooseTheme('light')}
 				>
+					Light
+				</button>
 			</div>
 		</section>
 
@@ -237,8 +243,8 @@
 				}}
 			/>
 			<p class="meta">
-				Resetting the app deletes the password, every saved API key and all sessions. Items,
-				sources and categories stay.
+				Resetting the app deletes the password, every saved API key and all sessions. Items, sources
+				and categories stay.
 			</p>
 		</section>
 
@@ -301,21 +307,27 @@
 								class="btn small"
 								type="button"
 								disabled={busy}
-								onclick={() => void saveProvider(row.id)}>Save</button
+								onclick={() => void saveProvider(row.id)}
 							>
+								Save
+							</button>
 							<button
 								class="btn small"
 								type="button"
 								disabled={busy || testing === row.id}
-								onclick={() => void testProvider(row.id)}>Test</button
+								onclick={() => void testProvider(row.id)}
 							>
+								Test
+							</button>
 							{#if row.keyConfigured}
 								<button
 									class="btn small danger"
 									type="button"
 									disabled={busy}
-									onclick={() => void clearKey(row.id)}>Clear key</button
+									onclick={() => void clearKey(row.id)}
 								>
+									Clear key
+								</button>
 							{/if}
 						</div>
 
@@ -327,22 +339,16 @@
 			</ul>
 
 			{#if available.length}
-				<label class="field add">
+				<div class="field add">
 					<span>Add provider</span>
-					<select
-						class="text"
+					<Dropdown
+						label="Add provider"
 						value=""
-						onchange={(event) => {
-							addProvider(event.currentTarget.value);
-							event.currentTarget.value = '';
-						}}
-					>
-						<option value="">Choose…</option>
-						{#each available as id (id)}
-							<option value={id}>{id}</option>
-						{/each}
-					</select>
-				</label>
+						placeholder="Choose…"
+						options={providerOptions}
+						onchange={addProvider}
+					/>
+				</div>
 			{/if}
 		</section>
 	</div>
@@ -354,6 +360,7 @@
 		inset: 0;
 		z-index: 20;
 		background: rgb(0 0 0 / 0.28);
+		animation: scrim-in 140ms var(--ease) both;
 	}
 
 	.panel {
@@ -364,10 +371,11 @@
 		bottom: 0;
 		display: flex;
 		flex-direction: column;
-		width: min(460px, 100vw);
+		width: min(500px, 100vw);
 		border-left: 1px solid var(--line);
 		background: var(--pane);
-		box-shadow: -8px 0 24px rgb(0 0 0 / 0.18);
+		box-shadow: -12px 0 36px rgb(0 0 0 / 0.22);
+		animation: panel-in 180ms var(--ease) both;
 	}
 
 	.head {
@@ -376,16 +384,16 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 8px;
-		height: 44px;
-		padding: 0 8px 0 14px;
+		height: 52px;
+		padding: 0 10px 0 18px;
 		box-shadow: inset 0 -1px 0 var(--line);
 	}
 
 	.head h2 {
 		font-family: var(--font-sans);
-		font-size: 11px;
+		font-size: 11.5px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -394,14 +402,14 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 10px 14px 24px;
+		padding: 14px 18px 28px;
 	}
 
 	.block {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
-		margin-top: 18px;
+		gap: 12px;
+		margin-top: 22px;
 	}
 
 	.block:first-child {
@@ -410,9 +418,9 @@
 
 	.block h3 {
 		font-family: var(--font-sans);
-		font-size: 11px;
+		font-size: 11.5px;
 		font-weight: 600;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--txt-3);
 	}
@@ -420,7 +428,7 @@
 	.list {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: 3px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -429,16 +437,16 @@
 	.row {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
-		padding: 8px 0;
+		gap: 8px;
+		padding: 10px 0;
 		box-shadow: inset 0 -1px 0 var(--line);
 	}
 
 	.row-main {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		min-height: 24px;
+		gap: 10px;
+		min-height: 28px;
 	}
 
 	.label {
@@ -448,34 +456,34 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		color: var(--txt);
-		font-size: 13px;
+		font-size: 13.5px;
 	}
 
 	.tag {
 		margin-left: 6px;
 		color: var(--txt-3);
-		font-size: 11px;
+		font-size: 11.5px;
 	}
 
 	.check {
 		display: flex;
 		flex: none;
 		align-items: center;
-		gap: 5px;
+		gap: 6px;
 		color: var(--txt-2);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.row-actions {
 		display: flex;
 		align-items: center;
-		gap: 4px;
+		gap: 6px;
 	}
 
 	.btn.small {
-		height: 26px;
-		padding: 0 8px;
-		font-size: 12px;
+		height: 30px;
+		padding: 0 10px;
+		font-size: 12.5px;
 	}
 
 	.btn.danger {
@@ -486,35 +494,39 @@
 	.text {
 		width: 100%;
 		min-width: 0;
-		height: 28px;
-		padding: 0 8px;
+		height: 34px;
+		padding: 0 10px;
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: 8px;
 		background: var(--card);
 		color: var(--txt);
 		font: inherit;
-		font-size: 13px;
+		font-size: 13.5px;
+		transition:
+			border-color 110ms var(--ease),
+			box-shadow 110ms var(--ease);
 	}
 
 	.text:focus {
 		outline: none;
 		border-color: var(--accent);
+		box-shadow: 0 0 0 3px var(--accent-soft);
 	}
 
 	.field {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
 		margin: 0;
 	}
 
 	.field > span {
 		color: var(--txt-2);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.add {
-		margin-top: 12px;
+		margin-top: 14px;
 	}
 
 	.err,
@@ -522,7 +534,8 @@
 	.ok,
 	.meta {
 		margin: 0;
-		font-size: 12px;
+		font-size: 12.5px;
+		line-height: 1.5;
 	}
 
 	.err,
@@ -536,5 +549,25 @@
 
 	.meta {
 		color: var(--txt-3);
+	}
+
+	@keyframes scrim-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes panel-in {
+		from {
+			transform: translateX(12px);
+			opacity: 0;
+		}
+		to {
+			transform: none;
+			opacity: 1;
+		}
 	}
 </style>

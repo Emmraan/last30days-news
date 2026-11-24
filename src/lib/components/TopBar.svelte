@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { CircleHelp, RefreshCw, Search, Settings, SunMoon } from 'lucide-svelte';
 	import { THEME_COOKIE } from '#lib/theme';
@@ -25,6 +26,13 @@
 		onhelp: () => void;
 	} = $props();
 
+	// The hint follows the platform without making SSR guess; Windows is the
+	// default and the value settles after hydration.
+	let mac = $state(false);
+	onMount(() => {
+		mac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+	});
+
 	function toggleTheme() {
 		const root = document.documentElement;
 		const current = root.classList.contains('light')
@@ -50,14 +58,16 @@
 	</a>
 
 	<div class="search" role="search">
-		<Search size={14} aria-hidden="true" />
+		<Search size={15} aria-hidden="true" />
 		<input
 			type="search"
 			placeholder="Search items"
 			aria-label="Search items"
+			aria-keyshortcuts="Control+K Meta+K"
 			value={query}
 			oninput={(event) => onquery(event.currentTarget.value)}
 		/>
+		<kbd class="keyhint" aria-hidden="true">{mac ? '⌘ K' : 'Ctrl K'}</kbd>
 	</div>
 
 	<div class="seg" role="group" aria-label="Time range">
@@ -78,7 +88,7 @@
 			aria-busy={refreshing}
 			onclick={onrefresh}
 		>
-			<RefreshCw size={15} aria-hidden="true" />
+			<span class="spin" class:on={refreshing}><RefreshCw size={17} aria-hidden="true" /></span>
 		</button>
 		<button
 			class="iconbtn"
@@ -87,7 +97,7 @@
 			title="Keyboard shortcuts (?)"
 			onclick={onhelp}
 		>
-			<CircleHelp size={15} aria-hidden="true" />
+			<CircleHelp size={17} aria-hidden="true" />
 		</button>
 		<button
 			class="iconbtn"
@@ -96,7 +106,7 @@
 			title="Open settings"
 			onclick={onsettings}
 		>
-			<Settings size={15} aria-hidden="true" />
+			<Settings size={17} aria-hidden="true" />
 		</button>
 		<button
 			class="iconbtn"
@@ -105,7 +115,7 @@
 			title="Toggle light or dark theme"
 			onclick={toggleTheme}
 		>
-			<SunMoon size={15} aria-hidden="true" />
+			<SunMoon size={17} aria-hidden="true" />
 		</button>
 	</div>
 </header>
@@ -114,49 +124,56 @@
 	.topbar {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		height: 58px;
+		gap: 14px;
+		height: var(--h-top);
 		min-width: 0;
-		padding: 0 14px;
+		padding: 0 18px;
 		background: var(--bg);
 	}
 
 	.brand {
 		display: flex;
 		align-items: center;
-		gap: 9px;
+		gap: 10px;
 		min-width: 0;
 	}
 
 	.wordmark {
 		font-family: var(--font-display);
-		font-size: 13px;
+		font-size: 14.5px;
 		font-weight: 600;
-		letter-spacing: -0.01em;
+		letter-spacing: -0.015em;
 		white-space: nowrap;
 	}
 
 	.search {
-		flex: 0 1 420px;
+		flex: 0 1 480px;
 		min-width: 0;
 		margin-left: 6px;
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		height: 34px;
-		padding: 0 12px;
-		border: 1px solid transparent;
-		border-radius: var(--pill);
-		background: var(--raise);
+		gap: 9px;
+		height: 40px;
+		padding: 0 9px 0 13px;
+		border: 1px solid var(--line-2);
+		border-radius: 10px;
+		background: var(--card);
 		color: var(--txt-3);
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
 		transition:
-			border-color 110ms var(--ease),
-			background-color 110ms var(--ease);
+			border-color 130ms var(--ease),
+			box-shadow 130ms var(--ease),
+			background-color 130ms var(--ease);
+	}
+
+	.search:hover {
+		border-color: color-mix(in srgb, var(--txt-3) 55%, var(--line-2));
 	}
 
 	.search:focus-within {
-		border-color: var(--line-2);
+		border-color: var(--accent);
 		background: var(--card);
+		box-shadow: 0 0 0 3px var(--accent-soft);
 	}
 
 	.search input {
@@ -166,7 +183,7 @@
 		background: none;
 		color: var(--txt);
 		font: inherit;
-		font-size: 13px;
+		font-size: 13.5px;
 		outline: none;
 	}
 
@@ -174,20 +191,41 @@
 		color: var(--txt-3);
 	}
 
-	/* The shared segmented control is square; on the toolbar a pill reads better. */
+	.keyhint {
+		display: inline-flex;
+		align-items: center;
+		flex: none;
+		height: 21px;
+		padding: 0 5px;
+		border: 1px solid var(--line);
+		border-radius: 5px;
+		background: var(--raise);
+		color: var(--txt-3);
+		font-family: var(--font-mono);
+		font-size: 10px;
+		line-height: 1;
+		white-space: nowrap;
+		transition: opacity 130ms var(--ease);
+	}
+
+	.search:focus-within .keyhint {
+		opacity: 0.45;
+	}
+
+	/* The shared segmented control is square; on the toolbar it reads wider. */
 	.seg {
-		height: 34px;
+		height: 40px;
 		padding: 3px;
 		border: 0;
-		border-radius: var(--pill);
+		border-radius: 10px;
 		background: var(--raise);
 	}
 
 	.seg > button {
-		height: 28px;
-		padding: 0 13px;
-		border-radius: var(--pill);
-		font-size: 12.5px;
+		height: 32px;
+		padding: 0 15px;
+		border-radius: 7px;
+		font-size: 13px;
 	}
 
 	.seg > button[aria-pressed='true'] {
@@ -199,18 +237,33 @@
 	.actions {
 		display: flex;
 		align-items: center;
-		gap: 4px;
+		gap: 5px;
 		flex: none;
 		margin-left: auto;
 	}
 
 	.iconbtn {
-		width: 32px;
-		height: 32px;
+		width: 36px;
+		height: 36px;
 		border-radius: 10px;
 	}
 
-	@media (max-width: 940px) {
+	.spin {
+		display: inline-grid;
+		place-items: center;
+	}
+
+	.spin.on {
+		animation: spin 900ms linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@media (max-width: 1080px) {
 		.wordmark {
 			display: none;
 		}
@@ -222,6 +275,7 @@
 	}
 
 	@media (max-width: 720px) {
+		.keyhint,
 		.seg {
 			display: none;
 		}

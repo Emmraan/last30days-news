@@ -96,6 +96,20 @@ export function displayText(value: string): string {
 		.trim();
 }
 
+/**
+ * Prose keeps its paragraph breaks. A feed or model can hand over multi-line
+ * copy, and flattening every newline into one block makes the detail pane read
+ * as a wall of text. Single newlines stay spaces so hard-wrapped text survives.
+ */
+export function displayParagraphs(value: string | null | undefined): string[] {
+	if (!value) return [];
+	return value
+		.replace(/\r\n?/g, '\n')
+		.split(/\n\s*\n+/)
+		.map(displayText)
+		.filter((paragraph) => paragraph.length > 0);
+}
+
 /** Only absolute http(s) links may reach an `href` in the dashboard. */
 export function safeHref(value: string | null | undefined): string {
 	const raw = value?.trim();

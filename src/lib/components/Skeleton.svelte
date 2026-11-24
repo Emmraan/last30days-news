@@ -44,29 +44,39 @@
 <style>
 	.bar {
 		display: block;
-		border-radius: 3px;
+		border-radius: 4px;
 		background: var(--card);
+		animation: skeleton-pulse 1.4s ease-in-out infinite alternate;
+	}
+
+	@keyframes skeleton-pulse {
+		from {
+			opacity: 0.55;
+		}
+		to {
+			opacity: 0.95;
+		}
 	}
 
 	.row {
 		box-sizing: border-box;
-		height: 74px;
-		padding: 9px 12px;
+		height: 82px;
+		padding: 12px 13px;
 	}
 
 	.head {
 		display: grid;
-		grid-template-columns: 16px minmax(0, 1fr) 38px;
+		grid-template-columns: 20px minmax(0, 1fr) 38px;
 		align-items: start;
-		gap: 8px;
-		min-height: 38px;
+		gap: 10px;
+		min-height: 42px;
 	}
 
 	.badge {
-		width: 16px;
-		height: 16px;
+		width: 20px;
+		height: 20px;
 		margin-top: 2px;
-		border-radius: 4px;
+		border-radius: 6px;
 	}
 
 	.lines {
@@ -94,40 +104,40 @@
 	.meta {
 		width: 90px;
 		height: 8px;
-		margin-top: 6px;
-		margin-left: 24px;
+		margin-top: 8px;
+		margin-left: 30px;
 	}
 
 	.detail {
-		padding: 4px 2px;
+		padding: 8px 2px;
 	}
 
 	.d-title {
 		width: 92%;
-		height: 18px;
-		margin-bottom: 8px;
+		height: 20px;
+		margin-bottom: 9px;
 	}
 
 	.d-title.short {
 		width: 64%;
-		margin-bottom: 14px;
+		margin-bottom: 16px;
 	}
 
 	.d-meta {
 		width: 55%;
 		height: 9px;
-		margin-bottom: 22px;
+		margin-bottom: 26px;
 	}
 
 	.copy {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 12px;
 	}
 
 	.line {
 		width: 100%;
-		height: 9px;
+		height: 10px;
 	}
 
 	.line.short {
