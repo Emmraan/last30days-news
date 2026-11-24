@@ -12,5 +12,6 @@
 - Vercel target using a Turso libSQL database, selected by `VERCEL=1`, with a one-click deploy button. Use the `libsql://` URL, not a `turso://` URL from the newer Turso Database engine.
 - Separate `.env.development.example` and `.env.production.example` files for local and production-like runs, with each optional variable documented for local, VPS and Vercel.
 - Deployed installs require `L30_INITIAL_PASSWORD`, never accept the local default password, and disable password reset.
+- Contributor guides and a beginner-friendly README with diagrams for local, VPS and Vercel.
 - Build budgets, HTTP smoke tests and package-install smoke tests.
 - Semantic release from `main`: GitHub Releases always, npm publishing only when `NPM_TOKEN` is configured.

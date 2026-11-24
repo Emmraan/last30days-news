@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" width="1200" height="430" role="img" aria-labelledby="title desc">
+	<title id="title">Three ways to run last30days-news</title>
+	<desc id="desc">Local runs use a SQLite file and the local default password. VPS and Vercel are deployments: VPS uses a SQLite volume, Vercel uses Turso, and both require an initial password and disable reset.</desc>
+	<style>
+		text { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+		.mono { font-family: 'Cascadia Mono', Consolas, ui-monospace, monospace; }
+		.ink { fill: #141414; }
+		.dim { fill: #545454; }
+		.muted { fill: #848484; }
+		.panel { fill: #f7f7f7; stroke: #e3e3e3; }
+		.box { fill: #ffffff; stroke: #e3e3e3; }
+		.flow { fill: none; stroke: #0f6cbd; stroke-width: 1.8; stroke-dasharray: 6 6; animation: dash 1.6s linear infinite; }
+		.flow-dim { fill: none; stroke: #848484; stroke-width: 1.8; stroke-dasharray: 6 6; animation: dash 1.9s linear infinite; }
+		@keyframes dash { to { stroke-dashoffset: -24; } }
+		@keyframes glow {
+			0%, 100% { opacity: 0.35; }
+			50% { opacity: 1; }
+		}
+		.glow { animation: glow 2.8s ease-in-out infinite; }
+		@media (prefers-reduced-motion: reduce) {
+			.flow, .flow-dim, .glow { animation: none; }
+		}
+	</style>
+
+	<rect width="1200" height="430" fill="#f3f3f3"/>
+	<rect x="0.5" y="0.5" width="1199" height="429" rx="16" fill="none" stroke="#d2d2d2"/>
+
+	<!-- Local -->
+	<rect x="24" y="32" width="368" height="366" rx="14" class="panel"/>
+	<rect x="48" y="56" width="28" height="28" rx="8" fill="#0f6cbd"/>
+	<path d="M58 64l5 6-5 6M68 76h6" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+	<text x="88" y="76" font-size="15" font-weight="600" class="ink">Local</text>
+	<text x="48" y="102" font-size="11.5" class="muted">npx last30days-news</text>
+
+	<rect x="48" y="112" width="320" height="52" rx="9" class="box"/>
+	<text x="64" y="134" font-size="12.5" font-weight="500" class="ink">Browser</text>
+	<text x="64" y="151" font-size="10.5" class="muted mono">127.0.0.1:4477</text>
+
+	<path d="M208 166v22" class="flow"/>
+	<path d="M204 186l4 5 4-5" fill="none" stroke="#0f6cbd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+	<rect x="48" y="196" width="320" height="52" rx="9" class="box"/>
+	<text x="64" y="218" font-size="12.5" font-weight="500" class="ink">Node process</text>
+	<text x="64" y="235" font-size="10.5" class="muted mono">build/handler.js</text>
+
+	<path d="M208 250v22" class="flow"/>
+	<path d="M204 270l4 5 4-5" fill="none" stroke="#0f6cbd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+	<rect x="48" y="280" width="320" height="52" rx="9" class="box"/>
+	<text x="64" y="302" font-size="12.5" font-weight="500" class="ink">SQLite file</text>
+	<text x="64" y="319" font-size="10.5" class="muted mono">db.sqlite</text>
+
+	<circle cx="48" cy="356" r="3" fill="#0f6cbd" class="glow"/>
+	<text x="60" y="360" font-size="11" class="dim">Password: last30 on first run</text>
+	<text x="48" y="380" font-size="11" class="dim">Reset: same machine only</text>
+
+	<!-- VPS -->
+	<rect x="416" y="32" width="368" height="366" rx="14" class="panel"/>
+	<rect x="440" y="56" width="28" height="28" rx="8" fill="#545454"/>
+	<rect x="448" y="64" width="12" height="4" rx="1" fill="#ffffff"/>
+	<rect x="448" y="72" width="12" height="4" rx="1" fill="#ffffff"/>
+	<circle cx="451" cy="68" r="1" fill="#545454"/>
+	<circle cx="451" cy="76" r="1" fill="#545454"/>
+	<text x="480" y="76" font-size="15" font-weight="600" class="ink">VPS</text>
+	<text x="440" y="102" font-size="11.5" class="muted">Docker or systemd</text>
+
+	<rect x="440" y="112" width="320" height="52" rx="9" class="box"/>
+	<text x="456" y="134" font-size="12.5" font-weight="500" class="ink">Browser</text>
+	<text x="456" y="151" font-size="10.5" class="muted mono">https://your-host</text>
+
+	<path d="M600 166v22" class="flow-dim"/>
+	<path d="M596 186l4 5 4-5" fill="none" stroke="#848484" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+	<rect x="440" y="196" width="320" height="52" rx="9" class="box"/>
+	<text x="456" y="218" font-size="12.5" font-weight="500" class="ink">TLS proxy + app</text>
+	<text x="456" y="235" font-size="10.5" class="muted mono">127.0.0.1:4477</text>
+
+	<path d="M600 250v22" class="flow-dim"/>
+	<path d="M596 270l4 5 4-5" fill="none" stroke="#848484" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+	<rect x="440" y="280" width="320" height="52" rx="9" class="box"/>
+	<text x="456" y="302" font-size="12.5" font-weight="500" class="ink">SQLite volume</text>
+	<text x="456" y="319" font-size="10.5" class="muted mono">/data or /var/lib</text>
+
+	<circle cx="440" cy="356" r="3" fill="#545454" class="glow"/>
+	<text x="452" y="360" font-size="11" class="dim">Password: L30_INITIAL_PASSWORD</text>
+	<text x="440" y="380" font-size="11" class="dim">Reset: disabled</text>
+
+	<!-- Vercel -->
+	<rect x="808" y="32" width="368" height="366" rx="14" class="panel"/>
+	<rect x="832" y="56" width="28" height="28" rx="8" fill="#0f6cbd"/>
+	<path d="M846 62l10 16h-20z" fill="#ffffff"/>
+	<text x="872" y="76" font-size="15" font-weight="600" class="ink">Vercel</text>
+	<text x="832" y="102" font-size="11.5" class="muted">Serverless + Turso</text>
+
+	<rect x="832" y="112" width="320" height="52" rx="9" class="box"/>
+	<text x="848" y="134" font-size="12.5" font-weight="500" class="ink">Browser</text>
+	<text x="848" y="151" font-size="10.5" class="muted mono">https://your-app.vercel.app</text>
+
+	<path d="M992 166v22" class="flow"/>
+	<path d="M988 186l4 5 4-5" fill="none" stroke="#0f6cbd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+	<rect x="832" y="196" width="320" height="52" rx="9" class="box"/>
+	<text x="848" y="218" font-size="12.5" font-weight="500" class="ink">Vercel function</text>
+	<text x="848" y="235" font-size="10.5" class="muted mono">VERCEL=1</text>
+
+	<path d="M992 250v22" class="flow"/>
+	<path d="M988 270l4 5 4-5" fill="none" stroke="#0f6cbd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+	<rect x="832" y="280" width="320" height="52" rx="9" class="box"/>
+	<text x="848" y="302" font-size="12.5" font-weight="500" class="ink">Turso libSQL</text>
+	<text x="848" y="319" font-size="10.5" class="muted mono">libsql://...</text>
+
+	<circle cx="832" cy="356" r="3" fill="#0f6cbd" class="glow"/>
+	<text x="844" y="360" font-size="11" class="dim">Password: L30_INITIAL_PASSWORD</text>
+	<text x="832" y="380" font-size="11" class="dim">Reset: disabled</text>
+
+	<text x="600" y="420" text-anchor="middle" font-size="11.5" class="muted">Same code. The database and the password policy change with the target.</text>
+</svg>

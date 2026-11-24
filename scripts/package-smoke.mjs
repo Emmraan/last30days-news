@@ -74,6 +74,9 @@ try {
 		'package/build/index.js',
 		'package/build/client/theme.js',
 		'package/build/client/_app/version.json',
+		'package/docs/assets/dashboard.svg',
+		'package/docs/assets/run-modes.svg',
+		'package/docs/assets/passwords.svg',
 		'package/README.md',
 		'package/LICENSE',
 		'package/CHANGELOG.md'
