@@ -305,7 +305,7 @@ scripts are allowed.
 
 ## P15 — Install, budgets, CI
 
-Work `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd`, on
+Work `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466`, on
 `phase-15-install`, not merged.
 `bin/last30days.js` adds
 `--no-open`, exact `PORT` or 4477–4487, platform data dirs and browser open.
@@ -319,9 +319,11 @@ and disable reset. The tarball ships only
 `vite.config.ts` loads the matching file for dev/build but never for tests.
 README has a Deploy to Vercel button and a local Turso branch check. Release
 is semantic-release from `main` after CI: GitHub Release always, npm only
-when `NPM_TOKEN` exists in the `release` environment. CI adds a Vercel
-adapter build and a Docker job: build, size <220 MB, boot, login, `/app`,
-feed, reset 403 and an unset-password container 503.
+when `NPM_TOKEN` exists in the `release` environment. The added CI
+`VERCEL=1` build was removed after adapter-vercel hung in file tracing
+(`ENXIO` on a `/tmp/dotnet-diagnostic-*` socket); the real deployment checks
+that adapter. The Docker CI job was removed on the owner's call after its
+one-off pass; the Dockerfile and VPS guide stay.
 Local gate: lint/typecheck clean, 53 files / 619 tests, both builds, budget
 pass (cold boot 677 ms, /app JS 56.4 KB, feed p95 60 ms), smoke and package
 smoke pass, audit 0 critical/high (2 moderate). A dummy `.env.production`
@@ -329,9 +331,16 @@ verified `start:local`: deployed login works, `last30` 401, reset 403, feed
 200, and the password never reached the log. Dependabot groups weekly
 npm, actions and Docker minor/patch updates; a policy labels them
 `automerge` and closes majors, and a `workflow_run` job merges after green
-CI and closes on failure. CI was green on `a057ff7` (owner report), Docker
-job included; `ca712bd` needs the same run. Not yet verified: real Turso and
-Vercel login/fetch/feed, npm publish (account suspended 72 h). Accepted: DNS
+CI and closes on failure. CI was green on `a057ff7` (owner report); the
+`ca712bd` run failed in the added `VERCEL=1` build, and `e8e9466` removes
+that step. The real Turso development branch verified login, first-run
+password change, `/app`, feed and refresh (5 events); one transient connect
+timeout cleared on rerun. The branch now holds the test password
+`local-test-password-123` and 5 items; delete `auth.password`, `crypto.salt`
+and every `secret.*` row to return to first-run. Not yet verified: actual
+Vercel login/fetch/feed, npm publish (account suspended 72 h). The first
+Turso check hit a `turso://` URL, which `@libsql/client` cannot open; the
+owner switched to the libSQL `libsql://` URL. Accepted: DNS
 rebinding and the `Host` header (P3); the local default window (now
 closed on deployments). A local install exposed through a proxy must set
 `L30_TRUST_PROXY=1`, or reset still sees the proxy as loopback.
