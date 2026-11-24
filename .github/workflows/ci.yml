@@ -140,7 +140,8 @@ jobs:
           curl -fsS http://127.0.0.1:4478/login -o /tmp/unset.html
           grep -q 'Setup is incomplete' /tmp/unset.html
 
-          if docker logs last30days-ci 2>&1 | grep -q 'ci-password-123'; then
+          docker logs last30days-ci > /tmp/ci.log 2>&1
+          if grep -q 'ci-password-123' /tmp/ci.log; then
             echo 'the container logged its initial password' >&2
             exit 1
           fi
