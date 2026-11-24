@@ -138,6 +138,8 @@ pnpm audit:gate
 
 `pnpm test:package` packs the tarball, checks that it contains only the built app and no tests or source maps, installs it in a temporary directory, and checks both the local and deployed login paths.
 
+Dependabot opens grouped weekly updates for npm, GitHub Actions and the Docker base image. A pull request with only patch and minor bumps is labelled `automerge`, then merged after both CI jobs pass; a major bump is closed with a comment and needs a manual branch. The policy lives in `.github/workflows/dependabot-policy.yml` and `.github/workflows/dependabot-merge.yml`.
+
 ## License
 
 MIT. See `LICENSE`.
