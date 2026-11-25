@@ -29,7 +29,7 @@ a new one; the plan and code hold the full rationale.
 | Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
 | Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
 | P14 Dashboard + landing showcase | done | `phase-14-landing` | `e9aae09` | `0ac90e1` |
-| P15 Install, budgets, CI | committed | `phase-15-install` | `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` + `ca1965f` + `f6ff2cd` | - |
+| P15 Install, budgets, CI | committed | `phase-15-install` | `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` + `ca1965f` + `f6ff2cd` + `03050ff` | - |
 
 ## P0 — Bootstrap
 
@@ -306,7 +306,7 @@ scripts are allowed.
 ## P15 — Install, budgets, CI
 
 Work `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` +
-`ca1965f` + `f6ff2cd`, on `phase-15-install`, not merged.
+`ca1965f` + `f6ff2cd` + `03050ff`, on `phase-15-install`, not merged.
 `bin/last30days.js` adds
 `--no-open`, exact `PORT` or 4477–4487, platform data dirs and browser open.
 Docker and systemd units, `vercel.json` and `VERCEL=1` adapter switch. Local
@@ -320,7 +320,12 @@ and disable reset. The tarball ships only
 README is a minimal quick start that links to the landing docs:
 `landing/` is a separate static app with mdsvex pages at `/docs`, an
 `install.sh`/`install.ps1` pair that installs the latest GitHub release
-tarball, and install commands built from a required `APP_URL`. The release
+tarball, and install commands built from a required `APP_URL`. `03050ff`
+hydrates only the docs routes (the home page stays `csr = false`), renders
+the SVGs inline in a focusable scroll canvas, keeps wide tables inside the
+prose column, adds the one-command VPS Docker installer and `/docs/uninstall`
+with `uninstall.sh`/`uninstall.ps1`, and trims the README to the three npm
+commands plus the docs URL. The release
 workflow attaches `last30days-news.tgz` to each GitHub Release. CONTRIBUTING,
 SECURITY and the Contributor Covenant cover development and reporting. Release
 is semantic-release from `main` after CI: GitHub Release always, npm only
