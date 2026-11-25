@@ -7,7 +7,7 @@ import { source } from '#lib/server/db/schema';
 
 export const prerender = false;
 
-// §S10: only the toggle is patchable. Name, URL and interval are not.
+// S10: only the toggle is patchable. Name, URL and interval are not.
 const body = z.object({ enabled: z.boolean() }).strict();
 
 export async function PATCH({ params, request, locals }: RequestEvent) {

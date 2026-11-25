@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-/** §S7: params that never identify an article, only the click. */
+/** S7: params that never identify an article, only the click. */
 const DROPPED = new Set([
 	'fbclid',
 	'gclid',
@@ -13,7 +13,7 @@ const DROPPED = new Set([
 ]);
 
 /**
- * §S7. Returns null for anything that is not an http(s) URL, so a `file:` or
+ * S7. Returns null for anything that is not an http(s) URL, so a `file:` or
  * `javascript:` link from a hostile feed never becomes an item.
  */
 export function canonicalUrl(input: string): string | null {
@@ -39,5 +39,5 @@ export function canonicalUrl(input: string): string | null {
 	return `${url.protocol}//${host}${path}${query}`;
 }
 
-/** §S7: `id = sha1(canonical)`. */
+/** S7: `id = sha1(canonical)`. */
 export const itemId = (canonical: string) => createHash('sha1').update(canonical).digest('hex');

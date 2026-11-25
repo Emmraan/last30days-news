@@ -7,10 +7,10 @@ import { toText, type RawItem } from '../sources/raw';
 
 export const EXCERPT_MAX = 800;
 
-/** §S7: fuzzy title matches only count within 48 hours of publication. */
+/** S7: fuzzy title matches only count within 48 hours of publication. */
 export const DEDUP_WINDOW_MS = 48 * 60 * 60 * 1000;
 
-/** §S7: `token Jaccard ≥ 0.72`. */
+/** S7: `token Jaccard ≥ 0.72`. */
 export const JACCARD_THRESHOLD = 0.72;
 
 type Owner = { id: string; category: string };
@@ -36,7 +36,7 @@ const SCRIPTS: [RegExp, string][] = [
 ];
 
 /**
- * §S20: best effort only, used to label a non-English source. Detecting the
+ * S20: best effort only, used to label a non-English source. Detecting the
  * script is cheap and honest; telling French from English is not attempted.
  */
 function guessLanguage(title: string, excerpt: string | null): string {
@@ -50,7 +50,7 @@ function usablePublished(value: RawItem['publishedAt']): value is number {
 }
 
 /**
- * §S7. Canonicalises and dedups one source's items against the category's
+ * S7. Canonicalises and dedups one source's items against the category's
  * existing rows: identical URL, identical normalised title, or Jaccard ≥ 0.72
  * within 48h. A match keeps the old row and only adds a source link.
  */

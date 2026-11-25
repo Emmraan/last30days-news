@@ -153,7 +153,7 @@ function makeModel(provider: ProviderEntry, apiKey: string | undefined): Languag
 }
 
 /**
- * The key is decrypted only when a model is actually needed (§S9). A missing
+ * The key is decrypted only when a model is actually needed (S9). A missing
  * vault key is a locked vault, not a missing key: the two get different codes
  * so the UI can tell the user to sign in again.
  */

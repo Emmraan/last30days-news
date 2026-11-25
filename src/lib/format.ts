@@ -12,7 +12,7 @@ function localDate(ms: number, now: number): string {
 }
 
 /**
- * §S12 rows and §S17 detail byline. A feed with no publish date falls back to
+ * S12 rows and S17 detail byline. A feed with no publish date falls back to
  * the fetch time, so the estimate marker must travel with the timestamp.
  */
 export function formatWhen(ms: number, now: number, estimated = false): string {

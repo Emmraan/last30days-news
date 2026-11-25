@@ -17,7 +17,7 @@ function resolveAppUrl(mode: string) {
 	return url;
 }
 
-// Static showcase site: prerendered, no server, no hydration (§6.8).
+// Static showcase site: prerendered, no server, no hydration (section 6.8).
 export default defineConfig(({ mode }) => ({
 	define: {
 		__APP_URL__: JSON.stringify(resolveAppUrl(mode))

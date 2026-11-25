@@ -8,7 +8,7 @@ on:
     types: [opened, reopened, synchronize]
 
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
@@ -37,7 +37,7 @@ jobs:
             version-update:semver-patch|version-update:semver-minor) ;;
             *)
               gh pr comment "$PR" --body "Closed by the dependency policy: only patch and minor updates merge automatically. Land a major update on a manual branch."
-              gh pr close "$PR"
+              gh pr close "$PR" --delete-branch
               exit 0
               ;;
           esac

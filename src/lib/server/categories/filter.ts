@@ -11,7 +11,7 @@ export type CategoryFilter = {
 	sourceIds: string[];
 };
 
-/** §S8: scores belong to a prompt, so editing it changes the cache key. */
+/** S8: scores belong to a prompt, so editing it changes the cache key. */
 export function promptHash(prompt: string): string {
 	return createHash('sha1').update(prompt).digest('hex');
 }
@@ -31,7 +31,7 @@ export async function loadCategoryFilter(
 }
 
 /**
- * §S4 candidate pool. Seeded categories keep `item.category` as their primary
+ * S4 candidate pool. Seeded categories keep `item.category` as their primary
  * category and cannot be edited, so that indexed column is both cheaper and
  * equivalent to their pinned source list. A user category may draw from any
  * source, so membership is checked through `item_source`.
@@ -78,7 +78,7 @@ export function categoryScoreCondition(row: CategoryRow): SQL | undefined {
 	)`;
 }
 
-/** §S4: source pool AND (keyword OR score), with every missing layer inert. */
+/** S4: source pool AND (keyword OR score), with every missing layer inert. */
 export function categoryVisibleCondition(filter: CategoryFilter): SQL | undefined {
 	const pool = categoryPoolCondition(filter);
 	const keyword = categoryKeywordCondition(filter.category.keywords);

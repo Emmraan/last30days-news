@@ -59,6 +59,6 @@ jobs:
               ;;
             failure|timed_out)
               gh pr comment "$NUMBER" --repo "$REPO" --body "CI failed, so the dependency policy closed this update. Reopen it if the failure is unrelated to the bump: $RUN"
-              gh pr close "$NUMBER" --repo "$REPO"
+              gh pr close "$NUMBER" --repo "$REPO" --delete-branch
               ;;
           esac

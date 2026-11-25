@@ -12,7 +12,7 @@ import { freshDb } from './helper';
 
 const T0 = 1_700_000_000_000;
 
-test('constants match §S9: 5 failures, 15 min base lock, 24 h cap', () => {
+test('constants match S9: 5 failures, 15 min base lock, 24 h cap', () => {
 	expect(MAX_FAILURES).toBe(5);
 	expect(LOCK_BASE_MS).toBe(15 * 60 * 1000);
 	expect(LOCK_MAX_MS).toBe(24 * 60 * 60 * 1000);

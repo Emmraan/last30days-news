@@ -1,4 +1,4 @@
-/** One shape for all three source kinds (§S5). */
+/** One shape for all three source kinds (S5). */
 export type RawItem = {
 	url: string;
 	title: string;
@@ -12,11 +12,11 @@ export type FetchCtx = { fetch: typeof globalThis.fetch; signal?: AbortSignal };
 export const USER_AGENT =
 	'last30days-news/0.1 (+https://github.com/last30days-news/last30days-news)';
 
-/** §S6: no source may flood the DB in one pass. */
+/** S6: no source may flood the DB in one pass. */
 export const MAX_ITEMS_PER_SOURCE = 200;
 
 /**
- * §S6/§S17. A feed is untrusted input: 5 MiB is far more than any real feed
+ * S6/S17. A feed is untrusted input: 5 MiB is far more than any real feed
  * and small enough that a hostile one cannot exhaust memory before we look.
  * The cap is applied to the decompressed stream, so a zip bomb is caught too.
  */
@@ -33,7 +33,7 @@ export const requestInit = (signal?: AbortSignal): RequestInit => ({
 });
 
 /**
- * §4 SSRF. Loopback, link-local, private ranges and non-HTTP schemes are
+ * section 4 SSRF. Loopback, link-local, private ranges and non-HTTP schemes are
  * refused before a socket is opened. DNS rebinding is out of scope: the
  * resolved address is not pinned, only the literal host is checked.
  */

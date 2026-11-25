@@ -41,8 +41,9 @@ covers everything the PRD describes, empty the PRD back to its clean
 template — the same headings with no content — so the next round is written
 there. Once every phase in `PLAN.md` is merged, do the same to `PLAN.md` and
 `PROGRESS.md`. There is no template file to copy from: the file itself is
-rewritten in place, sections kept, fields emptied. Today `PRD.md` stays
-filled — the post-MVP scope has no plan yet.
+rewritten in place, sections kept, fields emptied. v0.1 is shipped, so
+`PLAN.md` and `PROGRESS.md` are empty and `PRD.md` holds only the
+unplanned post-MVP scope.
 
 ## 1. Unit testing
 
@@ -140,3 +141,5 @@ known limitation with a written reason.
   updated in the same change set; the showcase must never describe an older
   dashboard.
 - Comments explain *why*, never *what*.
+- Never use the section-sign glyph (U+00A7) anywhere: docs, comments, UI
+  text or commit messages. Write `section 6.2`, `S9`, or `P4` instead.

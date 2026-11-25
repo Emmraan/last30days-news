@@ -39,7 +39,7 @@
 	}
 	let settingsOpen = $state(false);
 	// Settings and help are opened rarely. Importing them on demand keeps the
-	// first feed load inside the §S17 route budget.
+	// first feed load inside the S17 route budget.
 	let SettingsPanel = $state<Component<{
 		mustChangePassword?: boolean;
 		onpasswordchanged?: () => void;

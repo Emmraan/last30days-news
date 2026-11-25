@@ -16,7 +16,7 @@ export async function clearFailures(db: Db, ip: string) {
 }
 
 /**
- * §S9: 5 failures per 15 min window, then a lock that doubles with every
+ * S9: 5 failures per 15 min window, then a lock that doubles with every
  * further 5 failures, capped at 24 h. Counting all rows for the IP (not just
  * the last window) is what makes the escalation survive a restart.
  */

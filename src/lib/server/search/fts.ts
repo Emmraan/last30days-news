@@ -1,4 +1,4 @@
-/** §S13: every whitespace token is quoted so FTS5 operators stay literal. */
+/** S13: every whitespace token is quoted so FTS5 operators stay literal. */
 export function buildFtsQuery(input: string): string {
 	const tokens = input
 		.replace(/\u0000/g, ' ')

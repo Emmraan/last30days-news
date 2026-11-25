@@ -219,7 +219,7 @@ test('GET /api/items/[id] returns the item, its sources, and the newest cached s
 		whyItMatters: 'Buyers get more for the same money.'
 	});
 
-	// The feed's own URL is not part of the article payload (§S24 info leak).
+	// The feed's own URL is not part of the article payload (S24 info leak).
 	expect(res.raw).not.toContain('https://feeds.arstechnica.com');
 });
 

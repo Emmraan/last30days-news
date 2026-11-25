@@ -82,7 +82,7 @@ async function rssFeed(text: string): Promise<ProbeResult> {
 }
 
 /**
- * §S4/§S10: one fetch proves a pasted URL before anything is saved. It uses the
+ * S4/S10: one fetch proves a pasted URL before anything is saved. It uses the
  * same SSRF guard, byte cap and redirect checks as the normal fetch pass.
  */
 export async function probeFeed(url: string, ctx: FetchCtx): Promise<ProbeResult> {

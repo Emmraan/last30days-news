@@ -9,7 +9,7 @@ const MAXMEM = 64 * 1024 * 1024;
 
 export const newSalt = () => randomBytes(16);
 
-/** §S9: key = scrypt(password, crypto.salt), 32 bytes. */
+/** S9: key = scrypt(password, crypto.salt), 32 bytes. */
 export function deriveKey(password: string, salt: Buffer): Buffer {
 	return scryptSync(password, salt, KEYLEN, { maxmem: MAXMEM });
 }

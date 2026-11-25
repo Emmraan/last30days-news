@@ -6,7 +6,7 @@ export const VAULT_COOKIE = 'l30_vault';
 
 // The DB holds the encrypted AI keys and the session ids, but never this
 // cookie. The data key is encrypted under the session id so a later request
-// can use it without a process-wide cache, which §S19 rules out on Vercel.
+// can use it without a process-wide cache, which S19 rules out on Vercel.
 const SESSION_ID = /^[0-9a-f]{64}$/;
 
 export function setVaultCookie(cookies: Cookies, sessionId: string, key: Buffer, url: URL) {

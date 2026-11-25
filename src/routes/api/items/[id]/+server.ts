@@ -43,7 +43,7 @@ export async function GET({ params, locals }: RequestEvent) {
 		.orderBy(asc(source.name))
 		.all();
 
-	// §S8 caches per (item, model); the pane shows the newest one.
+	// S8 caches per (item, model); the pane shows the newest one.
 	const cached: Summary[] = await locals.db
 		.select({
 			model: summary.model,

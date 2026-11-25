@@ -1,5 +1,5 @@
 /**
- * Radar sweep, the locked §S11 mark. It is inlined in the app and encoded into
+ * Radar sweep, the locked S11 mark. It is inlined in the app and encoded into
  * the favicon so the browser tab and the shell can never drift apart.
  */
 export const LOGO_GLYPH = [

@@ -8,7 +8,7 @@ const scrypt = promisify(scryptCb) as (
 	opts: { N: number; r: number; p: number; maxmem: number }
 ) => Promise<Buffer>;
 
-// §S9. Changing these breaks every stored password, so they are constants.
+// S9. Changing these breaks every stored password, so they are constants.
 const N = 32768;
 const R = 8;
 const P = 1;
@@ -20,16 +20,16 @@ const MAXMEM = 64 * 1024 * 1024;
 /** Same cost as a real hash, so a missing password costs the same as a wrong one. */
 export const DUMMY_HASH = `scrypt$${N}$${R}$${P}$AAAAAAAAAAAAAAAAAAAAAA==$${'A'.repeat(43)}=`;
 
-/** §S9 first-run password. It only ever matches while no password is stored. */
+/** S9 first-run password. It only ever matches while no password is stored. */
 export const FIRST_RUN_PASSWORD = 'last30';
 
-/** §S19: a local install has no UI at boot, so print the default password. */
+/** S19: a local install has no UI at boot, so print the default password. */
 export function firstRunNotice() {
 	return `\nlast30days-news: first run.\n  Sign in with the default password "${FIRST_RUN_PASSWORD}" and change it in Settings.\n\n`;
 }
 
 /**
- * §S9: a deployed instance must never advertise the public default. If the
+ * S9: a deployed instance must never advertise the public default. If the
  * first password variable is missing, the owner gets a recovery instruction
  * instead of a password anyone can read from the repository.
  */

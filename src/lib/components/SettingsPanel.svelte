@@ -55,7 +55,7 @@
 	onMount(() => {
 		const root = document.documentElement;
 		theme = root.classList.contains('light') ? 'light' : 'dark';
-		// §S9 blocks every API except the password change until a real password
+		// S9 blocks every API except the password change until a real password
 		// is stored, so the provider list would only render as an error.
 		if (!mustChangePassword) void load();
 	});

@@ -19,7 +19,7 @@ export async function ensureSalt(db: Db): Promise<Buffer> {
 	return salt;
 }
 
-/** §S9: key = scrypt(password, crypto.salt). */
+/** S9: key = scrypt(password, crypto.salt). */
 export async function keyFor(db: Db, password: string): Promise<Buffer> {
 	return deriveKey(password, await ensureSalt(db));
 }

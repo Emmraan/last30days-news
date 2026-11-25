@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Tokens are the only colour source (§S11). Tailwind utilities are generated
+/* Tokens are the only colour source (S11). Tailwind utilities are generated
    from these names, so `bg-pane` exists and `bg-slate-800` does not. @theme
    values point at the runtime vars below, which follow the active colour
    scheme instead of baking in the dark palette. */

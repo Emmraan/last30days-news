@@ -19,7 +19,7 @@ const MIGRATIONS = import.meta.glob('../../../../drizzle/*.sql', {
 	eager: true
 }) as Record<string, string>;
 
-/** §S19: one data dir per platform, `L30_DATA_DIR` wins. */
+/** S19: one data dir per platform, `L30_DATA_DIR` wins. */
 export function resolveDataDir(): string {
 	if (process.env.L30_DATA_DIR) return process.env.L30_DATA_DIR;
 	if (process.env.APPDATA) return join(process.env.APPDATA, 'last30days-news');
@@ -55,7 +55,7 @@ async function applyMigrations(client: Client) {
 	for (const [path, sql] of pending) {
 		const name = path.slice(path.lastIndexOf('/') + 1);
 		if (applied.has(name)) continue;
-		// §S13: a build without FTS5 still boots; search uses the LIKE fallback.
+		// S13: a build without FTS5 still boots; search uses the LIKE fallback.
 		if (!fts5 && /using\s+fts5/i.test(sql)) {
 			await client.execute({
 				sql: 'insert into __migration (name, applied_at) values (?, ?)',
@@ -95,7 +95,7 @@ export async function createDb(opts: { dataDir?: string } = {}) {
 		authToken: remote ? process.env.TURSO_AUTH_TOKEN : undefined
 	});
 
-	// A remote replica manages its own pragmas (§S2).
+	// A remote replica manages its own pragmas (S2).
 	if (!remote) {
 		await client.execute('PRAGMA journal_mode=WAL');
 		await client.execute('PRAGMA synchronous=NORMAL');
@@ -109,7 +109,7 @@ export async function createDb(opts: { dataDir?: string } = {}) {
 	const db = drizzle(client, { schema }) as LibSQLDatabase<typeof schema>;
 	await seed(db);
 
-	// §S19: a container or VPS install has no UI yet, so the first boot must
+	// S19: a container or VPS install has no UI yet, so the first boot must
 	// state how to sign in on the console. Tests stay quiet.
 	const stored = await db
 		.select({ key: setting.key })

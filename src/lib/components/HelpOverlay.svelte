@@ -1,5 +1,5 @@
 <script lang="ts">
-	/** §S14 map. A bordered panel, not a modal: it never traps focus. */
+	/** S14 map. A bordered panel, not a modal: it never traps focus. */
 	const GROUPS: { title: string; rows: [string, string][] }[] = [
 		{
 			title: 'Move',

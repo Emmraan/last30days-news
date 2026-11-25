@@ -14,7 +14,7 @@ import {
 export const DEFAULT_LIMIT = 50;
 export const MAX_LIMIT = 100;
 
-/** §S13: shorter input is not a search; longer input is capped before it reaches SQL. */
+/** S13: shorter input is not a search; longer input is capped before it reaches SQL. */
 export const MIN_QUERY_CHARS = 2;
 export const MAX_QUERY_CHARS = 200;
 export const MAX_QUERY_TOKENS = 12;
@@ -23,10 +23,10 @@ const MAX_CURSOR_LENGTH = 200;
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 const HEX_ID = /^[0-9a-f]{40}$/;
 
-/** §S7 rank tuple: source_count desc, published_at desc, id asc. */
+/** S7 rank tuple: source_count desc, published_at desc, id asc. */
 export type Cursor = { sourceCount: number; publishedAt: number; id: string };
 
-/** §S13 search rank: higher is better, matching the feed's descending order. */
+/** S13 search rank: higher is better, matching the feed's descending order. */
 export type SearchCursor = { rank: number; publishedAt: number; id: string };
 
 export type FeedParams = {
@@ -177,7 +177,7 @@ function isFtsMissing(err: unknown): boolean {
 }
 
 /**
- * §S7 keyset order and §S3 time semantics. The time filter reads the effective
+ * S7 keyset order and S3 time semantics. The time filter reads the effective
  * date: a row with no publish date is filtered by when it was fetched.
  */
 export async function queryFeed(
@@ -213,7 +213,7 @@ export async function queryFeed(
 		language: item.language,
 		category: item.category,
 		sourceCount: item.sourceCount,
-		// §S12 rows need a stable source label for the fav badge. A multi-source
+		// S12 rows need a stable source label for the fav badge. A multi-source
 		// item picks the first name alphabetically so paging never reshuffles it.
 		// The outer table must be written out: Drizzle renders ${item.id} as a
 		// bare "id", which the subquery would resolve to source.id instead.
@@ -226,7 +226,7 @@ export async function queryFeed(
 		)`
 	};
 
-	// §S9: the reason is rendered as the row's why callout, so it is read from
+	// S9: the reason is rendered as the row's why callout, so it is read from
 	// the same cache row that admitted the item, never from a model response.
 	const prompt = categoryFilter?.category.prompt?.trim();
 	const withScore =
@@ -312,7 +312,7 @@ export async function queryFeed(
 			}
 		}
 
-		// §S13 fallback: a target without FTS5 gets the whole input as one title
+		// S13 fallback: a target without FTS5 gets the whole input as one title
 		// LIKE. It is deliberately weaker than the indexed search, but never 500s.
 		const pattern = `%${escapeLike(params.q)}%`;
 		conditions.push(sql`${item.title} like ${pattern} escape '\\'`);

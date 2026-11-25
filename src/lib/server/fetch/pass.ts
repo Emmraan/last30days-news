@@ -79,7 +79,7 @@ export async function runPass(deps: PassDeps): Promise<PassEvent[]> {
 		(r) => r.lastFetchedAt === null || r.lastFetchedAt + r.fetchIntervalMin * 60_000 <= now
 	);
 	// Serverless has one short invocation, so it takes a fixed slice and the
-	// client calls again (§S19).
+	// client calls again (S19).
 	const picked = batch ? due.slice(0, CONCURRENCY) : due;
 
 	let inserted = 0;
@@ -125,7 +125,7 @@ export async function runPass(deps: PassDeps): Promise<PassEvent[]> {
 		send({ type: 'source', sourceId: row.id, ok: true, inserted: count });
 	});
 
-	// §S6: prune after each pass, not on a timer.
+	// S6: prune after each pass, not on a timer.
 	const gone = await db
 		.delete(item)
 		.where(lt(item.publishedAt, now - RETENTION_DAYS * DAY))

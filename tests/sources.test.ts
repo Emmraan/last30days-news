@@ -7,7 +7,7 @@ import { fetchJson } from '#lib/server/sources/json';
 
 const fixture = (name: string) => readFileSync(join('fixtures', name), 'utf8');
 
-/** A fetch that answers from files. Tests never open a socket (§S17). */
+/** A fetch that answers from files. Tests never open a socket (S17). */
 function fixtureFetch(routes: Record<string, { status?: number; body: string }>) {
 	const calls: string[] = [];
 	const fn = (async (input: string | URL | Request) => {
@@ -29,7 +29,7 @@ test('rss 2.0: items map, tracking params go, HTML is stripped, no-link entry sk
 	);
 
 	expect(items).toHaveLength(2);
-	// Canonicalising is the ingest step's job (§S7); the adapter keeps the link.
+	// Canonicalising is the ingest step's job (S7); the adapter keeps the link.
 	expect(items[0]).toMatchObject({
 		url: 'https://arstechnica.com/space/2026/11/rocket-lab-recovery/?utm_source=rss&utm_medium=feed',
 		title: 'Rocket Lab nails its twentieth recovery',

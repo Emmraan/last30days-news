@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// §S17 budgets fail the build, not a code review. Static sizes come from the
+// S17 budgets fail the build, not a code review. Static sizes come from the
 // rendered HTML, so the number is the bytes a browser actually asks for.
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';

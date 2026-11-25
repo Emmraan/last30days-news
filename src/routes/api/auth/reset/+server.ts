@@ -41,7 +41,7 @@ export async function POST({ request, cookies, locals }: RequestEvent) {
 		return parsed.response;
 	}
 
-	// §S9: password, sessions, secrets and the salt go; items, sources and
+	// S9: password, sessions, secrets and the salt go; items, sources and
 	// every other setting stay. One transaction, because a reset that stops
 	// halfway leaves no stored password and the default `last30` works again.
 	const hash = await hashPassword(parsed.data.next);

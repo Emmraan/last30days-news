@@ -1,4 +1,4 @@
-/** §S14 keyboard map. Pure so the bindings can be tested without a DOM. */
+/** S14 keyboard map. Pure so the bindings can be tested without a DOM. */
 
 export type KeyAction =
 	| 'search'

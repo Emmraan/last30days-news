@@ -17,7 +17,7 @@ export function parseArgs(argv) {
 	return result;
 }
 
-/** §S19: an explicit PORT is used as-is; otherwise the next free port wins. @param {Record<string, string | undefined>} env */
+/** S19: an explicit PORT is used as-is; otherwise the next free port wins. @param {Record<string, string | undefined>} env */
 export function portCandidates(env) {
 	if (env.PORT === undefined) return [...DEFAULT_PORTS];
 	if (!/^\d+$/.test(env.PORT))

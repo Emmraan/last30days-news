@@ -1,7 +1,7 @@
-/** §S4 word characters are ASCII letters, digits and underscore in both JS and SQL. */
+/** S4 word characters are ASCII letters, digits and underscore in both JS and SQL. */
 const WORD_CHAR = /[a-z0-9_]/i;
 
-/** §S4: plain case-insensitive match, never a regex or boolean expression. */
+/** S4: plain case-insensitive match, never a regex or boolean expression. */
 export function matchesKeyword(text: string | null | undefined, keyword: string): boolean {
 	const haystack = (text ?? '').toLowerCase();
 	const needle = keyword.trim().toLowerCase();
@@ -33,7 +33,7 @@ function escapeGlob(value: string): string {
 }
 
 /**
- * §S4 SQL mirror of `matchesKeyword`. The leading/trailing space is supplied by
+ * S4 SQL mirror of `matchesKeyword`. The leading/trailing space is supplied by
  * the caller, so a `[^a-z0-9_]` guard matches both ends without four patterns.
  */
 export function keywordGlob(keyword: string): string {

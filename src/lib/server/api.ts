@@ -6,7 +6,7 @@ export type ApiError = { error: { code: string; message: string } };
 export const apiError = (status: number, code: string, message: string) =>
 	json({ error: { code, message } } satisfies ApiError, { status });
 
-/** §S9: one lock response, so every auth route reports the same shape. */
+/** S9: one lock response, so every auth route reports the same shape. */
 export const locked = (retryAfterMs: number) =>
 	json({ error: { code: 'locked', message: 'Too many attempts. Try again later.' } } satisfies ApiError, {
 		status: 429,
@@ -14,7 +14,7 @@ export const locked = (retryAfterMs: number) =>
 	});
 
 /**
- * §S10 bodies are small JSON documents. The cap is enforced while reading, not
+ * S10 bodies are small JSON documents. The cap is enforced while reading, not
  * from Content-Length alone: a liar or a chunked body must not allocate freely.
  */
 export const MAX_BODY_BYTES = 256 * 1024;
@@ -53,7 +53,7 @@ async function readCapped(request: Request): Promise<string | null> {
 
 export type Parsed<T> = { ok: true; data: T } | { ok: false; response: Response };
 
-/** §S10: unknown body fields are rejected by zod, not silently dropped. */
+/** S10: unknown body fields are rejected by zod, not silently dropped. */
 export async function readJson<T>(request: Request, schema: ZodType<T>): Promise<Parsed<T>> {
 	const text = await readCapped(request);
 	if (text === null)

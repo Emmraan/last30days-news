@@ -1,7 +1,7 @@
 import type { Cookies } from '@sveltejs/kit';
 import { SESSION_COOKIE, SESSION_TTL_MS } from './session';
 
-/** §S9: HttpOnly, SameSite=Lax, Path=/, Secure only over HTTPS. */
+/** S9: HttpOnly, SameSite=Lax, Path=/, Secure only over HTTPS. */
 export function setSessionCookie(cookies: Cookies, id: string, url: URL) {
 	cookies.set(SESSION_COOKIE, id, {
 		httpOnly: true,

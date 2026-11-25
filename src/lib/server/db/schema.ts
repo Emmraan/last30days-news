@@ -1,6 +1,6 @@
 import { index, integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-// All timestamps are integer ms UTC (§S2). No soft deletes, no updated_at.
+// All timestamps are integer ms UTC (S2). No soft deletes, no updated_at.
 const ts = (name: string) => integer(name, { mode: 'number' });
 
 export const category = sqliteTable('category', {
@@ -36,7 +36,7 @@ export const source = sqliteTable('source', {
 export const item = sqliteTable(
 	'item',
 	{
-		// sha1(canonical_url) — see §S7.
+		// sha1(canonical_url) — see S7.
 		id: text('id').primaryKey(),
 		title: text('title').notNull(),
 		url: text('url').notNull(),

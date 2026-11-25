@@ -17,7 +17,7 @@ afterEach(() => {
 		}
 });
 
-/** A real file-backed DB per call — never a mock, per AGENTS.md §2. */
+/** A real file-backed DB per call — never a mock, per AGENTS.md section 2. */
 export async function freshDb() {
 	const dir = mkdtempSync(join(tmpdir(), 'l30-auth-'));
 	const handle = await createDb({ dataDir: dir });

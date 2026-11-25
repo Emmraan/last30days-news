@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
 	// cannot point the suite at a real database.
 	if (mode !== 'test') mergeEnv(process.env, loadEnv(mode, process.cwd(), ''));
 
-	// One codebase, two targets (§S19). VERCEL=1 is set by the platform itself.
+	// One codebase, two targets (S19). VERCEL=1 is set by the platform itself.
 	const adapter = process.env.VERCEL === '1' ? adapterVercel() : adapterNode();
 
 	return {
@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => {
 			})
 		],
 		// A cold install pays module resolution for ~450 drizzle files on every
-		// boot. Bundling it once turns that into a single parse and keeps §S17's
+		// boot. Bundling it once turns that into a single parse and keeps S17's
 		// 800 ms cold boot reachable on Windows, where resolution is slowest.
 		ssr: {
 			noExternal: ['drizzle-orm']

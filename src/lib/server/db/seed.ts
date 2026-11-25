@@ -1,7 +1,7 @@
 import { category, categorySource, source } from './schema';
 import type { Db } from './index';
 
-// §S4 builtin categories and §S5 seeded sources. Insert-or-ignore so every
+// S4 builtin categories and S5 seeded sources. Insert-or-ignore so every
 // boot is a no-op once seeded, and a user rename is never clobbered.
 const CATEGORIES = [
 	{ id: 'technology', name: 'Technology', matchMode: 'keywords' as const, sortOrder: 0 },

@@ -1,5 +1,5 @@
 /**
- * §S16: one NDJSON line per event on stdout. Never a request body, an item
+ * S16: one NDJSON line per event on stdout. Never a request body, an item
  * body, a key, a hash or a cookie — the scrub below is the last line of
  * defence, not the first: callers still must not pass them.
  */

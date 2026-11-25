@@ -5,7 +5,7 @@ import { runPass, type PassEvent } from '#lib/server/fetch/pass';
 export const prerender = false;
 
 /**
- * §S10/§S19: local installs stream one SSE event per source as it lands;
+ * S10/S19: local installs stream one SSE event per source as it lands;
  * a serverless call cannot hold the stream, so it runs one batch and returns.
  */
 export async function POST({ request, locals }: RequestEvent) {

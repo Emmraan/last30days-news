@@ -1,5 +1,5 @@
 /**
- * §S9: reset exists for the person who owns the machine and the database
+ * S9: reset exists for the person who owns the machine and the database
  * file. A public deployment has no such person, so reset is loopback only on
  * a local install and off entirely once the app is marked as deployed.
  */

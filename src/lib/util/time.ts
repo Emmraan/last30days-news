@@ -1,4 +1,4 @@
-/** §S13 dashboard presets. The page computes the window from the client clock. */
+/** S13 dashboard presets. The page computes the window from the client clock. */
 export const PRESETS = ['24h', '7d', '30d'] as const;
 
 export type Preset = (typeof PRESETS)[number];

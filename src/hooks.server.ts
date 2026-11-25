@@ -49,7 +49,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// unsafe-inline in the CSP, and a client-only class would flash.
 	const theme = readTheme(event.cookies.get(THEME_COOKIE));
 
-	// §S9 CSRF: SameSite=Lax plus an Origin check on every non-GET. A missing
+	// S9 CSRF: SameSite=Lax plus an Origin check on every non-GET. A missing
 	// Origin is refused too — browsers always send one for cross-site writes.
 	if (event.request.method !== 'GET' && event.request.method !== 'HEAD') {
 		const origin = event.request.headers.get('origin');
@@ -82,7 +82,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	// §S9: the first-run password is public knowledge, so nothing but the
+	// S9: the first-run password is public knowledge, so nothing but the
 	// change route itself may run until a real one is stored.
 	if (
 		session &&

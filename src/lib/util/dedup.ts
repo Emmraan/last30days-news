@@ -1,5 +1,5 @@
 /**
- * §S7. Title identity is lowercase, punctuation-stripped, whitespace-collapsed.
+ * S7. Title identity is lowercase, punctuation-stripped, whitespace-collapsed.
  * Punctuation becomes a space rather than vanishing, so "AI—now" and "AI now"
  * share a key instead of gluing into "ainow".
  */
@@ -15,7 +15,7 @@ export function titleKey(input: string): string {
 const MAX_TOKENS = 64;
 
 /**
- * §S7 token Jaccard. Both arguments are `titleKey` output, so callers
+ * S7 token Jaccard. Both arguments are `titleKey` output, so callers
  * normalise each candidate title once instead of once per comparison.
  */
 export function jaccard(a: string, b: string): number {

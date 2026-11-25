@@ -76,7 +76,7 @@ export async function categoryViewById(db: Db, id: string): Promise<CategoryView
 	return filter ? categoryView(db, filter) : null;
 }
 
-/** §S4: names are unique after case-folding, including against builtins. */
+/** S4: names are unique after case-folding, including against builtins. */
 export async function nameTaken(db: Db, name: string, exceptId?: string): Promise<boolean> {
 	const wanted = name.trim().toLowerCase();
 	const rows = await db.select({ id: category.id, name: category.name }).from(category).all();

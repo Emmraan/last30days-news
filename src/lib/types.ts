@@ -1,4 +1,4 @@
-/** Shared wire shapes. Timestamps cross the wire as integer ms (§S10). */
+/** Shared wire shapes. Timestamps cross the wire as integer ms (S10). */
 export type Item = {
 	id: string;
 	title: string;
@@ -13,7 +13,7 @@ export type Item = {
 	sourceCount: number;
 	/** Feed rows only: the attribution label shown beside the row. */
 	sourceName?: string | null;
-	/** Present only when the request filtered by a scored category (§S8). */
+	/** Present only when the request filtered by a scored category (S8). */
 	score?: number | null;
 	reason?: string | null;
 };
