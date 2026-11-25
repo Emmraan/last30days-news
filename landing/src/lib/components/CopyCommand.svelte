@@ -1,11 +1,43 @@
 <script lang="ts">
 	let { command, label = 'Copy' }: { command: string; label?: string } = $props();
+
+	let copied = $state(false);
+	let timer: ReturnType<typeof setTimeout> | undefined;
+
+	async function copyText(text: string) {
+		try {
+			await navigator.clipboard.writeText(text);
+			return true;
+		} catch {
+			// Older browsers and plain-http hosts: select and copy by hand.
+			const field = document.createElement('textarea');
+			field.value = text;
+			field.setAttribute('readonly', '');
+			field.style.position = 'fixed';
+			field.style.opacity = '0';
+			document.body.append(field);
+			field.select();
+			let ok = false;
+			try {
+				ok = document.execCommand('copy');
+			} catch {}
+			field.remove();
+			return ok;
+		}
+	}
+
+	async function copy() {
+		if (!(await copyText(command))) return;
+		copied = true;
+		clearTimeout(timer);
+		timer = setTimeout(() => (copied = false), 1600);
+	}
 </script>
 
 <div class="cmd">
 	<pre><code>{command}</code></pre>
-	<button class="copy-command" type="button" data-copy={command} data-label={label}>
-		{label}
+	<button class="copy-command" class:done={copied} type="button" onclick={copy}>
+		{copied ? 'Copied' : label}
 	</button>
 </div>
 
@@ -57,7 +89,7 @@
 		color: var(--txt);
 	}
 
-	:global(.copy-command.done) {
+	.copy-command.done {
 		color: var(--ok);
 	}
 

@@ -6,8 +6,8 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=light" />
 		%sveltekit.head%
 		<script>
-			// The site ships no client JS; this small script is the only thing that runs,
-			// and it exists so the theme choice survives a reload. Applied before paint.
+			// Runs before paint so the saved theme applies without a flash. The home
+			// page still ships no client JS; docs pages hydrate separately.
 			try {
 				const saved = localStorage.getItem('l30-theme');
 				if (saved === 'light' || saved === 'dark') {
@@ -19,9 +19,9 @@
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>
 		<script>
-			// Everything here exists because `csr = false` means no hydration.
+			// The home page ships no JS; docs hydrate. The theme toggle is delegated
+			// so it keeps working after a client-side navigation replaces the button.
 			const root = document.documentElement;
-			const button = document.getElementById('theme-toggle');
 			const current = () =>
 				root.classList.contains('light')
 					? 'light'
@@ -31,7 +31,8 @@
 							? 'light'
 							: 'dark';
 
-			button?.addEventListener('click', () => {
+			document.addEventListener('click', (event) => {
+				if (!event.target.closest('#theme-toggle')) return;
 				const next = current() === 'dark' ? 'light' : 'dark';
 				root.classList.remove('dark', 'light');
 				root.classList.add(next);
@@ -84,22 +85,7 @@
 				}
 			};
 
-			// Documentation code blocks reuse the same handler as the hero button.
-			for (const button of document.querySelectorAll('[data-copy]')) {
-				if (button.id === 'copy-install') continue;
-				button.addEventListener('click', async () => {
-					const label = button.dataset.label || 'Copy';
-					if (!(await copyText(button.dataset.copy || ''))) return;
-					button.textContent = 'Copied';
-					button.classList.add('done');
-					setTimeout(() => {
-						button.textContent = label;
-						button.classList.remove('done');
-					}, 1600);
-				});
-			}
-
-			// Install command: package-manager tabs and the copy button.
+			// Install command: platform tabs and the copy button.
 			const cmd = document.getElementById('install-cmd');
 			const copy = document.getElementById('copy-install');
 			const status = document.getElementById('copy-status');

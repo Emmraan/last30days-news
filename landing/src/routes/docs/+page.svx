@@ -49,6 +49,7 @@ The first local run starts at `http://127.0.0.1:4477` and uses the password `las
 - [Configuration](/docs/configuration) lists every environment variable.
 - [Passwords and recovery](/docs/passwords) explains the local and deployed rules.
 - [Troubleshooting](/docs/troubleshooting) lists the errors you are most likely to hit.
+- [Uninstall](/docs/uninstall) removes the app, its data and the services it created.
 - [Development](/docs/development) covers the checkout, tests, docs site and releases.
 
 ## What stays private

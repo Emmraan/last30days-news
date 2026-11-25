@@ -69,7 +69,7 @@ The example files contain dummy values only. `.env.development` and `.env.produc
 The landing site is a separate static build. It shows the one-command installers, and those commands need the public landing URL. Set `APP_URL` in the landing Vercel project:
 
 ```text
-APP_URL=https://your-landing.vercel.app
+APP_URL=https://last30days-docs.vercel.app
 ```
 
 The landing build requires it on Vercel. Locally it falls back to `http://localhost:5174`. After changing `APP_URL`, redeploy the landing so the commands and docs links update.
@@ -82,6 +82,7 @@ The landing build turns `APP_URL` into:
 
 - `APP_URL/install.ps1` for Windows PowerShell.
 - `APP_URL/install.sh` for macOS and Linux.
+- `APP_URL/install-vps.sh` for VPS and Docker.
 - `APP_URL/docs` for this documentation.
 
 If the commands show `localhost` in production, `APP_URL` was missing or the landing was not rebuilt.

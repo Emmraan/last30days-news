@@ -5,6 +5,7 @@
 	import { REPO_URL } from '#lib/site';
 
 	let { children } = $props();
+	let menuOpen = $state(false);
 
 	const GROUPS = [
 		{
@@ -27,7 +28,8 @@
 			links: [
 				{ href: '/docs/configuration', label: 'Configuration' },
 				{ href: '/docs/passwords', label: 'Passwords and recovery' },
-				{ href: '/docs/troubleshooting', label: 'Troubleshooting' }
+				{ href: '/docs/troubleshooting', label: 'Troubleshooting' },
+				{ href: '/docs/uninstall', label: 'Uninstall' }
 			]
 		},
 		{
@@ -50,6 +52,7 @@
 						href={resolve(link.href)}
 						class="docs-link"
 						aria-current={active(link.href) ? 'page' : undefined}
+						onclick={() => (menuOpen = false)}
 					>
 						{link.label}
 					</a>
@@ -113,7 +116,7 @@
 
 	<div class="wrap docs-body">
 		<aside class="docs-side">
-			<details class="docs-menu">
+			<details class="docs-menu" bind:open={menuOpen}>
 				<summary class="docs-menu-btn">Documentation</summary>
 				{@render links()}
 			</details>

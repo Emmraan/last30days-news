@@ -6,48 +6,39 @@ A desktop-style reader for the last 30 days of technology news. RSS feeds and ot
 
 No account. No hosted service for the local install. One process, one database file, one password.
 
-## Quick start
+## Install
 
-Requirements: Node.js 26.13.0. Installers also need npm, which ships with Node.js.
+Requires Node.js 26.13.0. npm ships with Node.js.
 
-### Windows PowerShell
-
-```powershell
-irm https://raw.githubusercontent.com/Emmraan/last30days-news/main/landing/static/install.ps1 | iex
-```
-
-### macOS and Linux
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Emmraan/last30days-news/main/landing/static/install.sh | sh
-```
-
-### npm
+### Release tarball
 
 ```bash
 npm install -g https://github.com/Emmraan/last30days-news/releases/latest/download/last30days-news.tgz
 last30days
 ```
 
+### npx
+
+```bash
+npx last30days-news
+```
+
+### npm
+
+```bash
+npm i -g last30days-news
+last30days
+```
+
 The app starts at `http://127.0.0.1:4477`, opens your browser and prints the data directory. The first run uses the password `last30`. Change it in Settings after you sign in.
-
-To run without installing, use `npx last30days-news` once the package is published to npm.
-
-## Where to run it
-
-| Target | Database | First password | Password reset |
-| --- | --- | --- | --- |
-| Local | SQLite file | `last30` | `/reset` from the same machine |
-| Vercel | Turso libSQL | `L30_INITIAL_PASSWORD` | Disabled |
-| VPS or Docker | SQLite file on a volume | `L30_INITIAL_PASSWORD` | Disabled |
-
-Deployments set `L30_DEPLOYED=1` or `VERCEL=1`, require an 8+ character initial password, reject the local default `last30` and disable reset.
 
 ## Documentation
 
-The full guides live in the landing app under [`landing/src/routes/docs`](landing/src/routes/docs): local install, Vercel, VPS and Docker, configuration, passwords, recovery, troubleshooting and development.
+Full guides for local use, Docker, VPS, Vercel, configuration, passwords, uninstalling and development:
 
-Deploy `landing/` to Vercel with `APP_URL` set to the landing URL. The landing Hero then points at `/install.ps1` and `/install.sh` on that host, and the guides are at `/docs`. The installers in Quick start use the raw GitHub scripts, so they do not depend on the docs site.
+**https://last30days-docs.vercel.app/docs**
+
+Use the docs for every install method not listed above.
 
 ## Development
 

@@ -164,6 +164,9 @@
 	}
 
 	.nav-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		height: 30px;
 		padding: 0 10px;
 		border: 0;
@@ -172,6 +175,8 @@
 		color: var(--txt-2);
 		font: inherit;
 		font-size: 13px;
+		line-height: 1;
+		text-decoration: none;
 		white-space: nowrap;
 		cursor: pointer;
 		transition:
@@ -335,6 +340,8 @@
 	}
 
 	.menu-link {
+		display: flex;
+		align-items: center;
 		height: 36px;
 		padding: 0 10px;
 		border: 0;
@@ -344,6 +351,7 @@
 		font: inherit;
 		font-size: 13.5px;
 		text-align: left;
+		text-decoration: none;
 		cursor: pointer;
 	}
 
