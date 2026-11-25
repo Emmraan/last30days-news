@@ -29,7 +29,7 @@ a new one; the plan and code hold the full rationale.
 | Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
 | Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
 | P14 Dashboard + landing showcase | done | `phase-14-landing` | `e9aae09` | `0ac90e1` |
-| P15 Install, budgets, CI | committed | `phase-15-install` | `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` + `ca1965f` + `f6ff2cd` + `03050ff` | - |
+| P15 Install, budgets, CI | done | `phase-15-install` | `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` + `ca1965f` + `f6ff2cd` + `03050ff` | `3f7efe3` |
 
 ## P0 — Bootstrap
 
@@ -305,8 +305,8 @@ scripts are allowed.
 
 ## P15 — Install, budgets, CI
 
-Work `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` +
-`ca1965f` + `f6ff2cd` + `03050ff`, on `phase-15-install`, not merged.
+Merged in `3f7efe3` (work `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` +
+`e8e9466` + `ca1965f` + `f6ff2cd` + `03050ff`, branch kept).
 `bin/last30days.js` adds
 `--no-open`, exact `PORT` or 4477–4487, platform data dirs and browser open.
 Docker and systemd units, `vercel.json` and `VERCEL=1` adapter switch. Local
