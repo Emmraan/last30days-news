@@ -5,6 +5,6 @@
 			"#lib/*": ["./src/lib/*"]
 		}
 	},
-	"include": ["src", "tests", "e2e", "scripts", "*.config.ts", "*.config.js"],
+	"include": ["src", "tests", "e2e", "bin", "scripts", "*.config.ts", "*.config.js"],
 	"exclude": ["node_modules", "build", ".svelte-kit"]
 }

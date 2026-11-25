@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { REPO_URL } from '#lib/site';
 	import Logo from './Logo.svelte';
 </script>
@@ -26,6 +27,7 @@
 
 			<nav class="col" aria-labelledby="foot-developers">
 				<h3 id="foot-developers" class="mono">Developers</h3>
+				<a href={resolve('/docs')}>Documentation</a>
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external repo, not an app route -->
 				<a href={REPO_URL}>Source code</a>
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external repo, not an app route -->

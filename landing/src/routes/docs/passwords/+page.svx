@@ -1,0 +1,71 @@
+<svelte:head>
+	<title>Passwords and recovery · last30days-news</title>
+	<meta
+		name="description"
+		content="Local and deployed password rules, the reset route, and how to recover a last30days-news deployment."
+	/>
+</svelte:head>
+
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+	import Diagram from '#lib/components/Diagram.svelte';
+
+	const recoverySql = `sqlite3 /path/to/db.sqlite "DELETE FROM setting WHERE key IN ('auth.password', 'crypto.salt') OR key LIKE 'secret.%';"`;
+</script>
+
+# Passwords and recovery
+
+<Diagram
+	name="passwords"
+	alt="Local installs use last30 and a loopback reset. Deployments use an initial password, reject last30 and disable reset."
+	caption="The local escape hatch does not exist on a deployment."
+/>
+
+## Local install
+
+- First run: sign in with `last30`.
+- Change it in Settings. The app shows a single banner until you do.
+- Forgot it? Open `http://127.0.0.1:4477/reset` from the same machine.
+
+Reset clears the password, saved API keys and sessions. Items, sources and categories stay.
+
+The local reset route is loopback only. A remote client gets `403 reset_local_only`.
+
+## Deployments
+
+Docker, VPS and Vercel are deployments. They run with `L30_DEPLOYED=1` or `VERCEL=1` and follow stricter rules:
+
+- `L30_INITIAL_PASSWORD` is required on the first boot. It must be at least 8 characters.
+- `last30` is always rejected, even if an old database already stores its hash.
+- If no password is stored and no initial password is set, login fails closed with `503 setup_required`.
+- Password reset is disabled. Local and remote callers get `403 reset_local_only`.
+- `L30_INITIAL_PASSWORD` is read only while no password is stored. After the first boot, change the password in Settings. Changing the environment variable later does nothing.
+
+## Recover a deployment
+
+Stop the app, delete the password material, set a fresh initial password, then start again.
+
+For a local SQLite file:
+
+<CopyCommand command={recoverySql} />
+
+For Turso, run the same statement in the Turso console.
+
+Then set a new `L30_INITIAL_PASSWORD` in the environment and restart or redeploy. Items, sources and categories stay. Saved API keys must be entered again.
+
+### Docker
+
+Stop the container, run the SQL against the volume, update the environment and start a new container. The `/data` volume keeps the database.
+
+### systemd
+
+Stop the service, run the SQL against `/var/lib/last30days-news/db.sqlite`, update `/etc/last30days-news.env` and start the service again.
+
+### Vercel
+
+Run the SQL in the Turso console, update `L30_INITIAL_PASSWORD` in the Vercel project and redeploy.
+
+## Next
+
+- [Configuration](/docs/configuration)
+- [Troubleshooting](/docs/troubleshooting)

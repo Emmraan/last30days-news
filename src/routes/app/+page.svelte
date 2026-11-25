@@ -1,13 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, type Component } from 'svelte';
 	import { Plus } from 'lucide-svelte';
-	import CategoryPanel from '#lib/components/CategoryPanel.svelte';
 	import DetailPane from '#lib/components/DetailPane.svelte';
 	import FeedPane from '#lib/components/FeedPane.svelte';
-	import HelpOverlay from '#lib/components/HelpOverlay.svelte';
 	import StatusBar from '#lib/components/StatusBar.svelte';
 	import TopBar from '#lib/components/TopBar.svelte';
-	import SettingsPanel from '#lib/components/SettingsPanel.svelte';
 	import { displayText } from '#lib/format';
 	import type { CategoryView } from '#lib/server/categories/store';
 	import type { FeedPage, Item, ItemDetail, Summary } from '#lib/types';
@@ -28,7 +25,26 @@
 	// svelte-ignore state_referenced_locally
 	let categories = $state<CategoryView[]>([...data.categories]);
 	let panelOpen = $state(false);
+	// The category manager is only mounted when opened, so its form code stays
+	// out of the feed's first load.
+	let CategoryPanel = $state<Component<{
+		categories: CategoryView[];
+		onchange: (rows: CategoryView[]) => void;
+		onclose: () => void;
+	}> | null>(null);
+
+	async function openCategories() {
+		CategoryPanel ??= (await import('#lib/components/CategoryPanel.svelte')).default;
+		panelOpen = true;
+	}
 	let settingsOpen = $state(false);
+	// Settings and help are opened rarely. Importing them on demand keeps the
+	// first feed load inside the §S17 route budget.
+	let SettingsPanel = $state<Component<{
+		mustChangePassword?: boolean;
+		onpasswordchanged?: () => void;
+		onclose: () => void;
+	}> | null>(null);
 	// svelte-ignore state_referenced_locally
 	let mustChangePassword = $state(data.mustChangePassword);
 	let query = $state('');
@@ -44,6 +60,17 @@
 	let feedError = $state('');
 	let loadingMore = $state(false);
 	let helpOpen = $state(false);
+	let HelpOverlay = $state<Component<{ onclose: () => void }> | null>(null);
+
+	async function openSettings() {
+		SettingsPanel ??= (await import('#lib/components/SettingsPanel.svelte')).default;
+		settingsOpen = true;
+	}
+
+	async function openHelp() {
+		HelpOverlay ??= (await import('#lib/components/HelpOverlay.svelte')).default;
+		helpOpen = true;
+	}
 	// True between `g` and the key that completes the chord; a stray `g` must not
 	// arm the chord forever, hence the timer.
 	let awaitingG = $state(false);
@@ -198,11 +225,11 @@
 				break;
 			case 'settings':
 				event.preventDefault();
-				settingsOpen = true;
+				void openSettings();
 				break;
 			case 'help':
 				event.preventDefault();
-				helpOpen = true;
+				void openHelp();
 				break;
 		}
 	}
@@ -468,13 +495,13 @@
 			{refreshing}
 			{query}
 			onquery={chooseQuery}
-			onsettings={() => (settingsOpen = true)}
-			onhelp={() => (helpOpen = true)}
+			onsettings={openSettings}
+			onhelp={openHelp}
 		/>
 		{#if mustChangePassword}
 			<p class="firstrun" role="status">
 				The first-run password is still in place.
-				<button class="link" type="button" onclick={() => (settingsOpen = true)}>
+				<button class="link" type="button" onclick={openSettings}>
 					Change it now
 				</button>.
 			</p>
@@ -514,7 +541,7 @@
 				type="button"
 				aria-label="Manage categories"
 				title="Manage categories"
-				onclick={() => (panelOpen = true)}
+				onclick={openCategories}
 			>
 				<Plus size={16} aria-hidden="true" />
 			</button>
@@ -528,7 +555,7 @@
 					type="button"
 					aria-label="Add category"
 					title="Add category"
-					onclick={() => (panelOpen = true)}
+					onclick={openCategories}
 				>
 					<Plus size={16} aria-hidden="true" />
 				</button>
@@ -560,7 +587,7 @@
 			</div>
 
 			<div class="side-foot">
-				<button class="side-item" type="button" onclick={() => (panelOpen = true)}>
+				<button class="side-item" type="button" onclick={openCategories}>
 					<Plus size={16} aria-hidden="true" />
 					<span class="side-label">Manage categories</span>
 				</button>
@@ -607,11 +634,11 @@
 	/>
 </div>
 
-{#if panelOpen}
+{#if panelOpen && CategoryPanel}
 	<CategoryPanel {categories} onchange={applyCategories} onclose={() => (panelOpen = false)} />
 {/if}
 
-{#if settingsOpen}
+{#if settingsOpen && SettingsPanel}
 	<SettingsPanel
 		{mustChangePassword}
 		onpasswordchanged={() => (mustChangePassword = false)}
@@ -619,7 +646,7 @@
 	/>
 {/if}
 
-{#if helpOpen}
+{#if helpOpen && HelpOverlay}
 	<HelpOverlay onclose={() => (helpOpen = false)} />
 {/if}
 

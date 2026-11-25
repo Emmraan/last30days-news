@@ -1,0 +1,104 @@
+<svelte:head>
+	<title>Uninstall · last30days-news</title>
+	<meta
+		name="description"
+		content="Remove last30days-news installed with npm, npx, the installers, Docker or systemd, including its database and service files."
+	/>
+</svelte:head>
+
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+	import { UNINSTALL_PS1_URL, UNINSTALL_SH_URL } from '#lib/site';
+
+	const dockerRemove = 'sudo docker rm -f last30days-news && sudo docker volume rm last30days-data';
+	const dockerImage = 'sudo docker image rm ghcr.io/emmraan/last30days-news:latest';
+	const systemdStop = 'sudo systemctl disable --now last30days-news';
+	const systemdFiles = 'sudo rm /etc/systemd/system/last30days-news.service && sudo systemctl daemon-reload';
+	const systemdData = 'sudo rm -rf /opt/last30days-news /var/lib/last30days-news && sudo rm -f /etc/last30days-news.env';
+	const linuxData = 'rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/last30days-news"';
+</script>
+
+# Uninstall
+
+This page covers local installs and VPS deployments. A Vercel deployment is removed in the Vercel dashboard; this page does not cover it.
+
+Stop the app before removing anything. Removing the data directory deletes the database, saved API keys and settings. Keep a copy if you want the reading list later.
+
+## Remove everything at once
+
+One command removes every method it finds on the machine: the global npm package, cached npx copies, local data, the Docker container, volume and image, and a systemd unit. You do not need to know which method was used. Run it as your normal user, not with `sudo`; the script asks for sudo only for Docker and systemd files.
+
+### Windows PowerShell
+
+<CopyCommand command={`irm ${UNINSTALL_PS1_URL} | iex`} label="PowerShell" />
+
+### macOS and Linux
+
+<CopyCommand command={`curl -fsSL ${UNINSTALL_SH_URL} | sh`} label="Terminal" />
+
+Caddy and Vercel settings are not touched. Remove a Caddy site block by hand, and remove a Vercel project in the Vercel dashboard.
+
+## npm, npx and the installers
+
+The Windows installer, the macOS/Linux installer and both npm commands create a global npm package. Remove it with npm:
+
+<CopyCommand command="npm uninstall --global last30days-news" label="Terminal" />
+
+`npx last30days-news` leaves a cached copy under npm's cache. Clear the npx cache when you also want that removed:
+
+<CopyCommand command="npm cache clean --force" label="Terminal" />
+
+This clears the whole npm cache, not only this package. npm downloads what it needs again on the next install.
+
+## Local data
+
+Delete the data directory for your platform. The app must be stopped first.
+
+### Windows PowerShell
+
+<CopyCommand command='Remove-Item -Recurse -Force "$env:APPDATA\last30days-news"' label="PowerShell" />
+
+### macOS
+
+<CopyCommand command='rm -rf "$HOME/Library/Application Support/last30days-news"' label="Terminal" />
+
+### Linux
+
+<CopyCommand command={linuxData} label="Terminal" />
+
+If you set `L30_DATA_DIR`, delete that directory instead. This removes `db.sqlite` and its WAL files. Node.js and npm stay installed; remove them separately if you no longer need them.
+
+## Docker
+
+The automatic VPS installer and the manual Docker command use the same container and volume names. Stop and remove both:
+
+<CopyCommand command={dockerRemove} label="Terminal" />
+
+The volume contains the database. If you used a bind mount instead, delete that host directory yourself. The image can be removed after the container is gone:
+
+<CopyCommand command={dockerImage} label="Terminal" />
+
+## systemd
+
+Stop and disable the service, then remove the unit and the files it uses:
+
+<CopyCommand command={systemdStop} label="Terminal" />
+
+<CopyCommand command={systemdFiles} label="Terminal" />
+
+<CopyCommand command={systemdData} label="Terminal" />
+
+The last command deletes `/var/lib/last30days-news`, which holds the database. Remove the Caddy site block too, then reload Caddy.
+
+Remove the service user when no other service uses it:
+
+<CopyCommand command="sudo userdel last30days" label="Terminal" />
+
+## After uninstall
+
+- Global npm installs have no background process or startup entry, so nothing else runs.
+- Docker containers are removed, so they no longer restart.
+- systemd no longer starts the service after a reboot.
+- Vercel deployments are managed on Vercel.
+
+To install again, start from [install](/docs/install).

@@ -1,3 +1,3 @@
-// A showcase page: prerender it once, ship no client JS at all (§6.8).
+// Every route is prerendered. The home page opts out of hydration; docs pages
+// hydrate so navigation between them stays client-side.
 export const prerender = true;
-export const csr = false;

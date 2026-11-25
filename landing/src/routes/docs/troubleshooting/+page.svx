@@ -1,0 +1,59 @@
+<svelte:head>
+	<title>Troubleshooting · last30days-news</title>
+	<meta
+		name="description"
+		content="Fix common last30days-news problems: Turso URL schemes, setup-required login, reset errors, ports, empty feeds and Docker volumes."
+	/>
+</svelte:head>
+
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+</script>
+
+# Troubleshooting
+
+## `URL_SCHEME_NOT_SUPPORTED` or a `turso:` error
+
+Use the Turso **libSQL** URL, starting with `libsql://`. A `turso://` URL belongs to the newer Turso Database engine and is not supported by this app's libSQL driver.
+
+## `503 setup_required` on a deployment
+
+The database has no password and no `L30_INITIAL_PASSWORD` was set. Add an 8+ character initial password to the environment and restart or redeploy.
+
+## `403 reset_local_only`
+
+Reset is disabled on deployments. Use the recovery steps in [passwords and recovery](/docs/passwords).
+
+On a local install, the request did not come from the same machine. Open `/reset` on the machine running the reader.
+
+## Port already in use
+
+The packaged app tries 4477 through 4487. Set `PORT` to pin another port:
+
+<CopyCommand command="PORT=4480 last30days" />
+
+For development, pass a port to Vite:
+
+<CopyCommand command="pnpm exec vite dev --port 4480" />
+
+## Vercel feed is empty
+
+Open the app and refresh. The first refresh fetches items; AI summaries are optional. If refresh fails, check the Turso URL and token in the Vercel project.
+
+## Docker data disappears
+
+Mount a volume at `/data`. The container warns when `/data` is not mounted. Without a volume, the database lives inside the container and disappears when it is removed.
+
+## The install command shows `localhost`
+
+The landing was built without `APP_URL`. Set `APP_URL` in the landing Vercel project and redeploy. See [configuration](/docs/configuration#landing-app-url).
+
+## Node version is rejected
+
+The installers and the package require Node.js exactly `26.13.0`. Install that version from [nodejs.org](https://nodejs.org) and run the command again.
+
+## Next
+
+- [Configuration](/docs/configuration)
+- [Passwords and recovery](/docs/passwords)
+- [Development](/docs/development)

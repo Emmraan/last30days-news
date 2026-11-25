@@ -29,7 +29,7 @@ a new one; the plan and code hold the full rationale.
 | Fix: first-run password + seed | done | — | `4ac1b3c` | direct, on `main` |
 | Fix: CSP inline styles | done | — | `58998e8` | direct, on `main` |
 | P14 Dashboard + landing showcase | done | `phase-14-landing` | `e9aae09` | `0ac90e1` |
-| P15 Install, budgets, CI | not started | — | — | — |
+| P15 Install, budgets, CI | committed | `phase-15-install` | `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` + `ca1965f` + `f6ff2cd` + `03050ff` | - |
 
 ## P0 — Bootstrap
 
@@ -302,6 +302,62 @@ previews, inline scripts for theme/install/menu/copy. Root `/` redirects to
 builds pass, audit 0 critical/high (2 moderate). Accepted deviations: no
 screenshots or Playwright; the landing is a separate build; inline enhancement
 scripts are allowed.
+
+## P15 — Install, budgets, CI
+
+Work `1e16a63` + `f2446fb` + `e9ac5e2` + `ca712bd` + `e8e9466` +
+`ca1965f` + `f6ff2cd` + `03050ff`, on `phase-15-install`, not merged.
+`bin/last30days.js` adds
+`--no-open`, exact `PORT` or 4477–4487, platform data dirs and browser open.
+Docker and systemd units, `vercel.json` and `VERCEL=1` adapter switch. Local
+npm keeps `last30` and loopback `/reset`; deployments (`L30_DEPLOYED=1` or
+`VERCEL=1`) seed `L30_INITIAL_PASSWORD` (8+), never accept `last30` (even
+when an old database stored its hash), fail closed with `setup_required`,
+and disable reset. The tarball ships only
+`bin/`, built output and README/docs assets. `.env.development.example` and
+`.env.production.example` hold dummy values; real files stay ignored.
+`vite.config.ts` loads the matching file for dev/build but never for tests.
+README is a minimal quick start that links to the landing docs:
+`landing/` is a separate static app with mdsvex pages at `/docs`, an
+`install.sh`/`install.ps1` pair that installs the latest GitHub release
+tarball, and install commands built from a required `APP_URL`. `03050ff`
+hydrates only the docs routes (the home page stays `csr = false`), renders
+the SVGs inline in a focusable scroll canvas, keeps wide tables inside the
+prose column, adds the one-command VPS Docker installer and `/docs/uninstall`
+with `uninstall.sh`/`uninstall.ps1`, and trims the README to the three npm
+commands plus the docs URL. The release
+workflow attaches `last30days-news.tgz` to each GitHub Release. CONTRIBUTING,
+SECURITY and the Contributor Covenant cover development and reporting. Release
+is semantic-release from `main` after CI: GitHub Release always, npm only
+when `NPM_TOKEN` exists in the `release` environment. The added CI
+`VERCEL=1` build was removed after adapter-vercel hung in file tracing
+(`ENXIO` on a `/tmp/dotnet-diagnostic-*` socket); the real deployment checks
+that adapter. CI builds the Docker image on green `main` and pushes
+`ghcr.io/emmraan/last30days-news:latest` plus `sha-<short>` to GHCR; the VPS
+guide pulls it instead of building.
+Local gate: lint/typecheck clean, 53 files / 619 tests, both builds, budget
+pass (cold boot 667 ms, /app JS 56.4 KB, landing 15.5 KB, feed p95 75 ms),
+smoke and package smoke pass, audit 0 critical/high (2 moderate). The landing
+build fails closed on Vercel without `APP_URL`, and an injected test URL
+reached both install commands and every docs link resolved. A dummy `.env.production`
+verified `start:local`: deployed login works, `last30` 401, reset 403, feed
+200, and the password never reached the log. Dependabot groups weekly
+npm, actions and Docker minor/patch updates; a policy labels them
+`automerge` and closes majors, and a `workflow_run` job merges after green
+CI and closes on failure. CI was green on `a057ff7` (owner report); the
+`ca712bd` run failed in the added `VERCEL=1` build, and `e8e9466` removes
+that step. The real Turso development branch verified login, first-run
+password change, `/app`, feed and refresh (5 events); one transient connect
+timeout cleared on rerun. The branch now holds the test password
+`local-test-password-123` and 5 items; delete `auth.password`, `crypto.salt`
+and every `secret.*` row to return to first-run. Not yet verified: actual
+Vercel login/fetch/feed, the landing deployment and its `APP_URL`, npm publish
+(account suspended 72 h). The first
+Turso check hit a `turso://` URL, which `@libsql/client` cannot open; the
+owner switched to the libSQL `libsql://` URL. Accepted: DNS
+rebinding and the `Host` header (P3); the local default window (now
+closed on deployments). A local install exposed through a proxy must set
+`L30_TRUST_PROXY=1`, or reset still sees the proxy as loopback.
 
 ## Working rules adopted mid-project
 

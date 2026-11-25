@@ -1,0 +1,84 @@
+<svelte:head>
+	<title>Deploy to Vercel · last30days-news</title>
+	<meta
+		name="description"
+		content="Deploy last30days-news to Vercel with a Turso libSQL database, an initial password and no persistent local disk."
+	/>
+</svelte:head>
+
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+</script>
+
+# Deploy to Vercel
+
+Vercel runs the app as a serverless function. The function filesystem is temporary, so the database must be a Turso libSQL database.
+
+## Before you start
+
+- A Vercel account.
+- A Turso libSQL database. Keep its **main branch** for the deployment.
+- A token for that database.
+- An initial password with at least 8 characters.
+
+Do not deploy against the development branch you use for local testing. The deployment needs its own branch so test data and test passwords stay out of production.
+
+## Deploy
+
+1. Create a Turso libSQL database and keep its main branch URL. It starts with `libsql://`.
+2. Create a database token.
+3. Deploy this repository to Vercel. The repository root has the app's `vercel.json`.
+4. Add these environment variables in the Vercel project:
+
+| Variable | Value |
+| --- | --- |
+| `TURSO_DATABASE_URL` | The main branch URL, starting with `libsql://` |
+| `TURSO_AUTH_TOKEN` | The token for that database |
+| `L30_INITIAL_PASSWORD` | An 8+ character first password |
+
+5. Deploy and open the URL.
+6. Sign in with `L30_INITIAL_PASSWORD`, then change it in Settings.
+
+Vercel sets `VERCEL=1`. That selects the Vercel adapter and turns on deployed mode. Do not set `L30_DEPLOYED` on Vercel.
+
+Use a Turso **libSQL** database, not the newer Turso Database engine. A `turso://` URL does not work with this app's libSQL driver. The URL must start with `libsql://`.
+
+## Test the database locally first
+
+This catches database and credential problems before a deployment.
+
+1. Create a fresh Turso libSQL development branch. Do not use the main branch.
+2. Copy `.env.development.example` to `.env.development`.
+3. Fill `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from the development branch.
+4. Run the app:
+
+<CopyCommand command="pnpm dev" />
+
+5. Sign in with `last30`, change the password, and check the feed and refresh.
+
+A fresh branch starts in local first-run state. Changing the password writes its hash to that branch. The main branch used by Vercel stays untouched.
+
+## Refresh and sessions
+
+`/api/refresh` processes one batch per request on Vercel. The client polls until the batch finishes, so no single request outlives the function timeout.
+
+Sessions, login attempts and settings live in Turso. They survive between function invocations, and a redeploy does not sign you out.
+
+## The first password
+
+`L30_INITIAL_PASSWORD` is read only while no password is stored. After the first sign-in, change the password in Settings. Changing the environment variable later does nothing.
+
+If the database has no password and the variable is missing, login fails closed with `503 setup_required`. See [passwords and recovery](/docs/passwords).
+
+## Troubleshooting
+
+- `URL_SCHEME_NOT_SUPPORTED` or a `turso:` error: use the `libsql://` URL.
+- `503 setup_required`: add `L30_INITIAL_PASSWORD` and redeploy.
+- Empty feed: open the app and refresh. AI summaries are optional.
+- Login works locally but not on Vercel: confirm the Vercel project uses the main branch URL and token, not the development branch.
+
+## Next
+
+- [Configuration](/docs/configuration)
+- [Passwords and recovery](/docs/passwords)
+- [Troubleshooting](/docs/troubleshooting)

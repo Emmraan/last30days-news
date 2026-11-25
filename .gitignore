@@ -7,5 +7,7 @@ build
 fixtures/cache
 .env
 .env.*
-!.env.example
+!.env.development.example
+!.env.production.example
 review
+.vercel

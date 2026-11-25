@@ -1,0 +1,35 @@
+[Unit]
+Description=last30days-news reader
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=last30days
+Group=last30days
+WorkingDirectory=/opt/last30days-news
+# Put L30_INITIAL_PASSWORD here, not in this world-readable unit.
+EnvironmentFile=-/etc/last30days-news.env
+Environment=NODE_ENV=production
+Environment=L30_DEPLOYED=1
+Environment=PORT=4477
+Environment=HOST=127.0.0.1
+Environment=L30_DATA_DIR=/var/lib/last30days-news
+# Set to 1 only when the reverse proxy sets X-Forwarded-Proto and X-Forwarded-For.
+Environment=L30_TRUST_PROXY=1
+ExecStart=/usr/bin/node /opt/last30days-news/bin/last30days.js --no-open
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/var/lib/last30days-news
+
+[Install]
+WantedBy=multi-user.target

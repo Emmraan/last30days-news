@@ -1,0 +1,17 @@
+node_modules
+.svelte-kit
+build
+landing/.svelte-kit
+landing/build
+.env
+.env.*
+!.env.development.example
+!.env.production.example
+review
+.git
+.gitignore
+fixtures/cache
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+static/shots

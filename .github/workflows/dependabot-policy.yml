@@ -1,0 +1,49 @@
+name: Dependabot policy
+
+# Dependabot pull requests get a read-only token on pull_request, so the
+# decision runs in the base-repository context. Nothing from the PR is checked
+# out here.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: dependabot-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read the update type
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Label or close
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.html_url }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+        run: |
+          set -euo pipefail
+          case "$UPDATE_TYPE" in
+            version-update:semver-patch|version-update:semver-minor) ;;
+            *)
+              gh pr comment "$PR" --body "Closed by the dependency policy: only patch and minor updates merge automatically. Land a major update on a manual branch."
+              gh pr close "$PR"
+              exit 0
+              ;;
+          esac
+          if gh pr view "$PR" --json labels --jq '.labels[].name' | grep -qx automerge; then
+            exit 0
+          fi
+          gh label create automerge --color 0e8a16 --description 'Merge when CI is green' --force
+          gh pr edit "$PR" --add-label automerge
+          gh pr comment "$PR" --body "CI is running. This pull request merges after every job passes, and is closed if CI fails."

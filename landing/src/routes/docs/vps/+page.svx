@@ -1,0 +1,141 @@
+<svelte:head>
+	<title>Run on a VPS · last30days-news</title>
+	<meta
+		name="description"
+		content="Install last30days-news on a VPS with one command, or run Docker and systemd manually with a SQLite volume, initial password and TLS proxy."
+	/>
+</svelte:head>
+
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+	import { INSTALL_VPS_URL } from '#lib/site';
+
+	const runInstaller = `curl -fsSL ${INSTALL_VPS_URL} | sudo sh`;
+	const runInstallerWithPassword = `curl -fsSL ${INSTALL_VPS_URL} | sudo L30_INITIAL_PASSWORD='choose-a-password' sh`;
+	const image = 'ghcr.io/emmraan/last30days-news:latest';
+	const manualRun = `docker run -d --name last30days-news --restart unless-stopped -p 127.0.0.1:4477:4477 -v last30days-data:/data -e L30_INITIAL_PASSWORD='choose-a-password' ${image}`;
+	const ghcrLogin = 'echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_GITHUB_USER --password-stdin';
+	const tunnel = 'ssh -L 4477:127.0.0.1:4477 user@your-host';
+	const createUser = 'sudo useradd --system --home /var/lib/last30days-news --shell /usr/sbin/nologin last30days && sudo mkdir -p /opt/last30days-news /var/lib/last30days-news && sudo chown -R last30days:last30days /opt/last30days-news /var/lib/last30days-news';
+	const cloneBuild = 'sudo -u last30days git clone https://github.com/Emmraan/last30days-news.git /opt/last30days-news && cd /opt/last30days-news && sudo -u last30days pnpm install --frozen-lockfile && sudo -u last30days pnpm build';
+	const createEnv = 'sudo install -m 600 -o root -g root /dev/null /etc/last30days-news.env && sudoedit /etc/last30days-news.env';
+	const installUnit = 'sudo cp deploy/last30days-news.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now last30days-news && sudo systemctl status last30days-news';
+	const updateUnit = 'cd /opt/last30days-news && sudo -u last30days git pull && sudo -u last30days pnpm install --frozen-lockfile && sudo -u last30days pnpm build && sudo systemctl restart last30days-news';
+</script>
+
+# Run on a VPS
+
+Both paths are deployments. They set `L30_DEPLOYED=1`, require `L30_INITIAL_PASSWORD`, reject `last30` and disable password reset.
+
+Keep the app on `127.0.0.1` and put a TLS proxy in front. Never expose port 4477 directly to the internet.
+
+## Automatic installation
+
+The automatic path needs Docker on the host. It runs the published image with a named volume and does not build anything on the server.
+
+<CopyCommand command={runInstaller} label="Terminal" />
+
+The installer:
+
+- Pulls `ghcr.io/emmraan/last30days-news:latest`.
+- Creates the `last30days-data` volume for `/data`.
+- Binds the app to `127.0.0.1:4477` and restarts it unless stopped.
+- Generates an initial password when `L30_INITIAL_PASSWORD` is not set, then prints it once.
+- Replaces an existing `last30days-news` container and keeps the volume.
+
+To choose the first password yourself:
+
+<CopyCommand command={runInstallerWithPassword} label="Terminal" />
+
+The password only seeds an empty database. On later runs the app keeps the password stored in the volume.
+
+If the GHCR package is still private, log in first:
+
+<CopyCommand command={ghcrLogin} label="Shell" />
+
+## TLS proxy
+
+Put Caddy or another TLS proxy in front. A minimal Caddyfile:
+
+```text
+news.example.com {
+    reverse_proxy 127.0.0.1:4477
+}
+```
+
+The automatic installer sets `L30_TRUST_PROXY=1`, so forwarded client addresses reach the app. Only trust those headers when the proxy overwrites them, as Caddy does.
+
+## Manual installation
+
+Choose Docker or systemd when you want to control every step.
+
+### Docker
+
+Pull the image published by CI:
+
+<CopyCommand command={`docker pull ${image}`} label="Terminal" />
+
+Run it with a named volume for `/data` and an initial password:
+
+<CopyCommand command={manualRun} label="Terminal" />
+
+The image sets `L30_DEPLOYED=1`, runs as UID 1000 and stores data in `/data`. If the package is not public yet, log in first with a GitHub token that can read packages:
+
+<CopyCommand command={ghcrLogin} label="Terminal" />
+
+For a quick check from your own machine, use an SSH tunnel:
+
+<CopyCommand command={tunnel} label="Terminal" />
+
+Then open `http://127.0.0.1:4477`. If you bind-mount a host directory instead of a named volume, make it writable by UID 1000. The container warns if `/data` is not a mounted volume, because data would disappear with the container.
+
+When the proxy does not overwrite `X-Forwarded-For` and `X-Forwarded-Proto`, do not add `L30_TRUST_PROXY=1`.
+
+### systemd
+
+1. Install Node.js 26.13.0 and pnpm 12.16.1 on the host.
+2. Create the service user and directories:
+
+<CopyCommand command={createUser} label="Terminal" />
+
+3. Clone and build as the service user:
+
+<CopyCommand command={cloneBuild} label="Terminal" />
+
+4. Create the environment file and add `L30_INITIAL_PASSWORD`:
+
+<CopyCommand command={createEnv} label="Terminal" />
+
+```text
+L30_INITIAL_PASSWORD=choose-a-password
+```
+
+5. Install and start the unit:
+
+<CopyCommand command={installUnit} label="Terminal" />
+
+6. Put the TLS proxy from above in front of `127.0.0.1:4477`.
+
+The unit already sets `L30_DEPLOYED=1`, `HOST=127.0.0.1` and `L30_TRUST_PROXY=1`. Only keep `L30_TRUST_PROXY=1` when the proxy overwrites `X-Forwarded-For` and `X-Forwarded-Proto`. If it does not, remove that line so clients cannot spoof their address.
+
+## Update
+
+For the automatic install and Docker, pull the new image and recreate the container. The volume keeps the database. The installer does this for you:
+
+<CopyCommand command={runInstaller} label="Terminal" />
+
+For systemd, pull the new code, rebuild and restart:
+
+<CopyCommand command={updateUnit} label="Terminal" />
+
+The database stays in `/var/lib/last30days-news`.
+
+## Uninstall
+
+See [uninstall](/docs/uninstall) for removing the container, volume, systemd unit and data.
+
+## Next
+
+- [Configuration](/docs/configuration)
+- [Passwords and recovery](/docs/passwords)
+- [Troubleshooting](/docs/troubleshooting)

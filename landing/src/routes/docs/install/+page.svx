@@ -1,0 +1,84 @@
+<script>
+	import CopyCommand from '#lib/components/CopyCommand.svelte';
+	import { INSTALL_PS1_URL, INSTALL_SH_URL } from '#lib/site';
+</script>
+
+# Install
+
+The installers need Node.js 26.13.0 and npm. They download the latest GitHub release tarball and install it globally, so the npm registry is not involved. No configuration is required for the first run.
+
+## Windows
+
+Open PowerShell and run:
+
+<CopyCommand command={`irm ${INSTALL_PS1_URL} | iex`} label="PowerShell" />
+
+If PowerShell blocks the script, open a new PowerShell window and run it again. The installer does not change the execution policy.
+
+## macOS and Linux
+
+Open a terminal and run:
+
+<CopyCommand command={`curl -fsSL ${INSTALL_SH_URL} | sh`} label="Terminal" />
+
+The script downloads the latest release with `npm` from your current Node.js. If `npm` is missing, install Node.js 26.13.0 first.
+
+## Run it
+
+```bash
+last30days
+```
+
+The reader starts at `http://127.0.0.1:4477` and opens your browser. The first run uses the default password `last30`. Change it in Settings after you sign in.
+
+If port 4477 is busy, the command tries 4477 through 4487. To pin a port:
+
+```bash
+# macOS and Linux
+PORT=4480 last30days
+```
+
+```powershell
+# Windows PowerShell
+$env:PORT = 4480
+last30days
+```
+
+`HOST` defaults to `127.0.0.1`. Keep it there unless a reverse proxy is in front of the app.
+
+## Run without installing
+
+```bash
+npx last30days-news
+```
+
+`npx` downloads the npm package for one run and starts the same reader. It needs the package to be published on npm; the installers above use GitHub releases instead.
+
+## Data location
+
+The first run creates one SQLite database:
+
+- Windows: `%APPDATA%\last30days-news`
+- macOS: `~/Library/Application Support/last30days-news`
+- Linux: `$XDG_DATA_HOME/last30days-news`, or `~/.local/share/last30days-news`
+- Any platform: `L30_DATA_DIR` overrides the default
+
+The database is `<data-dir>/db.sqlite`, with WAL mode and foreign keys enabled. Back up that file and you have backed up the reader.
+
+## Command line
+
+```text
+last30days [options]
+
+  --no-open       Do not open the browser
+  --version, -v   Print the version
+  --help, -h      Print help
+```
+
+Set `L30_DEBUG=1` for verbose logs. Logs are newline-delimited JSON.
+
+## Next
+
+- [Run locally](/docs/local) for the daily workflow.
+- [Configuration](/docs/configuration) for ports, data and proxies.
+- [Passwords and recovery](/docs/passwords) for the first password and reset rules.

@@ -23,6 +23,24 @@ export const DUMMY_HASH = `scrypt$${N}$${R}$${P}$AAAAAAAAAAAAAAAAAAAAAA==$${'A'.
 /** §S9 first-run password. It only ever matches while no password is stored. */
 export const FIRST_RUN_PASSWORD = 'last30';
 
+/** §S19: a local install has no UI at boot, so print the default password. */
+export function firstRunNotice() {
+	return `\nlast30days-news: first run.\n  Sign in with the default password "${FIRST_RUN_PASSWORD}" and change it in Settings.\n\n`;
+}
+
+/**
+ * §S9: a deployed instance must never advertise the public default. If the
+ * first password variable is missing, the owner gets a recovery instruction
+ * instead of a password anyone can read from the repository.
+ */
+export function deploySetupNotice() {
+	return (
+		'\nlast30days-news: first run on a deployment.\n' +
+		'  Set L30_INITIAL_PASSWORD (at least 8 characters) and restart.\n' +
+		'  Password reset is disabled on this deployment.\n\n'
+	);
+}
+
 export async function hashPassword(plain: string): Promise<string> {
 	const salt = randomBytes(SALTLEN);
 	const hash = await scrypt(plain, salt, KEYLEN, { N, r: R, p: P, maxmem: MAXMEM });
